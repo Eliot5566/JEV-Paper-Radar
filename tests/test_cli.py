@@ -38,14 +38,14 @@ def test_check(capsys):
 def test_missing_key_exit_code(tmp_path, monkeypatch, capsys):
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     cfg = tmp_path / "radar.toml"
-    cfg.write_text('[[sources]]\ntype = "arxiv"\n[[interests]]\nid = "a"\ntext = "x"\n')
+    cfg.write_text('[[sources]]\ntype = "arxiv"\n[[interests]]\nid = "a"\ntext = "x"\n', encoding="utf-8")
     assert main(["run", "-c", str(cfg)]) == 2
     assert "TYPESAFE_API_KEY is not set" in capsys.readouterr().err
 
 
 def test_bad_config_exit_code(tmp_path, capsys):
     cfg = tmp_path / "radar.toml"
-    cfg.write_text("[radar]\ntitel = 'x'\n")
+    cfg.write_text("[radar]\ntitel = 'x'\n", encoding="utf-8")
     assert main(["check", "-c", str(cfg)]) == 2
     assert "Unknown key" in capsys.readouterr().err
 

@@ -49,7 +49,7 @@ def test_feed_url():
 
 
 def test_demo_feed_parses():
-    papers = parse_arxiv_rss(DEMO_FEED.read_text())
+    papers = parse_arxiv_rss(DEMO_FEED.read_text(encoding="utf-8"))
     assert len(papers) >= 40
     assert all(p.id.startswith("arxiv:2609.99") for p in papers)
     assert not any("Revised Today" in p.title for p in papers)

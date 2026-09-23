@@ -27,15 +27,15 @@ def test_end_to_end_mock(config):
     site = config.site_path
     for name in ("index.html", "2026-09-22.html", "archive.html", "feed.xml", ".nojekyll"):
         assert (site / name).exists(), name
-    page = (site / "index.html").read_text()
+    page = (site / "index.html").read_text(encoding="utf-8")
     assert "Offline demo" in page and "TraceGrade" in page
-    feed = ET.fromstring((site / "feed.xml").read_text())
+    feed = ET.fromstring((site / "feed.xml").read_text(encoding="utf-8"))
     titles = [i.findtext("title") for i in feed.iter("item")]
     assert len(titles) == counts["must_read"] + counts["maybe"]
     assert any(t.startswith("★ ") for t in titles)
 
     data = config.data_path / "decisions"
-    shown = [json.loads(line) for line in (data / "2026-09-22.jsonl").open()]
+    shown = [json.loads(line) for line in (data / "2026-09-22.jsonl").open(encoding="utf-8")]
     rest = [json.loads(line) for line in gzip.open(data / "2026-09-22.rest.jsonl.gz", "rt")]
     assert {r["band"] for r in shown} <= {"must_read", "maybe"}
     assert all("abstract" not in r["paper"] for r in rest)
@@ -137,7 +137,7 @@ def test_summaries_cascade(tmp_path):
 
 def test_rebuild_without_runs(config):
     rebuild_site(config, Store(config.data_path))
-    assert "No runs yet" in (config.site_path / "index.html").read_text()
+    assert "No runs yet" in (config.site_path / "index.html").read_text(encoding="utf-8")
 
 
 def test_calibrate_suggests_thresholds():
@@ -160,7 +160,7 @@ def test_quiet_day_still_builds_site(tmp_path):
     from .conftest import make_config
 
     empty = tmp_path / "empty.xml"
-    empty.write_text('<rss version="2.0"><channel></channel></rss>')
+    empty.write_text('<rss version="2.0"><channel></channel></rss>', encoding="utf-8")
     config = make_config(tmp_path, sources=[{"type": "arxiv", "file": str(empty)}])
     result = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
     assert result.judged == 0 and (config.site_path / "index.html").exists()
@@ -188,13 +188,13 @@ def test_vote_links_appear_only_when_configured(tmp_path):
 
     config = make_config(tmp_path, output={"feedback_repo": "Eliot5566/JEV-Paper-Radar"})
     run(config, MockBackend(), today=DAY, notify=False, log=quiet)
-    page = (config.site_path / "index.html").read_text()
+    page = (config.site_path / "index.html").read_text(encoding="utf-8")
     assert "issues/new?title=" in page and "👍" in page and "👎" in page
     assert unquote(page.split("issues/new?title=")[1].split('"')[0]).startswith("radar-label: arxiv:2609.9")
 
     plain = make_config(tmp_path / "plain")
     run(plain, MockBackend(), today=DAY, notify=False, log=quiet)
-    assert "issues/new" not in (plain.site_path / "index.html").read_text()
+    assert "issues/new" not in (plain.site_path / "index.html").read_text(encoding="utf-8")
 
 
 def test_harvest_records_labels_and_closes_issues(config):
@@ -242,5 +242,5 @@ def test_custom_tagline(tmp_path):
 
     config = make_config(tmp_path, output={"tagline": "Today's standouts across AI."})
     run(config, MockBackend(), today=DAY, notify=False, log=quiet)
-    page = (config.site_path / "index.html").read_text()
+    page = (config.site_path / "index.html").read_text(encoding="utf-8")
     assert "Today&#x27;s standouts across AI." in page and "against your interests" not in page
