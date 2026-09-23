@@ -6,11 +6,11 @@
 
 用白話寫興趣 · 校準過的機率 · 讀完*整個* arXiv 一天約 6 美分 · Fork 即用，不需要伺服器
 
-[English](README.md) · [專案企劃](docs/PLAN.zh-TW.md)
+[English](README.md) · [專案企劃](docs/PLAN.zh-TW.md) · [發布清單](docs/LAUNCH.zh-TW.md)
 
 <img src="docs/demo.png" width="720" alt="Paper Radar 每日頁面">
 
-<sub>離線 demo 截圖（虛構論文、模擬模型）。實際使用時是 Jev 評分的真實論文。</sub>
+<sub>真實執行結果：Jev 在 5 秒內讀完 50 篇當日 arXiv 新論文，花費 $0.002。沒有金鑰也可以用 <code>paper-radar demo</code> 看到同樣的頁面。</sub>
 
 </div>
 

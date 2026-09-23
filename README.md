@@ -8,9 +8,9 @@ Plain-English interests · calibrated probabilities · about 6 cents a day for *
 
 [Quick start](#quick-start-5-minutes-no-server) · [Try the demo](#try-it-in-10-seconds) · [How it works](#how-it-works) · [繁體中文](README.zh-TW.md)
 
-<img src="docs/demo.png" width="720" alt="Paper Radar daily page: 44 papers read, 10 shortlisted, 9 must-read">
+<img src="docs/demo.png" width="720" alt="Paper Radar daily page: 50 papers read, 12 shortlisted, 4 must-read">
 
-<sub>Screenshot of the offline demo (fictional papers, mock model). Your page shows real papers scored by Jev.</sub>
+<sub>A real run: 50 new arXiv papers judged by Jev in 5 seconds for $0.002. No key? <code>paper-radar demo</code> shows the same page offline.</sub>
 
 </div>
 
@@ -28,7 +28,7 @@ Paper Radar takes a different route. Every new paper gets **judged** against the
 | Thresholds you can tune and check | ❌ | ❌ | ❌ | ✅ `calibrate` |
 | Cost to read all of arXiv daily | free | free after setup | higher: you pay for generated text | **≈ $0.06 per day\*** |
 
-<sub>\* Estimate: ~1,500 papers × ~1,000 input tokens × $0.042 per million tokens (output tokens are free). Every run logs the exact tokens and cost in `data/runs.jsonl`. Run `paper-radar check` to estimate your own profile.</sub>
+<sub>\* Measured, not guessed: a real run on 2026-09-23 read 50 papers in 5 seconds for 46,584 input tokens and $0.0020 (932 tokens per paper, `jev-1.13.0`). All of arXiv, about 1,500 papers per weekday, works out to roughly $0.06 a day. Output tokens are free. Every run logs its own tokens and cost in `data/runs.jsonl`; `paper-radar check` estimates your profile before you spend anything.</sub>
 
 ## What you get every morning
 
