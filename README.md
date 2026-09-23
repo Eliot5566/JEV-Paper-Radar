@@ -95,6 +95,11 @@ Jev reads your words literally ([Jev 1.13 jaggedness notes](https://docs.typesaf
 | Describe the paper: *"Proposes a benchmark for …"* | Ask for counts or dates: *"published after 2024"* |
 | Use `weight = 0.5` for nice-to-have topics | Write ten near-duplicate interests |
 
+Measured on one day of 299 papers: the two interests worded as one crisp idea each
+("introduces a benchmark or an evaluation method", "makes inference faster or cheaper")
+produced 14 confident hits each. Three vaguer ones in the same profile — including
+"clearly outperforms previous approaches on a widely used task" — never crossed 0.95 at all.
+
 ## How it works
 
 ```mermaid

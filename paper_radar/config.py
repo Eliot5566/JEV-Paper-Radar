@@ -88,6 +88,7 @@ class Output:
     near_misses: int = 15
     dedupe_days: int = 14
     feedback_repo: str = ""  # "owner/name": adds 👍/👎 links that open a pre-filled issue
+    tagline: str = ""        # replaces the one-line subtitle under the date
 
 
 @dataclass

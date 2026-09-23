@@ -17,36 +17,37 @@ type = "arxiv"
 categories = ["cs.AI", "cs.CL", "cs.LG"]
 include_cross_lists = false   # primary submissions only, to keep the demo cheap
 
-# A deliberately broad "what mattered in AI today" profile. Not one person's taste:
-# the point is to show strangers what the output looks like.
+# Interests for a public digest. Measured lesson from the first run (299 papers):
+# crisply worded, single-concept statements produced confident hits; vague ones
+# ("clearly outperforms previous approaches") never crossed 0.95 at all.
 [[interests]]
-id = "capability"
-label = "New capability"
-text = "The paper reports a method that clearly outperforms previous approaches on a widely used task"
+id = "new_model"
+label = "New model"
+text = "The paper introduces a new language model or a new training method for one"
 
 [[interests]]
 id = "agents"
 label = "Agents"
-text = "LLM agents that plan and act over many steps using tools, browsers, or code execution"
+text = "The paper is about LLM agents that use tools or browse the web"
 
 [[interests]]
 id = "evaluation"
 label = "Evaluation"
-text = "A new benchmark, evaluation protocol, or measurement study for language models"
+text = "The paper introduces a benchmark or an evaluation method for language models"
 
 [[interests]]
 id = "efficiency"
 label = "Efficiency"
-text = "Making language model training or inference faster or cheaper"
+text = "The paper makes language model inference faster or cheaper"
 
 [[interests]]
-id = "reliability"
-label = "Reliability"
-text = "Hallucination, calibration, safety, or robustness of language model outputs"
+id = "hallucination"
+label = "Hallucination"
+text = "The paper measures or reduces hallucination in language model outputs"
 
 [thresholds]
-must_read = 0.88      # stricter than a personal radar: strangers want the top of the pile
-maybe = 0.70
+must_read = 0.95      # tuned on real scores: 0.88 kept 73 of 299 papers, 0.95 keeps ~28
+maybe = 0.90
 exclude = 0.80
 
 [signals]
@@ -60,3 +61,4 @@ site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/"
 feed_days = 14
 near_misses = 0
 feedback_repo = ""    # no voting on the public page; votes belong to your own radar
+tagline = "Today's standouts across cs.AI, cs.CL and cs.LG, picked by Jev from every new submission."

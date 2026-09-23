@@ -235,3 +235,12 @@ def test_harvest_rejects_bad_repo(config):
 
     with pytest.raises(ValueError, match="owner/name"):
         harvest("not-a-repo", Store(config.data_path), fetch=lambda url, h: [], log=quiet)
+
+
+def test_custom_tagline(tmp_path):
+    from .conftest import make_config
+
+    config = make_config(tmp_path, output={"tagline": "Today's standouts across AI."})
+    run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    page = (config.site_path / "index.html").read_text()
+    assert "Today&#x27;s standouts across AI." in page and "against your interests" not in page

@@ -213,7 +213,7 @@ def render_day(
     body = [
         '<section class="hero">',
         f"<h1>{_e(day)}</h1>",
-        '<p class="sub">Every new paper was read against your interests. These are the ones worth your time.</p>',
+        f'<p class="sub">{_e(config.output.tagline or "Every new paper was read against your interests. These are the ones worth your time.")}</p>',
         banner,
         '<div class="funnel">',
         f'<div class="stage"><b>{_num(stats["judged"])}</b><span>papers read</span></div><div class="arrow">→</div>',
