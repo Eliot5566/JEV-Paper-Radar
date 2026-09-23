@@ -14,6 +14,8 @@ def test_example_config_is_valid():
     root = Path(__file__).resolve().parents[1]
     config = load_config(root / "radar.toml")
     assert config.interests and config.sources
+    public = load_config(root / "radar.public.toml")
+    assert public.output.site_dir == "site/public" and public.output.data_dir == "data/public"
     for profile in (root / "profiles").glob("*.toml"):
         load_config(profile)
 
@@ -164,6 +166,7 @@ def test_arxiv_without_categories_warns(tmp_path):
         ({"output": {"dedupe_days": 0}}, "dedupe_days"),
         ({"jev": {"backend": "mock", "price_per_mtok": -1}}, "price_per_mtok"),
         ({"summaries": {"enabled": True, "top_k": 0}}, "top_k"),
+        ({"output": {"feedback_repo": "not a repo"}}, "owner/name"),
     ],
 )
 def test_numeric_guards(tmp_path, override, message):

@@ -10,6 +10,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from . import REPO_URL, __version__
 from .config import Config
+from .feedback import issue_url
 from .questions import PAPER_TYPES
 from .scoring import Decision, rank
 
@@ -57,6 +58,10 @@ h2 small{font-weight:400;color:var(--muted);font-size:14px}
 details{margin-top:8px}summary{cursor:pointer;color:var(--muted);font-size:13px}
 details p{font-size:14px;margin:6px 0 0}
 .id{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted)}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+.vote{font-size:12.5px;color:var(--muted)}
+.vote a{display:inline-block;border:1px solid var(--border);border-radius:8px;padding:1px 8px;margin-left:6px;text-decoration:none}
+.vote a:hover{border-color:var(--accent);text-decoration:none}
 .list{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px 14px;margin:10px 0}
 .list li{list-style:none;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
 .list li:last-child{border-bottom:0}.list ul{margin:0;padding:0}
@@ -114,7 +119,20 @@ def day_stats(day: str, decisions: list[Decision], runs: list[dict[str, Any]]) -
     }
 
 
-def _card(d: Decision, labels: dict[str, str]) -> str:
+def _votes(d: Decision, feedback_repo: str) -> str:
+    """Two links that open a pre-filled GitHub issue; `paper-radar harvest` turns them into labels."""
+    if not feedback_repo:
+        return ""
+    p = d.paper
+    yes = issue_url(feedback_repo, p.id, p.title, p.url, "yes")
+    no = issue_url(feedback_repo, p.id, p.title, p.url, "no")
+    return (
+        f'<span class="vote">Useful?<a href="{_e(yes)}" title="Record this paper as relevant">👍</a>'
+        f'<a href="{_e(no)}" title="Record this paper as not relevant">👎</a></span>'
+    )
+
+
+def _card(d: Decision, labels: dict[str, str], feedback_repo: str = "") -> str:
     p = d.paper
     tags = [f'<span class="pct">{_pct(d.relevance)}</span>']
     if d.paper_type:
@@ -134,7 +152,7 @@ def _card(d: Decision, labels: dict[str, str]) -> str:
         f'<article class="card {d.band}"><div class="row">{"".join(tags)}</div>'
         f'<h3><a href="{_url(p.url)}">{_e(p.title)}</a></h3>'
         f'<p class="by">{_e(meta)}</p>{summary}<div class="why">{why}</div>{abstract}'
-        f'<div class="id">{_e(p.id)}</div></article>'
+        f'<div class="foot"><span class="id">{_e(p.id)}</span>{_votes(d, feedback_repo)}</div></article>'
     )
 
 
@@ -167,6 +185,7 @@ def render_day(
 ) -> str:
     labels = {i.id: i.display for i in config.interests}
     ex_labels = {e.id: e.display for e in config.exclusions}
+    votes_repo = config.output.feedback_repo
     ranked = rank(decisions)
     must = [d for d in ranked if d.band == "must_read"]
     maybe = [d for d in ranked if d.band == "maybe"]
@@ -204,13 +223,14 @@ def render_day(
         f'<p class="meta">{_e(" · ".join(meta_bits))}</p>',
         "</section>",
         f'<h2>Must-read <small>≥ {_pct(config.thresholds.must_read)}</small></h2>',
-        "".join(_card(d, labels) for d in must) or '<p class="empty">Nothing crossed the must-read bar today.</p>',
+        "".join(_card(d, labels, votes_repo) for d in must) or '<p class="empty">Nothing crossed the must-read bar today.</p>',
         f'<h2>Maybe <small>{_pct(config.thresholds.maybe)} to {_pct(config.thresholds.must_read)}</small></h2>',
-        "".join(_card(d, labels) for d in maybe) or '<p class="empty">No maybes today.</p>',
+        "".join(_card(d, labels, votes_repo) for d in maybe) or '<p class="empty">No maybes today.</p>',
     ]
     if near:
         items = "".join(
-            f'<li><span class="pct">{_pct(d.relevance)}</span><a href="{_url(d.paper.url)}">{_e(d.paper.title)}</a></li>'
+            f'<li><span class="pct">{_pct(d.relevance)}</span><a href="{_url(d.paper.url)}">{_e(d.paper.title)}</a>'
+            f"{_votes(d, votes_repo)}</li>"
             for d in near
         )
         body.append(

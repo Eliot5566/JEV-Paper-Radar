@@ -15,6 +15,7 @@ permissions:
   contents: write   # commit the audit trail in data/
   pages: write      # publish the site
   id-token: write
+  issues: write     # close the 👍/👎 issues after folding them into data/labels.jsonl
 
 concurrency:
   group: paper-radar
@@ -33,6 +34,12 @@ jobs:
 
       - name: Install Paper Radar
         run: pip install .
+
+      - name: Collect 👍/👎 feedback left as issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        run: paper-radar harvest
 
       - name: Read today's papers
         env:
@@ -54,6 +61,16 @@ jobs:
             paper-radar run --limit "$LIMIT"
           else
             paper-radar run
+          fi
+
+      - name: Public demo radar
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        continue-on-error: true   # the public page must never block your own radar
+        run: |
+          if [ -f radar.public.toml ]; then
+            paper-radar run -c radar.public.toml --no-notify
           fi
 
       - name: Commit audit trail

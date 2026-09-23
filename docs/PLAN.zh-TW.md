@@ -186,9 +186,10 @@ arXiv RSS / bioRxiv / 任意 RSS
 | 版本 | 內容 | 狀態 |
 |---|---|---|
 | v0.1 | arXiv／bioRxiv／RSS、TypeSafe／OpenRouter／mock 後端、網頁、RSS、Slack／Discord／Telegram／Email、LLM 摘要、calibrate、GitHub Actions | ✅ MVP 完成 |
-| v0.2（2 週） | 網頁上一鍵 👍／👎（透過 GitHub Issues 收集標註）、PubMed、HF Daily Papers、PyPI 發布 | 規劃中 |
-| v0.3（1 個月） | **Screening mode**：系統性回顧用，納入／排除條件各為 Noul，輸出 PRISMA 計數表，並支援與人工審查並行的 shadow mode | 規劃中 |
-| v0.4 | **Lab mode**（一個 repo 多位成員）、必讀論文的引用驗證與缺漏方法標記、研究知識圖譜 | 規劃中 |
+| v0.2 | 一鍵 👍／👎（GitHub Issues 收集標註 + `harvest` 自動回收）、公開 demo radar（`radar.public.toml`） | ✅ 完成 |
+| v0.3（2 週） | PubMed、Hugging Face Daily Papers 來源、PyPI 發布 | 規劃中 |
+| v0.4（1 個月） | **Screening mode**：系統性回顧用，納入／排除條件各為 Noul，輸出 PRISMA 計數表，並支援與人工審查並行的 shadow mode | 規劃中 |
+| v0.5 | **Lab mode**（一個 repo 多位成員）、必讀論文的引用驗證與缺漏方法標記、研究知識圖譜 | 規劃中 |
 | v1.0 | 本地開源模型後端（完全離線）、資料改存到獨立分支以控制 repo 大小 | 規劃中 |
 
 ---

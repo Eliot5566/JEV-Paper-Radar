@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from paper_radar.cli import _normalize_id, main
+from paper_radar.cli import main
+from paper_radar.ids import normalize_paper_id as _normalize_id
 from paper_radar.store import Store
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -80,3 +81,20 @@ def test_run_reads_key_from_dotenv_next_to_config(tmp_path, monkeypatch, capsys)
     import os
 
     assert os.environ["TYPESAFE_API_KEY"] == "k-from-dotenv"  # no "key is not set" failure
+
+
+def test_feedback_repo_falls_back_to_github_repository(tmp_path, monkeypatch):
+    from paper_radar.cli import _apply_env_defaults
+    from paper_radar.config import parse_config
+
+    config = parse_config({"sources": [{"type": "arxiv"}], "interests": [{"id": "a", "text": "x"}]}, base_dir=tmp_path)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "Eliot5566/JEV-Paper-Radar")
+    _apply_env_defaults(config)
+    assert config.output.feedback_repo == "Eliot5566/JEV-Paper-Radar"
+
+    explicit = parse_config(
+        {"sources": [{"type": "arxiv"}], "interests": [{"id": "a", "text": "x"}], "output": {"feedback_repo": "me/mine"}},
+        base_dir=tmp_path,
+    )
+    _apply_env_defaults(explicit)
+    assert explicit.output.feedback_repo == "me/mine"

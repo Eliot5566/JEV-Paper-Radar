@@ -1,4 +1,4 @@
-"""Command line: `paper-radar run | demo | check | label | calibrate | rebuild`."""
+"""Command line: `paper-radar run | demo | check | label | calibrate | harvest | rebuild`."""
 
 from __future__ import annotations
 
@@ -15,12 +15,12 @@ from pathlib import Path
 from . import __version__
 from .calibrate import calibrate, format_report
 from .config import ConfigError, lint, load_config
+from .feedback import harvest
+from .ids import normalize_paper_id
 from .jev import JevError, MockBackend, make_backend
 from .pipeline import estimate_tokens_per_paper, rebuild_site, run
 from .questions import build_questions
 from .store import Store
-
-ARXIV_ID = re.compile(r"^\d{4}\.\d{4,5}$|^[a-z\-]+(\.[A-Z]{2})?/\d{7}$")
 
 
 def _today(value: str | None) -> date:
@@ -48,15 +48,15 @@ def load_dotenv(path: Path) -> list[str]:
     return loaded
 
 
-def _normalize_id(raw: str) -> str:
-    raw = raw.strip()
-    raw = re.sub(r"^https?://arxiv\.org/(abs|pdf)/", "", raw).removesuffix(".pdf")
-    raw = re.sub(r"v\d+$", "", raw) if ARXIV_ID.match(re.sub(r"v\d+$", "", raw)) else raw
-    return f"arxiv:{raw}" if ARXIV_ID.match(raw) else raw
+def _apply_env_defaults(config) -> None:
+    """In GitHub Actions, a fork points its 👍/👎 links at its own repo with no config."""
+    if not config.output.feedback_repo:
+        config.output.feedback_repo = os.environ.get("GITHUB_REPOSITORY", "")
 
 
 def cmd_run(args: argparse.Namespace) -> int:
     config = load_config(args.config)
+    _apply_env_defaults(config)
     for warning in lint(config):
         print(f"warning: {warning}")
     if args.backend:
@@ -106,7 +106,7 @@ def cmd_label(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     store = Store(config.data_path)
     relevant = args.verdict.lower() in ("yes", "y", "1", "true", "relevant")
-    pid = _normalize_id(args.paper_id)
+    pid = normalize_paper_id(args.paper_id)
     store.add_label(pid, relevant, datetime.now(timezone.utc).isoformat(timespec="seconds"))
     print(f"Labelled {pid} as {'relevant' if relevant else 'not relevant'}")
     return 0
@@ -125,8 +125,23 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_harvest(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    repo = args.repo or config.output.feedback_repo or os.environ.get("GITHUB_REPOSITORY", "")
+    if not repo:
+        print('error: set output.feedback_repo = "owner/name" in radar.toml, or pass --repo', file=sys.stderr)
+        return 2
+    token = os.environ.get("GITHUB_TOKEN", "")
+    result = harvest(repo, Store(config.data_path), token=token, close=not args.no_close and bool(token))
+    print(f"Recorded {result.recorded} label(s) from issues, closed {result.closed}")
+    if result.recorded and not token:
+        print("note: set GITHUB_TOKEN to let the run close the issues it has already read")
+    return 0
+
+
 def cmd_rebuild(args: argparse.Namespace) -> int:
     config = load_config(args.config)
+    _apply_env_defaults(config)
     days = rebuild_site(config, Store(config.data_path))
     print(f"Rebuilt {len(days)} day page(s) in {config.site_path}")
     return 0
@@ -167,6 +182,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--precision", type=float, default=0.9, help="target precision for must_read")
     p.add_argument("--recall", type=float, default=0.9, help="target recall for maybe")
     p.set_defaults(func=cmd_calibrate)
+
+    p = sub.add_parser("harvest", help="fold 👍/👎 issues into data/labels.jsonl and close them")
+    p.add_argument("-c", "--config", default="radar.toml")
+    p.add_argument("--repo", help='owner/name (defaults to output.feedback_repo)')
+    p.add_argument("--no-close", action="store_true", help="leave the issues open")
+    p.set_defaults(func=cmd_harvest)
 
     p = sub.add_parser("rebuild", help="regenerate the site from data/ without calling Jev")
     p.add_argument("-c", "--config", default="radar.toml")

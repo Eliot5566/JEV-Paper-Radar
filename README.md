@@ -30,6 +30,13 @@ Paper Radar takes a different route. Every new paper gets **judged** against the
 
 <sub>\* Measured, not guessed: a real run on 2026-09-23 read 50 papers in 5 seconds for 46,584 input tokens and $0.0020 (932 tokens per paper, `jev-1.13.0`). All of arXiv, about 1,500 papers per weekday, works out to roughly $0.06 a day. Output tokens are free. Every run logs its own tokens and cost in `data/runs.jsonl`; `paper-radar check` estimates your profile before you spend anything.</sub>
 
+## See one before you set anything up
+
+A public radar runs here every weekday, so you can look at real output without a key:
+**https://eliot5566.github.io/JEV-Paper-Radar/public/** ([RSS](https://eliot5566.github.io/JEV-Paper-Radar/public/feed.xml))
+
+It uses a deliberately broad AI profile (`radar.public.toml`). Yours would be narrower and much more useful.
+
 ## What you get every morning
 
 - **A web page** on GitHub Pages: must-read and maybe lists, near misses, and what your exclusions filtered out
@@ -109,6 +116,16 @@ Paper Radar follows TypeSafe's own design patterns:
 - **Cascade.** Jev decides what deserves attention across thousands of papers. A generative model, if you turn it on, writes one sentence for the ten that made the cut.
 - **Confidence-gated output.** The must-read, maybe and near-miss bands come from thresholds you set and can verify with `calibrate`.
 
+## Teach it what you like, in one click
+
+Every paper on your page carries 👍 / 👎 links. Clicking one opens a pre-filled GitHub issue
+titled `radar-label: <paper id> yes`; submitting it is the whole interaction. The next run folds
+those issues into `data/labels.jsonl`, closes them, and `calibrate` fits your thresholds to them.
+
+In GitHub Actions the links point at your own repo automatically (`GITHUB_REPOSITORY`), so a fork
+needs no configuration. Locally, set `output.feedback_repo = "owner/name"` or run
+`paper-radar harvest --repo owner/name`.
+
 ## Calibrate it to *you*
 
 TypeSafe's accuracy and calibration figures are self-reported. Check them on your own judgement instead:
@@ -142,7 +159,8 @@ Ready-made profiles live in [`profiles/`](profiles): LLM research, neuroscience 
 
 ## Roadmap
 
-- [ ] One-click 👍/👎 on the page via GitHub Issues, harvested into `labels.jsonl`
+- [x] One-click 👍/👎 on the page via GitHub Issues, harvested into `labels.jsonl`
+- [x] A public demo radar so visitors see real output without a key
 - [ ] PubMed and Hugging Face Daily Papers sources
 - [ ] **Screening mode** for systematic reviews: inclusion and exclusion criteria as Nouls, a PRISMA-style count table, shadow runs next to human reviewers
 - [ ] **Lab mode**: one repo, many members, a page per person plus a shared feed

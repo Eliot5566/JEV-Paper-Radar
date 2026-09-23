@@ -1,0 +1,62 @@
+# A second radar that runs alongside your personal one and publishes a PUBLIC page,
+# so visitors can see a live result without an API key of their own.
+#   paper-radar run -c radar.public.toml
+# It writes to site/public/ and data/public/, and never touches your personal radar.
+
+[radar]
+title = "Paper Radar · today in AI"
+max_papers = 1500
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"
+concurrency = 8
+
+[[sources]]
+type = "arxiv"
+categories = ["cs.AI", "cs.CL", "cs.LG"]
+include_cross_lists = false   # primary submissions only, to keep the demo cheap
+
+# A deliberately broad "what mattered in AI today" profile. Not one person's taste:
+# the point is to show strangers what the output looks like.
+[[interests]]
+id = "capability"
+label = "New capability"
+text = "The paper reports a method that clearly outperforms previous approaches on a widely used task"
+
+[[interests]]
+id = "agents"
+label = "Agents"
+text = "LLM agents that plan and act over many steps using tools, browsers, or code execution"
+
+[[interests]]
+id = "evaluation"
+label = "Evaluation"
+text = "A new benchmark, evaluation protocol, or measurement study for language models"
+
+[[interests]]
+id = "efficiency"
+label = "Efficiency"
+text = "Making language model training or inference faster or cheaper"
+
+[[interests]]
+id = "reliability"
+label = "Reliability"
+text = "Hallucination, calibration, safety, or robustness of language model outputs"
+
+[thresholds]
+must_read = 0.88      # stricter than a personal radar: strangers want the top of the pile
+maybe = 0.70
+exclude = 0.80
+
+[signals]
+paper_type = true
+code_release = true
+
+[output]
+site_dir = "site/public"
+data_dir = "data/public"
+site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/"
+feed_days = 14
+near_misses = 0
+feedback_repo = ""    # no voting on the public page; votes belong to your own radar

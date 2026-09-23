@@ -87,6 +87,7 @@ class Output:
     site_url: str = ""
     near_misses: int = 15
     dedupe_days: int = 14
+    feedback_repo: str = ""  # "owner/name": adds 👍/👎 links that open a pre-filled issue
 
 
 @dataclass
@@ -221,6 +222,8 @@ def validate(config: Config) -> None:
 
     if config.output.dedupe_days < 1 or config.output.feed_days < 1 or config.output.near_misses < 0:
         raise ConfigError("output.dedupe_days and output.feed_days must be >= 1, near_misses >= 0")
+    if config.output.feedback_repo and not re.match(r"^[\w.-]+/[\w.-]+$", config.output.feedback_repo):
+        raise ConfigError('output.feedback_repo must look like "owner/name"')
     if config.jev.price_per_mtok < 0:
         raise ConfigError("jev.price_per_mtok must be >= 0")
     if config.summaries.enabled and config.summaries.top_k < 1:

@@ -179,3 +179,59 @@ def test_untrusted_links_are_neutralized(config):
                                 url="javascript:alert(1)"), relevance=0.9, band="must_read", interests={"agent_eval": 0.9}, exclusions={})
     page = render_day(config, "2026-09-22", [evil], day_stats("2026-09-22", [evil], []))
     assert "javascript:" not in page and "<script>alert" not in page
+
+
+def test_vote_links_appear_only_when_configured(tmp_path):
+    from urllib.parse import unquote
+
+    from .conftest import make_config
+
+    config = make_config(tmp_path, output={"feedback_repo": "Eliot5566/JEV-Paper-Radar"})
+    run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    page = (config.site_path / "index.html").read_text()
+    assert "issues/new?title=" in page and "👍" in page and "👎" in page
+    assert unquote(page.split("issues/new?title=")[1].split('"')[0]).startswith("radar-label: arxiv:2609.9")
+
+    plain = make_config(tmp_path / "plain")
+    run(plain, MockBackend(), today=DAY, notify=False, log=quiet)
+    assert "issues/new" not in (plain.site_path / "index.html").read_text()
+
+
+def test_harvest_records_labels_and_closes_issues(config):
+    from paper_radar.feedback import harvest
+
+    issues = [
+        {"number": 1, "title": "radar-label: 2609.99001 yes", "created_at": "2026-09-23T01:00:00Z"},
+        {"number": 2, "title": "radar-label: arxiv:2609.99007 NO", "created_at": "2026-09-23T02:00:00Z"},
+        {"number": 3, "title": "Feature request: add PubMed"},
+        {"number": 4, "title": "radar-label: 2609.99002 yes", "pull_request": {}},
+    ]
+    patched = []
+    store = Store(config.data_path)
+    result = harvest(
+        "owner/name",
+        store,
+        token="t",
+        fetch=lambda url, headers: (headers["Authorization"] == "Bearer t" and "state=open" in url) and issues or [],
+        patch=lambda url, payload, headers: patched.append((url, payload)),
+        log=quiet,
+    )
+    assert result.recorded == 2 and result.closed == 2 and result.ignored == 1
+    assert store.load_labels() == {"arxiv:2609.99001": True, "arxiv:2609.99007": False}
+    assert patched[0][1]["state"] == "closed" and patched[0][0].endswith("/issues/1")
+
+
+def test_harvest_without_token_keeps_issues_open(config):
+    from paper_radar.feedback import harvest
+
+    issues = [{"number": 9, "title": "radar-label: 2609.99001 yes"}]
+    result = harvest("o/n", Store(config.data_path), close=False, fetch=lambda url, h: issues,
+                     patch=lambda *a: (_ for _ in ()).throw(AssertionError("must not close")), log=quiet)
+    assert result.recorded == 1 and result.closed == 0
+
+
+def test_harvest_rejects_bad_repo(config):
+    from paper_radar.feedback import harvest
+
+    with pytest.raises(ValueError, match="owner/name"):
+        harvest("not-a-repo", Store(config.data_path), fetch=lambda url, h: [], log=quiet)

@@ -22,6 +22,13 @@ Paper Radar 的做法：每一篇新論文都交給 TypeSafe 的 System One 模�
 
 實測（2026-09-23）：讀 50 篇花 5 秒、46,584 input tokens、約 $0.0020，平均每篇 932 tokens。換算讀完整個 arXiv（每工作日約 1,500 篇）約 $0.06／天。每次執行的實際用量都會記在 `data/runs.jsonl`。
 
+## 先看一眼再決定要不要裝
+
+這裡每個工作日都會自動更新一份公開雷達，不需要金鑰就能看到真實輸出：
+**https://eliot5566.github.io/JEV-Paper-Radar/public/** （[RSS](https://eliot5566.github.io/JEV-Paper-Radar/public/feed.xml)）
+
+它用的是刻意放寬的通用 AI 設定（`radar.public.toml`）。你自己的會窄得多，也有用得多。
+
 ## 每天早上你會得到
 
 - **一個網頁**（GitHub Pages）：必讀、可能有興趣、差一點入選、被排除條件過濾掉的
@@ -74,6 +81,15 @@ Jev 會照字面讀你的句子（見 [Jev 1.13 已知限制](https://docs.types
 - 不要在興趣裡寫否定句；把「不要 X」改成 `[[exclude]]`，並用正面敘述（例如「主要應用是醫學影像」）
 - 不要要求比較日期或數字，這些交給程式
 - 次要興趣用 `weight = 0.5` 降權
+
+## 一鍵教它你的口味
+
+頁面上每篇論文都有 👍 / 👎 兩個連結，點下去會開一個預先填好的 GitHub issue（標題是
+`radar-label: <論文 id> yes`），送出就結束了。下一次執行會把這些 issue 收進
+`data/labels.jsonl`、自動關閉它們，`calibrate` 就拿這些標註幫你調門檻。
+
+在 GitHub Actions 上，連結會自動指向你自己的 repo（讀 `GITHUB_REPOSITORY`），所以 fork 不需要任何設定。
+本機使用時，在 `radar.toml` 設 `output.feedback_repo = "owner/name"`，或執行 `paper-radar harvest --repo owner/name`。
 
 ## 校準到「你」
 
