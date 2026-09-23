@@ -143,3 +143,29 @@ def test_parse_config_defaults(tmp_path):
         {"sources": [{"type": "arxiv"}], "interests": [{"id": "a", "text": "x"}]}, base_dir=tmp_path
     )
     assert config.jev.backend == "typesafe" and config.thresholds.must_read == 0.8
+
+
+def test_source_typos_are_rejected(tmp_path):
+    with pytest.raises(ConfigError, match="catagories"):
+        make_config(tmp_path, sources=[{"type": "arxiv", "catagories": ["cs.AI"]}])
+    with pytest.raises(ConfigError, match="Unknown key"):
+        make_config(tmp_path, sources=[{"type": "rss", "url": "https://e.org/f", "lmit": 5}])
+    make_config(tmp_path, sources=[{"type": "biorxiv", "server": "biorxiv", "days": 2, "categories": ["neuroscience"]}])
+
+
+def test_arxiv_without_categories_warns(tmp_path):
+    config = make_config(tmp_path, sources=[{"type": "arxiv"}])
+    assert any("no categories" in w for w in lint(config))
+
+
+@pytest.mark.parametrize(
+    "override, message",
+    [
+        ({"output": {"dedupe_days": 0}}, "dedupe_days"),
+        ({"jev": {"backend": "mock", "price_per_mtok": -1}}, "price_per_mtok"),
+        ({"summaries": {"enabled": True, "top_k": 0}}, "top_k"),
+    ],
+)
+def test_numeric_guards(tmp_path, override, message):
+    with pytest.raises(ConfigError, match=message):
+        make_config(tmp_path, **override)

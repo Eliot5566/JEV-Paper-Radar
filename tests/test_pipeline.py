@@ -164,6 +164,10 @@ def test_quiet_day_still_builds_site(tmp_path):
     config = make_config(tmp_path, sources=[{"type": "arxiv", "file": str(empty)}])
     result = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
     assert result.judged == 0 and (config.site_path / "index.html").exists()
+    # data/ and a run record must exist so the workflow's `git add data` step works
+    runs = Store(config.data_path).load_runs()
+    assert runs[-1]["judged"] == 0 and runs[-1]["fetched"] == 0
+    assert (config.data_path / "runs.jsonl").exists()
 
 
 def test_untrusted_links_are_neutralized(config):

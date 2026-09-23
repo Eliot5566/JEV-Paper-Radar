@@ -1,0 +1,44 @@
+# ── Generated output ─────────────────────────────────────────────────────────
+# The site is rebuilt from data/ on every run and published as a Pages artifact,
+# so it does not belong in git. If you publish Pages from a branch instead of from
+# GitHub Actions, delete the "site/" line below so the site gets committed.
+site/
+# output of `paper-radar demo`
+paper-radar-demo/
+/demo/
+
+# data/ is deliberately NOT ignored: it is the audit trail (every decision,
+# probability and model version) and it is what deduplication reads next run.
+
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# Keys belong in GitHub Actions secrets or your shell, never in the repo.
+.env
+.env.*
+*.pem
+*.key
+secrets.toml
+radar.local.toml
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── Editors and operating systems ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

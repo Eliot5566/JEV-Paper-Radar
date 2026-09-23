@@ -88,6 +88,25 @@ def judge_all(
     return decisions, failures
 
 
+def _record_run(store: Store, result: RunResult, backend: Backend) -> None:
+    """One line per run in data/runs.jsonl, including days with nothing new."""
+    store.append_run(
+        {
+            "day": result.day,
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "backend": backend.name,
+            "model": result.decisions[0].model if result.decisions else backend.model,
+            "fetched": result.fetched,
+            "judged": result.judged,
+            "failed": result.failed,
+            **result.counts(),
+            "input_tokens": result.tokens,
+            "cost_usd": round(result.cost, 6),
+            "seconds": round(result.seconds, 1),
+        }
+    )
+
+
 def rebuild_site(config: Config, store: Store, *, mock: bool = False) -> list[str]:
     """Regenerate every page from the audit trail (cheap, so the site is never stale)."""
     site = config.site_path
@@ -153,9 +172,13 @@ def run(
         f"(≈{per_paper} tokens, ≈${len(fresh) * per_paper * config.jev.price_per_mtok / 1e6:.4f} estimated)"
     )
     if dry_run or not fresh:
+        quiet = RunResult(day, fetched, 0, 0, [], time.monotonic() - started, 0, 0.0)
         if not dry_run:
-            rebuild_site(config, store)  # keep the Pages artifact valid on quiet days
-        return RunResult(day, fetched, 0, 0, [], time.monotonic() - started, 0, 0.0)
+            # Still record the run and rebuild: data/ must exist for the workflow's commit
+            # step, and the Pages artifact has to stay valid on days with nothing new.
+            _record_run(store, quiet, backend)
+            rebuild_site(config, store)
+        return quiet
 
     log(f"Asking {backend.name} ({backend.model}) about {len(fresh)} papers")
     decisions, failures = judge_all(backend, fresh, questions, config, log=log)
@@ -170,21 +193,7 @@ def run(
     tokens = sum(d.input_tokens for d in decisions)
     cost = sum(d.cost for d in decisions)
     result = RunResult(day, fetched, len(decisions), len(failures), decisions, seconds, tokens, cost)
-    store.append_run(
-        {
-            "day": day,
-            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "backend": backend.name,
-            "model": decisions[0].model if decisions else backend.model,
-            "fetched": fetched,
-            "judged": len(decisions),
-            "failed": len(failures),
-            **result.counts(),
-            "input_tokens": tokens,
-            "cost_usd": round(cost, 6),
-            "seconds": round(seconds, 1),
-        }
-    )
+    _record_run(store, result, backend)
     rebuild_site(config, store)
     if notify:
         sent = send_all(config, day, decisions, env=env, log=log)

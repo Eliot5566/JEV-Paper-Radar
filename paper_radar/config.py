@@ -15,6 +15,12 @@ ID_RE = re.compile(r"^[a-z0-9_]{1,40}$")
 NEGATION_RE = re.compile(r"\b(not|no|never|without|except|unless|excluding|neither|nor)\b|n't\b", re.IGNORECASE)
 BACKENDS = {"typesafe", "openrouter", "mock"}
 SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "rss"}
+SOURCE_KEYS = {
+    "arxiv": {"categories", "include_cross_lists", "include_replacements"},
+    "biorxiv": {"server", "days", "categories"},
+    "medrxiv": {"server", "days", "categories"},
+    "rss": {"url", "limit"},
+}
 COMBINE_MODES = {"max", "noisy_or"}
 
 
@@ -213,10 +219,23 @@ def validate(config: Config) -> None:
     if config.max_papers < 1:
         raise ConfigError("radar.max_papers must be >= 1")
 
+    if config.output.dedupe_days < 1 or config.output.feed_days < 1 or config.output.near_misses < 0:
+        raise ConfigError("output.dedupe_days and output.feed_days must be >= 1, near_misses >= 0")
+    if config.jev.price_per_mtok < 0:
+        raise ConfigError("jev.price_per_mtok must be >= 0")
+    if config.summaries.enabled and config.summaries.top_k < 1:
+        raise ConfigError("summaries.top_k must be >= 1")
+
     for index, source in enumerate(config.sources):
         kind = source.get("type")
         if kind not in SOURCE_TYPES:
             raise ConfigError(f"sources[{index}].type must be one of {sorted(SOURCE_TYPES)}")
+        allowed = SOURCE_KEYS[kind] | {"type", "name", "file"}
+        unknown = sorted(set(source) - allowed)
+        if unknown:
+            raise ConfigError(
+                f"Unknown key(s) in sources[{index}] ({kind}): {', '.join(unknown)}. Allowed: {', '.join(sorted(allowed))}"
+            )
         if kind == "rss" and not (source.get("url") or source.get("file")):
             raise ConfigError(f"sources[{index}] (rss) needs a url")
 
@@ -239,6 +258,9 @@ def lint(config: Config) -> list[str]:
     for exclusion in config.exclusions:
         if NEGATION_RE.search(exclusion.text):
             warnings.append(f"exclude '{exclusion.id}' contains a negation. State what the paper IS about, positively.")
+    for index, source in enumerate(config.sources):
+        if source.get("type") == "arxiv" and not source.get("categories") and not source.get("file"):
+            warnings.append(f"sources[{index}] (arxiv) has no categories, so only cs.AI is fetched. Add categories, or [\"*\"] for all of arXiv.")
     if len(config.interests) + len(config.exclusions) > 30:
         warnings.append("More than 30 interests/exclusions: every one is a question on every paper, so cost scales with it.")
     return warnings

@@ -1,0 +1,2 @@
+# The daily audit trail lives here (decisions/, runs.jsonl, labels.jsonl).
+# This file only keeps the folder in git; everything else is written by `paper-radar run`.
