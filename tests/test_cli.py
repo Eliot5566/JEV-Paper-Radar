@@ -47,3 +47,36 @@ def test_bad_config_exit_code(tmp_path, capsys):
     cfg.write_text("[radar]\ntitel = 'x'\n")
     assert main(["check", "-c", str(cfg)]) == 2
     assert "Unknown key" in capsys.readouterr().err
+
+
+def test_dotenv_is_loaded_but_never_overrides_real_env(tmp_path, monkeypatch):
+    from paper_radar.cli import load_dotenv
+
+    env_file = tmp_path / ".env"
+    env_file.write_text('TYPESAFE_API_KEY="from-dotenv"\n# comment\n\nEMPTY\nOTHER=plain\n', encoding="utf-8")
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.setenv("OTHER", "from-shell")
+    loaded = load_dotenv(env_file)
+    assert loaded == ["TYPESAFE_API_KEY"]
+    import os
+
+    assert os.environ["TYPESAFE_API_KEY"] == "from-dotenv"
+    assert os.environ["OTHER"] == "from-shell"
+    assert load_dotenv(tmp_path / "missing.env") == []
+
+
+def test_run_reads_key_from_dotenv_next_to_config(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("TYPESAFE_API_KEY=k-from-dotenv\n", encoding="utf-8")
+    cfg = tmp_path / "radar.toml"
+    feed = ROOT / "paper_radar" / "demo" / "arxiv_demo.xml"  # local file: the test never hits the network
+    cfg.write_text(
+        f'[jev]\nbackend = "typesafe"\n[[sources]]\ntype = "arxiv"\nfile = "{feed.as_posix()}"\n'
+        '[[interests]]\nid = "a"\ntext = "x"\n',
+        encoding="utf-8",
+    )
+    main(["run", "-c", str(cfg), "--dry-run"])
+    import os
+
+    assert os.environ["TYPESAFE_API_KEY"] == "k-from-dotenv"  # no "key is not set" failure

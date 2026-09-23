@@ -50,9 +50,19 @@ Paper Radar 的做法：每一篇新論文都交給 TypeSafe 的 System One 模�
 ## 10 秒試玩（不需金鑰）
 
 ```bash
-pip install git+https://github.com/a7868783/paper-radar
+pip install git+https://github.com/Eliot5566/JEV-Paper-Radar
 paper-radar demo
 ```
+
+在自己的電腦上跑真實資料時，把金鑰放在 `radar.toml` 旁邊的 `.env`（已被 git 忽略，不會上傳）：
+
+```bash
+echo "TYPESAFE_API_KEY=你的金鑰" > .env
+paper-radar check
+paper-radar run --limit 50
+```
+
+真正的環境變數優先於 `.env`，所以同樣的指令在 GitHub Actions 上也一樣可用。
 
 ## 怎麼寫出 Jev 答得好的興趣
 

@@ -61,17 +61,21 @@ After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcem
 No key needed. The demo uses fictional papers and a keyword heuristic in place of Jev, so you can see the output before you set anything up.
 
 ```bash
-pip install git+https://github.com/a7868783/paper-radar
+pip install git+https://github.com/Eliot5566/JEV-Paper-Radar
 paper-radar demo          # writes ./paper-radar-demo/site/index.html
 ```
 
 Run it for real from your laptop:
 
 ```bash
-export TYPESAFE_API_KEY=sk-...
+# put your key in a .env file next to radar.toml (it is git-ignored) ...
+echo "TYPESAFE_API_KEY=your-key-here" > .env
+# ... or export it in your shell instead
 paper-radar check                 # validate radar.toml, lint interests, estimate cost
 paper-radar run --limit 50        # judge 50 papers, build ./site
 ```
+
+Real environment variables take precedence over `.env`, so the same commands work unchanged in CI.
 
 ## Write interests Jev can answer well
 

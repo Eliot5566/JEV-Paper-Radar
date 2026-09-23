@@ -226,8 +226,11 @@ arXiv RSS / bioRxiv / 任意 RSS
 
 ## 8. 你的下一步
 
-1. 在 GitHub 建立 `paper-radar` repo，把 `OWNER` 換成你的帳號（`paper_radar/__init__.py`、`pyproject.toml`、兩份 README）。把 `github-workflows/` 裡的兩個檔案移到 `.github/workflows/`（遠端工具無法直接寫入 `.github` 資料夾）
-2. 取得 `TYPESAFE_API_KEY`，或先用 OpenRouter
-3. 本機執行 `paper-radar check`，再執行 `paper-radar run --limit 50`，確認真實 API 與 RSS 都正常
-4. 把 `radar.toml` 改成你自己的研究興趣，跑一週、標註約 30 篇，再用 `calibrate` 調整門檻
-5. 依第 4 節的發布計畫上線
+repo 已建立在 https://github.com/Eliot5566/JEV-Paper-Radar （專案已搬到 repo 根目錄，workflow 在 `.github/workflows/`）。
+
+1. 在 GitHub 的 *Settings → Secrets and variables → Actions* 加入 `TYPESAFE_API_KEY`
+2. *Settings → Pages → Source* 選 **GitHub Actions**
+3. *Actions → Paper Radar → Run workflow*，limit 填 `50` 先便宜試跑，確認真實 API 與 arXiv RSS 都正常
+4. 本機測試時，把金鑰放在 `radar.toml` 旁邊的 `.env`（已被 git 忽略）：`echo "TYPESAFE_API_KEY=..." > .env`
+5. 把 `radar.toml` 改成你自己的研究興趣，跑一週、標註約 30 篇，再用 `paper-radar calibrate` 調整門檻
+6. 依第 4 節的發布計畫上線（錄 demo 影片、提 awesome 清單 PR、Show HN）

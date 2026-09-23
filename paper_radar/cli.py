@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -24,6 +25,27 @@ ARXIV_ID = re.compile(r"^\d{4}\.\d{4,5}$|^[a-z\-]+(\.[A-Z]{2})?/\d{7}$")
 
 def _today(value: str | None) -> date:
     return date.fromisoformat(value) if value else datetime.now(timezone.utc).date()
+
+
+def load_dotenv(path: Path) -> list[str]:
+    """Read KEY=VALUE lines from a local .env into the environment, for local runs.
+
+    Real environment variables always win, so GitHub Actions secrets are never shadowed.
+    .env is git-ignored: keys belong there or in Actions secrets, never in a tracked file.
+    """
+    if not path.is_file():
+        return []
+    loaded: list[str] = []
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+            loaded.append(key)
+    return loaded
 
 
 def _normalize_id(raw: str) -> str:
@@ -154,6 +176,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    load_dotenv(Path(".env"))
+    config_path = getattr(args, "config", None)
+    if config_path:
+        load_dotenv(Path(config_path).resolve().parent / ".env")
     try:
         return args.func(args)
     except (ConfigError, JevError) as error:

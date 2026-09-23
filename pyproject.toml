@@ -28,7 +28,8 @@ dev = ["pytest>=8"]
 paper-radar = "paper_radar.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/a7868783/paper-radar"
+Homepage = "https://github.com/Eliot5566/JEV-Paper-Radar"
+Issues = "https://github.com/Eliot5566/JEV-Paper-Radar/issues"
 
 [tool.setuptools.packages.find]
 include = ["paper_radar*"]
