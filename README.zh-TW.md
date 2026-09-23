@@ -20,6 +20,8 @@ arXiv 每月新投稿已超過 3 萬篇（[2026 年 6 月為 32,040 篇](https:/
 
 Paper Radar 的做法：每一篇新論文都交給 TypeSafe 的 System One 模型 [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)，依照你用白話寫的興趣逐條**判斷**。Jev 不生成文字，而是對每個興趣回傳一個校準過的機率，所以不用解析、也不會產生選項以外的答案。因為夠快、夠便宜，可以真的讀完*全部*，不必先粗篩。
 
+實測（2026-09-23）：讀 50 篇花 5 秒、46,584 input tokens、約 $0.0020，平均每篇 932 tokens。換算讀完整個 arXiv（每工作日約 1,500 篇）約 $0.06／天。每次執行的實際用量都會記在 `data/runs.jsonl`。
+
 ## 每天早上你會得到
 
 - **一個網頁**（GitHub Pages）：必讀、可能有興趣、差一點入選、被排除條件過濾掉的

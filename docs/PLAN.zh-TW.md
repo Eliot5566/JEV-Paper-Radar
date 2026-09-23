@@ -124,15 +124,15 @@ arXiv RSS / bioRxiv / 任意 RSS
 
 ### 3.5 成本與速度（估算）
 
-| 項目 | 估算 |
-|---|---|
-| 每篇 input tokens | 約 1,000（固定開銷約 250，參考官方範例一個短問題就計 296 token；問題約 350；標題與摘要約 400） |
-| 全 arXiv 一天（約 1,500 篇） | 約 $0.06／天，約 $1.4／月 |
-| 只看 cs.AI+CL+LG 等幾個分類（數百篇） | 每月幾毛錢 |
-| 速度 | 速率設為 1,000 req／分鐘，1,500 篇約 1.5～2 分鐘 |
-| GitHub Actions | 公開 repo 免費 |
+| 項目 | 實測（2026-09-23，3 條興趣 + 1 條排除 + 2 個訊號） | 原估算 |
+|---|---|---|
+| 每篇 input tokens | **932**（50 篇共 46,584） | 約 1,000（誤差 7%） |
+| 50 篇的費用與時間 | **$0.0020、5 秒** | — |
+| 全 arXiv 一天（約 1,500 篇） | 約 **$0.06／天**、約 2.5 分鐘 | $0.06／天 |
+| 全 arXiv 一個月（22 個公告日） | 約 **$1.3** | 約 $1.4 |
+| GitHub Actions | 公開 repo 免費 | 免費 |
 
-以上是估算；每次執行的實際 token 與費用會寫進 `data/runs.jsonl`，網頁上也會顯示。
+數字取自第一次真實執行（`jev-1.13.0` via TypeSafe）。每次執行的實際 token 與費用都會寫進 `data/runs.jsonl`，網頁上也會顯示。
 
 ---
 
@@ -216,11 +216,16 @@ arXiv RSS / bioRxiv / 任意 RSS
 - OpenRouter 格式對照其 [Decisions API 文件](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-questions-and-answers-request)（多一個 `usage.cost`，程式已支援）
 - 離線 demo 可產生完整網站，亮色與暗色、手機與桌面版面都檢查過
 
-**尚未驗證（需要你的金鑰與網路）**
+**已用真實資料驗證（2026-09-23 第一次正式執行）**
 
-- 真實 Jev API 的端到端呼叫（沙盒無法連到 TypeSafe 與 arXiv）
-- arXiv RSS 的實際格式：解析器依照 arXiv 2024 年起的新 RSS 格式撰寫，並有容錯，但要用真實 feed 確認一次
-- 真實的每篇 token 數與分類品質
+- 端到端跑通：arXiv RSS 解析 → Jev 判斷 50 篇 → 網頁與 RSS 發佈到 GitHub Pages → `paper-radar[bot]` 自動 commit 審計紀錄
+- 成本與速度符合估算：932 tokens／篇、$0.0020／50 篇、5 秒
+- GitHub Actions 上 CI 在 Python 3.11／3.12／3.13 全綠
+
+**仍待觀察**
+
+- 分類品質需要累積標註後用 `paper-radar calibrate` 檢驗；首次執行已看到一個照字面讀的案例（標題含 "Calibrated" 的推論加速論文被「校準」興趣以 89% 命中）
+- 全量（不設 limit）執行的實際耗時與費用，等第一次排程執行後確認
 
 ---
 
