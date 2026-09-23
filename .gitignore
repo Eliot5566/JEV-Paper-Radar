@@ -19,6 +19,11 @@ paper-radar-demo/
 secrets.toml
 radar.local.toml
 
+# ── Private notes ────────────────────────────────────────────────────────────
+# Launch/marketing working notes. Useful locally, not meant for the public repo.
+docs/LAUNCH.zh-TW.md
+docs/awesome-submissions.md
+
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

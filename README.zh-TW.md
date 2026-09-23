@@ -6,7 +6,7 @@
 
 用白話寫興趣 · 校準過的機率 · 讀完*整個* arXiv 一天約 6 美分 · Fork 即用，不需要伺服器
 
-[English](README.md) · [專案企劃](docs/PLAN.zh-TW.md) · 
+[English](README.md) · [專案企劃](docs/PLAN.zh-TW.md)
 
 <img src="docs/demo.png" width="720" alt="Paper Radar 每日頁面">
 
