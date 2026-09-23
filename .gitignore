@@ -38,6 +38,10 @@ htmlcov/
 # ── Editors and operating systems ────────────────────────────────────────────
 .vscode/
 .idea/
+# VS Code "Local History" extension
+.history/
+# where the Claude desktop app drops copies of files it sends to the chat
+Claude outputs/
 *.swp
 .DS_Store
 Thumbs.db
