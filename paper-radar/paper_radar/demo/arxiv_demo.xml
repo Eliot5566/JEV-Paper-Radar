@@ -1,0 +1,550 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+<channel>
+<title>Demo feed (fictional papers) in the arXiv RSS format</title>
+<link>http://rss.arxiv.org/rss/cs.AI</link>
+<description>Fictional sample items for the Paper Radar offline demo. Not real arXiv papers.</description>
+<language>en-us</language>
+<lastBuildDate>Tue, 22 Sep 2026 04:00:00 +0000</lastBuildDate>
+<item>
+<title>TraceGrade: Evaluating LLM Agents on Long-Horizon Tool-Use Tasks with Step-Level Verification</title>
+<link>https://example.org/demo/2609.99001</link>
+<description>arXiv:2609.99001v1 Announce Type: new 
+Abstract: Benchmarks for LLM agents usually score only the final answer of a multi-step episode. We introduce TraceGrade, a benchmark of 1,240 multi-step tool-use tasks across web, shell, and spreadsheet environments in which every intermediate action is verified against an executable checker. Evaluating 14 LLM agents, we find that final-answer accuracy overstates step-level correctness by up to 31 points. Code and tasks are publicly released.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99001v1</guid>
+<category>cs.CL</category><category>cs.AI</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Mira Okafor, Tomás Lindqvist, Hae-won Seo, Priya Raman</dc:creator>
+</item>
+<item>
+<title>Calibrated Abstention for Language Model Question Answering via Conformal Uncertainty</title>
+<link>https://example.org/demo/2609.99002</link>
+<description>arXiv:2609.99002v1 Announce Type: new 
+Abstract: Language model predictions are often overconfident, which makes abstention unreliable. We propose a conformal procedure that turns token-level signals into calibrated uncertainty estimation for open-domain question answering. Across five datasets, our method reduces expected calibration error by 43% and lets the language model abstain with a guaranteed error rate.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99002v1</guid>
+<category>cs.CL</category><category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Jonas Brandt, Aiko Tanaka, Lucía Ferrer</dc:creator>
+</item>
+<item>
+<title>Rerank Less, Retrieve Better: Query-Adaptive Depth for Retrieval-Augmented Generation</title>
+<link>https://example.org/demo/2609.99003</link>
+<description>arXiv:2609.99003v1 Announce Type: new 
+Abstract: Retrieval-augmented generation pipelines typically rerank a fixed number of passages. We show that retrieval quality for question answering depends strongly on query difficulty, and train a lightweight controller that chooses retrieval depth per query. The controller cuts reranker calls by 58% while improving answer accuracy on four question answering benchmarks.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99003v1</guid>
+<category>cs.IR</category><category>cs.CL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Samir Haddad, Elena Petrova</dc:creator>
+</item>
+<item>
+<title>SpecTree: Draft Trees for Faster Speculative Decoding in Large Language Models</title>
+<link>https://example.org/demo/2609.99004</link>
+<description>arXiv:2609.99004v1 Announce Type: new 
+Abstract: Speculative decoding accelerates LLM inference by verifying draft tokens in parallel. We propose SpecTree, which drafts a tree of continuations and prunes it with a learned acceptance model. SpecTree delivers 3.1x faster decoding than autoregressive sampling with identical outputs, and composes with quantization for cheaper inference. Code is available.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99004v1</guid>
+<category>cs.CL</category><category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Wei Zhang, Olivia Grant, Rafael Moreno, Chen Li</dc:creator>
+</item>
+<item>
+<title>A Survey of Uncertainty Estimation in Large Language Models</title>
+<link>https://example.org/demo/2609.99005</link>
+<description>arXiv:2609.99005v1 Announce Type: new 
+Abstract: We review methods for uncertainty estimation in large language models, covering verbalized confidence, sampling consistency, and probe-based approaches. We organize the literature by the kind of prediction being scored and discuss open problems in calibration for long-form generation.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99005v1</guid>
+<category>cs.CL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Grace Mensah, Daniel Kowalski</dc:creator>
+</item>
+<item>
+<title>Low-Dose CT Denoising with Diffusion Priors and Calibrated Uncertainty Maps</title>
+<link>https://example.org/demo/2609.99006</link>
+<description>arXiv:2609.99006v1 Announce Type: new 
+Abstract: We present a diffusion-based denoiser for low-dose CT scans in medical imaging that also outputs calibrated uncertainty maps. On two public CT datasets the method improves structural similarity while highlighting regions where radiologists should double-check the reconstruction.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99006v1</guid>
+<category>eess.IV</category><category>cs.CV</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Hannah Weiss, Kofi Asante, Marta Silva</dc:creator>
+</item>
+<item>
+<title>Equivariant Graph Networks for Crystal Property Prediction</title>
+<link>https://example.org/demo/2609.99007</link>
+<description>arXiv:2609.99007v1 Announce Type: new 
+Abstract: We design an equivariant graph neural network for predicting formation energy and band gap of inorganic crystals. The model sets a new state of the art on two materials benchmarks while using 40% fewer parameters.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99007v1</guid>
+<category>cs.LG</category><category>cond-mat.mtrl-sci</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Ivan Sokolov, Mei Lin</dc:creator>
+</item>
+<item>
+<title>On the Sample Complexity of Offline Reinforcement Learning with Linear Function Approximation</title>
+<link>https://example.org/demo/2609.99008</link>
+<description>arXiv:2609.99008v1 Announce Type: new 
+Abstract: We establish minimax lower bounds on the sample complexity of offline reinforcement learning under linear function approximation and give an algorithm whose upper bound matches them up to logarithmic factors.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99008v1</guid>
+<category>cs.LG</category><category>stat.ML</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Noah Fischer, Amara Nwosu</dc:creator>
+</item>
+<item>
+<title>Do LLM Agents Know When They Are Wrong? Self-Evaluation of Tool-Use Trajectories</title>
+<link>https://example.org/demo/2609.99009</link>
+<description>arXiv:2609.99009v1 Announce Type: new 
+Abstract: We study whether LLM agents can evaluate their own multi-step tool-use trajectories. Agents' self-reported confidence is poorly calibrated: across three agent benchmarks, trajectories rated 90% likely to succeed succeed only 61% of the time. A simple uncertainty estimation probe on hidden states recovers much of the gap.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99009v1</guid>
+<category>cs.AI</category><category>cs.CL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Laura Chen, Pedro Alves, Yuki Mori</dc:creator>
+</item>
+<item>
+<title>4-Bit KV Cache Compression for Long-Context LLM Inference</title>
+<link>https://example.org/demo/2609.99010</link>
+<description>arXiv:2609.99010v1 Announce Type: new 
+Abstract: Long-context LLM inference is dominated by KV cache memory. We introduce a 4-bit quantization scheme for the KV cache with per-channel outlier handling that keeps perplexity within 0.1 of full precision and enables 2.6x cheaper inference at 128k context.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99010v1</guid>
+<category>cs.LG</category><category>cs.CL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Arjun Mehta, Sofia Rossi</dc:creator>
+</item>
+<item>
+<title>Tabular Foundation Models for Clinical Risk Prediction</title>
+<link>https://example.org/demo/2609.99011</link>
+<description>arXiv:2609.99011v1 Announce Type: new 
+Abstract: We evaluate tabular foundation models on 22 clinical risk prediction tasks from electronic health records and find that they match gradient-boosted trees with far less tuning.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99011v1</guid>
+<category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Emily Carter, Ravi Iyer, Beatriz Santos</dc:creator>
+</item>
+<item>
+<title>Visual Place Recognition under Seasonal Change</title>
+<link>https://example.org/demo/2609.99012</link>
+<description>arXiv:2609.99012v1 Announce Type: new 
+Abstract: We address visual place recognition across seasons with a contrastive objective on paired summer and winter images, improving recall at 1 by nine points on three outdoor datasets.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99012v1</guid>
+<category>cs.CV</category><category>cs.RO</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Anders Holm, Keiko Sato</dc:creator>
+</item>
+<item>
+<title>SciRetrieve: A Benchmark of Retrieval Quality for Scientific Question Answering</title>
+<link>https://example.org/demo/2609.99013</link>
+<description>arXiv:2609.99013v1 Announce Type: new 
+Abstract: We release SciRetrieve, a benchmark of 9,800 expert-written scientific questions with passage-level relevance labels, to measure retrieval quality for retrieval-augmented question answering. Dense retrievers and rerankers still miss a supporting passage for 27% of questions.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99013v1</guid>
+<category>cs.IR</category><category>cs.CL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Oluwaseun Adeyemi, Clara Dubois</dc:creator>
+</item>
+<item>
+<title>Position: Evaluating Autonomous Agents Needs Cost-Aware Metrics</title>
+<link>https://example.org/demo/2609.99014</link>
+<description>arXiv:2609.99014v1 Announce Type: new 
+Abstract: We argue that evaluating LLM agents by success rate alone hides the cost of multi-step tool-use. We propose reporting success per dollar and per minute and show how rankings on popular agent benchmarks change under cost-aware metrics.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99014v1</guid>
+<category>cs.AI</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Michael Brooks, Anika Sharma</dc:creator>
+</item>
+<item>
+<title>Emergent Communication in Multi-Robot Foraging</title>
+<link>https://example.org/demo/2609.99015</link>
+<description>arXiv:2609.99015v1 Announce Type: new 
+Abstract: We train teams of simulated robots to forage and observe the emergence of a compositional signalling protocol that transfers to new arena layouts.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99015v1</guid>
+<category>cs.MA</category><category>cs.RO</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Lucas Martin, Zainab Hussain</dc:creator>
+</item>
+<item>
+<title>Prompt Compression for Long Documents with Learned Token Dropping</title>
+<link>https://example.org/demo/2609.99016</link>
+<description>arXiv:2609.99016v1 Announce Type: new 
+Abstract: We learn which prompt tokens can be dropped before a language model reads a long document, reducing prompt length by 60% with a small drop in summarization quality.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99016v1</guid>
+<category>cs.CL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>A Dataset of Tool Descriptions for API Retrieval</title>
+<link>https://example.org/demo/2609.99017</link>
+<description>arXiv:2609.99017v1 Announce Type: new 
+Abstract: We collect 48,000 API tool descriptions and user requests and study retrieval of the right tool for a request, reporting dense and sparse retrieval baselines.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99017v1</guid>
+<category>cs.IR</category><category>cs.SE</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Self-Supervised Pretraining for Seismic Event Detection</title>
+<link>https://example.org/demo/2609.99018</link>
+<description>arXiv:2609.99018v1 Announce Type: new 
+Abstract: We pretrain a transformer on unlabeled seismograms and fine-tune it to detect small earthquakes, doubling recall for low-magnitude events.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99018v1</guid>
+<category>physics.geo-ph</category><category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Topological Phases in Twisted Bilayer Graphene at Fractional Filling</title>
+<link>https://example.org/demo/2609.99019</link>
+<description>arXiv:2609.99019v1 Announce Type: new 
+Abstract: We compute the phase diagram of twisted bilayer graphene at fractional filling and identify a region with a fractional Chern insulator ground state.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99019v1</guid>
+<category>cond-mat.str-el</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Fair Division of Indivisible Goods with Budget Constraints</title>
+<link>https://example.org/demo/2609.99020</link>
+<description>arXiv:2609.99020v1 Announce Type: new 
+Abstract: We study envy-free allocations of indivisible goods when agents face budget constraints and give a polynomial-time algorithm for two agents.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99020v1</guid>
+<category>cs.GT</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Neural Radiance Fields for Dynamic Urban Scenes</title>
+<link>https://example.org/demo/2609.99021</link>
+<description>arXiv:2609.99021v1 Announce Type: new 
+Abstract: We extend neural radiance fields to large dynamic street scenes by decomposing static background and moving vehicles, improving novel-view synthesis quality.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99021v1</guid>
+<category>cs.CV</category><category>cs.GR</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Bayesian Optimization of Battery Electrolyte Formulations</title>
+<link>https://example.org/demo/2609.99022</link>
+<description>arXiv:2609.99022v1 Announce Type: new 
+Abstract: We run closed-loop Bayesian optimization over electrolyte recipes and find a formulation with 18% higher ionic conductivity in 40 experiments.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99022v1</guid>
+<category>cs.LG</category><category>physics.chem-ph</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Lower Bounds for Streaming Graph Connectivity</title>
+<link>https://example.org/demo/2609.99023</link>
+<description>arXiv:2609.99023v1 Announce Type: new 
+Abstract: We prove space lower bounds for deciding connectivity in dynamic graph streams under a bounded number of passes.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99023v1</guid>
+<category>cs.DS</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Diffusion Models for Protein Backbone Generation with Symmetry Constraints</title>
+<link>https://example.org/demo/2609.99024</link>
+<description>arXiv:2609.99024v1 Announce Type: new 
+Abstract: We condition a diffusion model on point-group symmetry to generate protein backbones for symmetric assemblies, improving designability in silico.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99024v1</guid>
+<category>q-bio.BM</category><category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Measuring the Hubble Constant with Strongly Lensed Supernovae</title>
+<link>https://example.org/demo/2609.99025</link>
+<description>arXiv:2609.99025v1 Announce Type: new 
+Abstract: We forecast the precision of Hubble constant measurements from time delays of lensed supernovae expected in the next survey decade.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99025v1</guid>
+<category>astro-ph.CO</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Robust Legged Locomotion on Deformable Terrain</title>
+<link>https://example.org/demo/2609.99026</link>
+<description>arXiv:2609.99026v1 Announce Type: new 
+Abstract: We train a quadruped controller in simulation with randomized soil models and deploy it on sand and snow without fine-tuning.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99026v1</guid>
+<category>cs.RO</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Federated Learning with Heterogeneous Label Distributions</title>
+<link>https://example.org/demo/2609.99027</link>
+<description>arXiv:2609.99027v1 Announce Type: new 
+Abstract: We analyze federated averaging when clients see disjoint label sets and propose a server-side correction that improves accuracy under skew.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99027v1</guid>
+<category>cs.LG</category><category>cs.DC</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>An Empirical Study of Code Review Comments in Open Source</title>
+<link>https://example.org/demo/2609.99028</link>
+<description>arXiv:2609.99028v1 Announce Type: new 
+Abstract: We label 12,000 code review comments from open-source projects and find that a third concern naming and readability rather than defects.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99028v1</guid>
+<category>cs.SE</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Quantum Error Mitigation with Probabilistic Error Cancellation at Scale</title>
+<link>https://example.org/demo/2609.99029</link>
+<description>arXiv:2609.99029v1 Announce Type: new 
+Abstract: We implement probabilistic error cancellation on a 27-qubit device and characterize its sampling overhead for circuits of increasing depth.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99029v1</guid>
+<category>quant-ph</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Causal Discovery from Time Series with Latent Confounders</title>
+<link>https://example.org/demo/2609.99030</link>
+<description>arXiv:2609.99030v1 Announce Type: new 
+Abstract: We give an identifiability result and an algorithm for causal discovery in multivariate time series when some confounders are unobserved.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99030v1</guid>
+<category>stat.ML</category><category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Cross-Lingual Transfer for Hate Speech Detection in Low-Resource Languages</title>
+<link>https://example.org/demo/2609.99031</link>
+<description>arXiv:2609.99031v1 Announce Type: new 
+Abstract: We compare translation-based and multilingual encoder approaches to hate speech detection in six low-resource languages.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99031v1</guid>
+<category>cs.CL</category><category>cs.SI</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Energy-Efficient Scheduling for Edge Inference Clusters</title>
+<link>https://example.org/demo/2609.99032</link>
+<description>arXiv:2609.99032v1 Announce Type: new 
+Abstract: We schedule vision model inference jobs across heterogeneous edge devices to minimize energy under latency constraints.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99032v1</guid>
+<category>cs.DC</category><category>cs.NI</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>A Large-Scale Study of Citation Practices in Machine Learning</title>
+<link>https://example.org/demo/2609.99033</link>
+<description>arXiv:2609.99033v1 Announce Type: new 
+Abstract: We analyze 400,000 machine learning papers and find a growing share of citations to preprints that are never formally published.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99033v1</guid>
+<category>cs.DL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Optimal Transport for Single-Cell Trajectory Inference</title>
+<link>https://example.org/demo/2609.99034</link>
+<description>arXiv:2609.99034v1 Announce Type: new 
+Abstract: We use unbalanced optimal transport to infer developmental trajectories from single-cell RNA snapshots, recovering known lineages in three datasets.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99034v1</guid>
+<category>q-bio.QM</category><category>stat.ML</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Solving Olympiad Geometry with Symbolic Search</title>
+<link>https://example.org/demo/2609.99035</link>
+<description>arXiv:2609.99035v1 Announce Type: new 
+Abstract: We combine a symbolic deduction engine with a learned construction proposer and solve 27 of 30 olympiad geometry problems.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99035v1</guid>
+<category>cs.AI</category><category>cs.LO</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Adversarial Patches Against Traffic Sign Detectors in the Physical World</title>
+<link>https://example.org/demo/2609.99036</link>
+<description>arXiv:2609.99036v1 Announce Type: new 
+Abstract: We print adversarial patches that cause traffic sign detectors to miss stop signs in 71% of real-world drive-by tests.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99036v1</guid>
+<category>cs.CV</category><category>cs.CR</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Monotone Operator Splitting for Constrained Convex Optimization</title>
+<link>https://example.org/demo/2609.99037</link>
+<description>arXiv:2609.99037v1 Announce Type: new 
+Abstract: We propose a three-operator splitting scheme with adaptive step sizes and prove linear convergence under metric subregularity.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99037v1</guid>
+<category>math.OC</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Speech Emotion Recognition with Self-Supervised Features</title>
+<link>https://example.org/demo/2609.99038</link>
+<description>arXiv:2609.99038v1 Announce Type: new 
+Abstract: We benchmark self-supervised speech representations for emotion recognition across four corpora and three languages.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99038v1</guid>
+<category>eess.AS</category><category>cs.SD</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Estimating Poverty from Satellite Imagery in Sub-Saharan Africa</title>
+<link>https://example.org/demo/2609.99039</link>
+<description>arXiv:2609.99039v1 Announce Type: new 
+Abstract: We predict village-level asset wealth from satellite imagery and validate against household surveys in eight countries.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99039v1</guid>
+<category>cs.CY</category><category>cs.CV</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Differentially Private Synthetic Data for Tabular Records</title>
+<link>https://example.org/demo/2609.99040</link>
+<description>arXiv:2609.99040v1 Announce Type: new 
+Abstract: We generate differentially private synthetic tables with a marginal-based method and evaluate utility on downstream classifiers.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99040v1</guid>
+<category>cs.CR</category><category>stat.ML</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Learning to Simulate Granular Flows with Graph Networks</title>
+<link>https://example.org/demo/2609.99041</link>
+<description>arXiv:2609.99041v1 Announce Type: new 
+Abstract: We train graph network simulators on discrete element data and reproduce avalanche dynamics at a fraction of the cost.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99041v1</guid>
+<category>physics.comp-ph</category><category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Interpretable Credit Scoring with Monotonic Neural Networks</title>
+<link>https://example.org/demo/2609.99042</link>
+<description>arXiv:2609.99042v1 Announce Type: new 
+Abstract: We build credit scoring models with monotonicity constraints that match gradient boosting accuracy while satisfying regulatory requirements.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99042v1</guid>
+<category>q-fin.RM</category><category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>A Formal Semantics for Smart Contract Upgrades</title>
+<link>https://example.org/demo/2609.99043</link>
+<description>arXiv:2609.99043v1 Announce Type: new 
+Abstract: We define a formal semantics for proxy-based smart contract upgrades and verify storage layout compatibility for 1,200 deployed contracts.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99043v1</guid>
+<category>cs.PL</category><category>cs.CR</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>new</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>A. Researcher, B. Scientist</dc:creator>
+</item>
+<item>
+<title>Faster Decoding for Speech Language Models via Speculative Unit Prediction</title>
+<link>https://example.org/demo/2609.99044</link>
+<description>arXiv:2609.99044v1 Announce Type: cross 
+Abstract: Speech language models generate discrete units slowly. We adapt speculative decoding to unit sequences and obtain 2.4x faster inference with no loss in speech quality.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99044v1</guid>
+<category>eess.AS</category><category>cs.CL</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>cross</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Hyun-woo Park, Isabel Novak</dc:creator>
+</item>
+<item>
+<title>An Older Paper Revised Today: Improved Bounds for Matrix Completion</title>
+<link>https://example.org/demo/2609.99045</link>
+<description>arXiv:2609.99045v1 Announce Type: replace 
+Abstract: This is a revised version of a paper announced earlier and should be skipped by default.</description>
+<guid isPermaLink="false">oai:arXiv.org:2609.99045v1</guid>
+<category>cs.LG</category>
+<pubDate>Tue, 22 Sep 2026 00:00:00 -0400</pubDate>
+<arxiv:announce_type>replace</arxiv:announce_type>
+<dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+<dc:creator>Old Author</dc:creator>
+</item>
+</channel>
+</rss>

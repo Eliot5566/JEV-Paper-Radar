@@ -1,0 +1,46 @@
+# Profile: LLM research generalist. Copy the parts you want into radar.toml.
+[radar]
+title = "LLM Research Radar"
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"
+
+[[sources]]
+type = "arxiv"
+categories = ["cs.CL", "cs.LG", "cs.AI"]
+
+[[interests]]
+id = "reasoning"
+label = "Reasoning"
+text = "Methods that improve multi-step reasoning of language models, such as chain of thought or reinforcement learning on reasoning tasks"
+
+[[interests]]
+id = "agents"
+label = "Agents"
+text = "LLM agents that plan and act over many steps using tools, browsers, or code execution"
+
+[[interests]]
+id = "interpretability"
+label = "Interpretability"
+text = "Mechanistic interpretability of neural network internals, such as circuits, features, or probing"
+
+[[interests]]
+id = "efficiency"
+label = "Efficiency"
+text = "Making language model training or inference faster or cheaper"
+
+[[interests]]
+id = "evals"
+label = "Evaluation"
+text = "New benchmarks or evaluation methodology for language models"
+
+[[exclude]]
+id = "position_only"
+label = "Position papers"
+text = "The paper is a position or opinion piece"
+
+[thresholds]
+must_read = 0.85
+maybe = 0.55
+exclude = 0.85

@@ -1,0 +1,48 @@
+# Demo profile used by `paper-radar demo`. Papers are fictional; the model is a mock heuristic.
+
+[radar]
+title = "Paper Radar · demo"
+
+[jev]
+backend = "mock"
+
+[[sources]]
+type = "arxiv"
+file = "arxiv_demo.xml"
+
+[thresholds]
+must_read = 0.80
+maybe = 0.50
+exclude = 0.70
+
+[signals]
+paper_type = true
+code_release = true
+
+[output]
+near_misses = 8
+
+[[interests]]
+id = "agent_eval"
+label = "Agent evaluation"
+text = "Benchmarks or methods for evaluating LLM agents on multi-step tool-use tasks"
+
+[[interests]]
+id = "calibration"
+label = "LLM calibration"
+text = "Calibration or uncertainty estimation of language model predictions"
+
+[[interests]]
+id = "retrieval"
+label = "RAG & retrieval"
+text = "Retrieval-augmented generation, rerankers, or retrieval quality for question answering"
+
+[[interests]]
+id = "fast_inference"
+label = "Efficient inference"
+text = "Faster or cheaper LLM inference such as speculative decoding, quantization, or KV cache compression"
+
+[[exclude]]
+id = "medical_imaging"
+label = "Medical imaging"
+text = "The main application is medical imaging such as CT or MRI scans"

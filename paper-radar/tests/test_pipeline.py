@@ -1,0 +1,177 @@
+import gzip
+import json
+import xml.etree.ElementTree as ET
+from datetime import date
+
+import pytest
+
+from paper_radar.calibrate import calibrate, format_report
+from paper_radar.jev import JevError, MockBackend
+from paper_radar.notify import send_all
+from paper_radar.pipeline import rebuild_site, run
+from paper_radar.store import Store
+from paper_radar.summarize import summarize_top
+
+DAY = date(2026, 9, 22)
+
+
+def quiet(_):
+    pass
+
+
+def test_end_to_end_mock(config):
+    result = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    counts = result.counts()
+    assert result.judged == 44 and result.failed == 0
+    assert counts["must_read"] >= 3 and counts["excluded"] == 1
+    site = config.site_path
+    for name in ("index.html", "2026-09-22.html", "archive.html", "feed.xml", ".nojekyll"):
+        assert (site / name).exists(), name
+    page = (site / "index.html").read_text()
+    assert "Offline demo" in page and "TraceGrade" in page
+    feed = ET.fromstring((site / "feed.xml").read_text())
+    titles = [i.findtext("title") for i in feed.iter("item")]
+    assert len(titles) == counts["must_read"] + counts["maybe"]
+    assert any(t.startswith("★ ") for t in titles)
+
+    data = config.data_path / "decisions"
+    shown = [json.loads(line) for line in (data / "2026-09-22.jsonl").open()]
+    rest = [json.loads(line) for line in gzip.open(data / "2026-09-22.rest.jsonl.gz", "rt")]
+    assert {r["band"] for r in shown} <= {"must_read", "maybe"}
+    assert all("abstract" not in r["paper"] for r in rest)
+    run_log = Store(config.data_path).load_runs()
+    assert run_log[-1]["judged"] == 44 and run_log[-1]["backend"] == "mock"
+
+
+def test_second_run_same_day_skips_seen(config):
+    run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    again = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    assert again.judged == 0
+    assert len(Store(config.data_path).load_decisions("2026-09-22")) == 44
+
+
+def test_dry_run_calls_nothing(config):
+    class Exploding(MockBackend):
+        def decide(self, state, questions):
+            raise AssertionError("should not be called")
+
+    result = run(config, Exploding(), today=DAY, dry_run=True, notify=False, log=quiet)
+    assert result.fetched == 44 and result.judged == 0
+
+
+def test_limit(config):
+    assert run(config, MockBackend(), today=DAY, limit=5, notify=False, log=quiet).judged == 5
+
+
+def test_fatal_error_aborts(config):
+    class Unauthorized(MockBackend):
+        name = "typesafe"
+
+        def decide(self, state, questions):
+            raise JevError("typesafe HTTP 401: bad key", fatal=True, status=401)
+
+    with pytest.raises(JevError, match="401"):
+        run(config, Unauthorized(), today=DAY, notify=False, log=quiet)
+    assert Store(config.data_path).days() == []
+
+
+def test_transient_failures_are_retried_next_run(config):
+    class Flaky(MockBackend):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+
+        def decide(self, state, questions):
+            self.calls += 1
+            if "TraceGrade" in state["title"]:
+                raise JevError("timeout")
+            return super().decide(state, questions)
+
+    first = run(config, Flaky(), today=DAY, notify=False, log=quiet)
+    assert first.failed == 1 and first.judged == 43
+    second = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    assert second.judged == 1
+
+
+def test_notifications(config):
+    result = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    posts = []
+    env = {"SLACK_WEBHOOK_URL": "https://hooks/slack", "DISCORD_WEBHOOK_URL": "https://hooks/discord",
+           "TELEGRAM_BOT_TOKEN": "t", "TELEGRAM_CHAT_ID": "42"}
+    sent = send_all(config, "2026-09-22", result.decisions, env=env, poster=lambda url, payload, **kw: posts.append((url, payload)), log=quiet)
+    assert sent == ["slack", "discord", "telegram"]
+    assert "shortlisted" in posts[0][1]["text"] and "<" in posts[0][1]["text"]
+    assert len(posts[1][1]["content"]) <= 1990
+    assert posts[2][0] == "https://api.telegram.org/bott/sendMessage" and posts[2][1]["chat_id"] == "42"
+    assert send_all(config, "d", result.decisions, env={}, log=quiet) == []
+
+
+def test_notification_failure_is_not_fatal(config):
+    result = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    logs = []
+
+    def broken(*a, **k):
+        raise OSError("down")
+
+    assert send_all(config, "d", result.decisions, env={"SLACK_WEBHOOK_URL": "x"}, poster=broken, log=logs.append) == []
+    assert "slack notification failed" in logs[0]
+
+
+def test_summaries_cascade(tmp_path):
+    from .conftest import make_config
+
+    config = make_config(tmp_path, summaries={"enabled": True, "model": "some-llm", "language": "Traditional Chinese", "top_k": 2})
+    result = run(config, MockBackend(), today=DAY, notify=False, log=quiet, env={})  # no key -> skipped
+    assert all(d.summary is None for d in result.decisions)
+    calls = []
+
+    def poster(url, payload, **kw):
+        calls.append((url, payload, kw))
+        return {"choices": [{"message": {"content": "一句話摘要。"}}]}
+
+    n = summarize_top(config.summaries, result.decisions, env={"LLM_API_KEY": "k"}, poster=poster, log=quiet)
+    assert n == 2 and calls[0][0] == "https://api.openai.com/v1/chat/completions"
+    assert "Traditional Chinese" in calls[0][1]["messages"][0]["content"]
+    assert calls[0][2]["headers"]["Authorization"] == "Bearer k"
+
+
+def test_rebuild_without_runs(config):
+    rebuild_site(config, Store(config.data_path))
+    assert "No runs yet" in (config.site_path / "index.html").read_text()
+
+
+def test_calibrate_suggests_thresholds():
+    relevance = {f"p{i}": i / 100 for i in range(100)}
+    labels = {f"p{i}": i >= 70 for i in range(100)}
+    report = calibrate(relevance, labels, target_precision=0.95, target_recall=0.9)
+    assert report.n == 100 and report.positives == 30
+    assert report.suggested_must_read == pytest.approx(0.7)
+    assert report.suggested_maybe == pytest.approx(0.7)
+    text = format_report(report, 0.95, 0.9)
+    assert "Brier" in text and "Suggested must_read" in text
+
+
+def test_calibrate_small_sample_warns():
+    report = calibrate({"a": 0.9}, {"a": True, "missing": False})
+    assert any("rough" in w for w in report.warnings) and any("no stored decision" in w for w in report.warnings)
+
+
+def test_quiet_day_still_builds_site(tmp_path):
+    from .conftest import make_config
+
+    empty = tmp_path / "empty.xml"
+    empty.write_text('<rss version="2.0"><channel></channel></rss>')
+    config = make_config(tmp_path, sources=[{"type": "arxiv", "file": str(empty)}])
+    result = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    assert result.judged == 0 and (config.site_path / "index.html").exists()
+
+
+def test_untrusted_links_are_neutralized(config):
+    from paper_radar.models import Paper
+    from paper_radar.render import day_stats, render_day
+    from paper_radar.scoring import Decision
+
+    evil = Decision(paper=Paper(id="rss:x", source="rss", title="<script>alert(1)</script>", abstract="a",
+                                url="javascript:alert(1)"), relevance=0.9, band="must_read", interests={"agent_eval": 0.9}, exclusions={})
+    page = render_day(config, "2026-09-22", [evil], day_stats("2026-09-22", [evil], []))
+    assert "javascript:" not in page and "<script>alert" not in page

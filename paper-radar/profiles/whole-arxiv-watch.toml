@@ -1,0 +1,33 @@
+# Profile: read ALL of arXiv every day and catch one narrow topic wherever it appears
+# (a method crossing fields, a dataset you maintain, a competitor lab's technique).
+[radar]
+title = "Whole-arXiv Watch"
+max_papers = 4000
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"
+concurrency = 16
+
+[[sources]]
+type = "arxiv"
+categories = ["*"]
+
+[[interests]]
+id = "optimal_transport"
+label = "Optimal transport"
+text = "The paper uses optimal transport or Wasserstein distances as a central tool"
+
+[[interests]]
+id = "uses_imagenet"
+label = "Uses ImageNet"
+text = "The paper reports results on the ImageNet dataset"
+
+[signals]
+paper_type = true
+code_release = false
+
+[thresholds]
+must_read = 0.85
+maybe = 0.60
+exclude = 0.80

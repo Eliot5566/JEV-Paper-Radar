@@ -1,0 +1,86 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Paper Radar configuration. Edit this file, commit, and you're done.
+#  Validate locally with:  paper-radar check
+# ─────────────────────────────────────────────────────────────────────────────
+
+[radar]
+title = "My Paper Radar"
+max_papers = 3000          # safety cap per run (all of arXiv is ~1,500 new papers per weekday)
+combine = "max"            # "max": best-matching interest wins · "noisy_or": matching several interests adds up
+
+[jev]
+backend = "typesafe"       # "typesafe" (TYPESAFE_API_KEY) · "openrouter" (OPENROUTER_API_KEY, no waitlist) · "mock"
+model = "jev-1.13.0"       # pin a version so results are reproducible; for openrouter use "typesafe/jev-1.13"
+concurrency = 8
+requests_per_minute = 1000 # TypeSafe's documented limit is 1,200 requests/minute
+price_per_mtok = 0.042     # USD per million input tokens, used for the cost estimate (output tokens are free)
+
+# ── Where papers come from ──────────────────────────────────────────────────
+[[sources]]
+type = "arxiv"
+categories = ["cs.AI", "cs.CL", "cs.LG", "cs.IR", "stat.ML"]  # ["*"] = every arXiv archive
+include_cross_lists = true
+
+# [[sources]]
+# type = "biorxiv"          # or "medrxiv"
+# days = 1
+# categories = ["neuroscience", "bioinformatics"]   # empty = all categories
+
+# [[sources]]
+# type = "rss"              # any RSS/Atom feed: journals, lab blogs, hnrss.org, newsletters
+# name = "Hacker News 100+"
+# url = "https://hnrss.org/newest?points=100"
+
+# ── What you care about ─────────────────────────────────────────────────────
+# Each interest is ONE plain-English statement about a paper. Jev returns the probability
+# that the statement is true for each paper. Tips (Jev reads your words literally):
+#   • one idea per interest; split "A and B" into two interests
+#   • no negations here; put "not X" into an [[exclude]] entry phrased positively
+#   • no dates or numbers to compare; do that in code, not in the question
+[[interests]]
+id = "agent_eval"
+label = "Agent evaluation"
+text = "Benchmarks or methods for evaluating LLM agents on multi-step tool-use tasks"
+
+[[interests]]
+id = "calibration"
+label = "LLM calibration"
+text = "Calibration or uncertainty estimation of language model predictions"
+
+[[interests]]
+id = "retrieval"
+label = "RAG & retrieval"
+text = "Retrieval-augmented generation, rerankers, or retrieval quality for question answering"
+weight = 0.9               # optional, 0–1: down-weight interests that are nice-to-have
+
+# Papers matching an exclusion (probability >= thresholds.exclude) are filtered out.
+[[exclude]]
+id = "medical_imaging"
+label = "Medical imaging"
+text = "The main application is medical imaging such as CT or MRI scans"
+
+[thresholds]
+must_read = 0.80           # tune these with `paper-radar calibrate` after labelling ~30 papers
+maybe = 0.50
+exclude = 0.80
+
+[signals]                  # extra per-paper questions, shown as tags
+paper_type = true          # Choice: new method / benchmark / dataset / survey / theory / ...
+code_release = true        # Noul: does the abstract say code or data is released?
+evidence = false           # Score: how much evaluation the abstract reports
+
+[output]
+site_dir = "site"          # static site for GitHub Pages
+data_dir = "data"          # audit trail: every decision, committed to the repo
+site_url = ""              # e.g. "https://<you>.github.io/paper-radar" (used in RSS and digests)
+feed_days = 7
+near_misses = 15
+
+# Optional "System 2" step: a generative model writes one-sentence TL;DRs for the top papers
+# only, in your language. Any OpenAI-compatible endpoint. Key comes from the LLM_API_KEY secret.
+[summaries]
+enabled = false
+base_url = "https://api.openai.com/v1"
+model = ""
+language = "Traditional Chinese"
+top_k = 10

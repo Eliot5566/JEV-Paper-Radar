@@ -1,0 +1,41 @@
+# Profile: computational neuroscience across bioRxiv and arXiv q-bio.
+[radar]
+title = "Neuro Radar"
+
+[jev]
+backend = "openrouter"
+model = "typesafe/jev-1.13"
+
+[[sources]]
+type = "biorxiv"
+days = 1
+categories = ["neuroscience", "bioinformatics"]
+
+[[sources]]
+type = "arxiv"
+categories = ["q-bio.NC", "cs.NE"]
+
+[[interests]]
+id = "neural_coding"
+label = "Neural coding"
+text = "How populations of neurons represent sensory or task variables"
+
+[[interests]]
+id = "connectomics"
+label = "Connectomics"
+text = "Reconstruction or analysis of synapse-level wiring diagrams of brains"
+
+[[interests]]
+id = "ml_for_neuro"
+label = "ML for neural data"
+text = "Machine learning models applied to large-scale neural recordings such as calcium imaging or Neuropixels"
+
+[[exclude]]
+id = "clinical_trial"
+label = "Clinical trials"
+text = "The paper reports a clinical trial in human patients"
+
+[thresholds]
+must_read = 0.80
+maybe = 0.50
+exclude = 0.80

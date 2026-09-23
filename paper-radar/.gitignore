@@ -1,0 +1,8 @@
+site/
+paper-radar-demo/
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+dist/
+build/

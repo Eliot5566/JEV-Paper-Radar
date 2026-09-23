@@ -1,0 +1,86 @@
+name: Paper Radar
+
+on:
+  schedule:
+    # 02:00 UTC Mon–Fri (10:00 in Taipei): after arXiv's 20:00 US-Eastern announcement, all year round.
+    - cron: "0 2 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Judge at most N papers (leave blank for no limit)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write   # commit the audit trail in data/
+  pages: write      # publish the site
+  id-token: write
+
+concurrency:
+  group: paper-radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Paper Radar
+        run: pip install .
+
+      - name: Read today's papers
+        env:
+          LIMIT: ${{ github.event.inputs.limit }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          if [[ "$LIMIT" =~ ^[0-9]+$ ]]; then
+            paper-radar run --limit "$LIMIT"
+          else
+            paper-radar run
+          fi
+
+      - name: Commit audit trail
+        run: |
+          git config user.name "paper-radar[bot]"
+          git config user.email "paper-radar[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "No new decisions to commit"
+          else
+            git commit -m "radar: $(date -u +%F)"
+            git pull --rebase
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: radar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
