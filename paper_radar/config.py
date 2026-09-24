@@ -23,6 +23,7 @@ SOURCE_KEYS = {
     "rss": {"url", "limit"},
 }
 COMBINE_MODES = {"max", "noisy_or"}
+SCREEN_COMBINE = {"geometric", "min"}
 
 
 class ConfigError(ValueError):
@@ -73,12 +74,15 @@ class Screening:
 
     Unlike the daily radar, criteria are a conjunction: a record is eligible only if
     *every* include criterion holds, and any single exclude criterion disqualifies it.
+    Because of that, every criterion you add is another chance to veto a record — the
+    opposite of interests, where adding one can only create another chance to match.
     `threshold` is deliberately permissive by default — in screening, a missed study
     costs far more than an extra abstract to read, so the default errs toward reading.
     """
 
     enabled: bool = False
     target_recall: float = 0.95
+    combine: str = "geometric"   # "geometric" (all criteria) or "min" (weakest link)
     threshold: float = 0.40
     exclude_threshold: float = 0.90
     include: list[Criterion] = field(default_factory=list)
@@ -251,6 +255,8 @@ def validate(config: Config) -> None:
                 "[screening] is enabled but has no [[screening.include]] criteria. "
                 "Every include criterion must hold for a record to be eligible."
             )
+        if screening.combine not in SCREEN_COMBINE:
+            raise ConfigError(f"screening.combine must be one of {sorted(SCREEN_COMBINE)}")
         if not 0.5 <= screening.target_recall <= 1:
             raise ConfigError("screening.target_recall must be between 0.5 and 1")
         for name in ("threshold", "exclude_threshold"):

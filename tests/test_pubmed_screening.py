@@ -156,21 +156,46 @@ def test_include_criterion_negation_is_linted(tmp_path):
 # ── screening decisions ──────────────────────────────────────────────────────────
 
 def decision_for(tmp_path, probabilities, *, abstract="An abstract.", **screening):
+    """Build one ScreenDecision from a dict of raw Noul answers."""
     config = review_config(tmp_path, **screening)
     paper = Paper(id="pubmed:1", source="pubmed", title="T", abstract=abstract, url="u")
     answers = {key: {"noul": value} for key, value in probabilities.items()}
     return screen(paper, JevResult(answers=answers, model="m", input_tokens=10), config)
 
 
-def test_eligibility_is_the_weakest_include_criterion(tmp_path):
-    d = decision_for(tmp_path, {"si_population": 0.95, "si_design": 0.62, "sx_animal": 0.01})
+def test_min_mode_scores_the_weakest_criterion(tmp_path):
+    d = decision_for(tmp_path, {"si_population": 0.95, "si_design": 0.62, "sx_animal": 0.01},
+                     combine="min")
     assert d.eligibility == pytest.approx(0.62) and d.weakest == "design"
     assert d.verdict == INCLUDE
 
 
-def test_one_failed_criterion_excludes_even_with_a_strong_rest(tmp_path):
-    d = decision_for(tmp_path, {"si_population": 0.99, "si_design": 0.05, "sx_animal": 0.0})
-    assert d.verdict == EXCLUDE and d.eligibility == pytest.approx(0.05)
+def test_geometric_mode_uses_every_criterion(tmp_path):
+    """The reason the default changed: min() cannot tell these two records apart."""
+    strong = {"si_population": 0.95, "si_design": 0.02, "sx_animal": 0.0}
+    weak = {"si_population": 0.10, "si_design": 0.02, "sx_animal": 0.0}
+
+    assert decision_for(tmp_path, strong, combine="min").eligibility == pytest.approx(
+        decision_for(tmp_path, weak, combine="min").eligibility)
+
+    a = decision_for(tmp_path, strong)
+    b = decision_for(tmp_path, weak)
+    assert a.eligibility > b.eligibility
+    assert a.weakest == "design" and b.weakest == "design"   # still reported, for diagnosis
+
+
+def test_geometric_score_does_not_drift_with_the_number_of_criteria(tmp_path):
+    """A threshold has to mean the same thing in a 3-criterion and a 6-criterion review."""
+    from paper_radar.screening import combine_criteria
+
+    assert combine_criteria([0.9] * 3) == pytest.approx(combine_criteria([0.9] * 6))
+    assert combine_criteria([0.9] * 3, "min") == pytest.approx(combine_criteria([0.9] * 6, "min"))
+
+
+def test_a_criterion_near_zero_still_sinks_the_record(tmp_path):
+    """Geometric is still a conjunction: it is not an average that forgives a failure."""
+    d = decision_for(tmp_path, {"si_population": 0.99, "si_design": 0.001, "sx_animal": 0.0})
+    assert d.verdict == EXCLUDE and d.eligibility < 0.11
 
 
 def test_an_exclusion_criterion_beats_a_high_eligibility(tmp_path):
@@ -313,3 +338,28 @@ def test_screen_report_runs_without_any_labels(tmp_path, capsys):
     )
     assert main(["screen", "-c", str(cfg), "--report"]) == 0
     assert "No labelled records overlap" in capsys.readouterr().out
+
+
+# ── the benchmark's criteria files ──────────────────────────────────────────────
+
+def test_every_benchmark_criteria_file_is_valid():
+    """A typo in a criteria file would silently change a published number."""
+    import tomllib
+
+    folder = Path(__file__).resolve().parents[1] / "benchmarks" / "clef_tar_2019" / "criteria"
+    files = sorted(folder.glob("*/*.toml"))
+    assert len(files) >= 16   # v1 (literal) and v2 (revised) must both stay valid
+
+    for path in files:
+        raw = tomllib.loads(path.read_text(encoding="utf-8"))
+        meta = raw.pop("benchmark")
+        assert meta["topic"] == path.stem
+        assert meta["review_pmid"].isdigit()
+        raw["jev"] = {"backend": "mock"}
+        raw["sources"] = [{"type": "pubmed", "query": "placeholder"}]
+        config = parse_config(raw, base_dir=folder)
+        assert config.screening.enabled and config.screening.include
+        # The published criteria must be quoted in the file, so the translation is checkable.
+        assert "SELECTION CRITERIA, as published:" in path.read_text(encoding="utf-8")
+        # And the criteria themselves must survive the project's own lint.
+        assert not [w for w in lint(config) if "screening.include" in w], path.name

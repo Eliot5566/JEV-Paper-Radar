@@ -90,7 +90,7 @@ Jev reads your words literally ([Jev 1.13 jaggedness notes](https://docs.typesaf
 
 | Do | Don't |
 |----|-------|
-| One idea per interest | "RL for robots and also LLM agents" → split into two |
+| One idea per interest — for *interests*, which combine with `max` | "RL for robots and also LLM agents" → split into two |
 | Put negatives in `[[exclude]]`, phrased positively: *"The main application is medical imaging"* | *"Agents, but not robotics"* |
 | Describe the paper: *"Proposes a benchmark for …"* | Ask for counts or dates: *"published after 2024"* |
 | Use `weight = 0.5` for nice-to-have topics | Write ten near-duplicate interests |
@@ -172,7 +172,9 @@ paper-radar screen -c review.toml --limit 50     # a cheap first pass
 paper-radar screen -c review.toml
 ```
 
-Each criterion is one Noul. Eligibility is `min(p)` across the inclusion criteria — the weakest one — because multiplying six probabilities assumes they are independent, which they are not, and drives everything to zero regardless of the evidence. Every record ever screened is kept in full in `data/screening/`, rejects included, because a review has to account for all of them.
+Each criterion is one Noul. Eligibility is the geometric mean of the inclusion criteria, so every criterion's evidence counts rather than only the weakest one — `combine = "min"` restores the strict weakest-link reading. Every record ever screened is kept in full in `data/screening/`, rejects included, because a review has to account for all of them.
+
+> **Writing criteria for screening is the opposite of writing interests.** A radar combines interests with `max`, so one more interest is one more chance to match. Screening is a conjunction, so **one more criterion is one more chance to veto a record**. Write the fewest criteria that capture eligibility, and keep each one to something an abstract can actually answer. Measuring this is how we found it out: splitting compound criteria into more of them took one benchmark topic from 10.0% work saved to 0.1%.
 
 The output is the count block PRISMA 2020 asks for:
 
@@ -209,12 +211,32 @@ It fits the threshold to your recall target and reports **WSS** — work saved o
   Missed: pubmed:42771903
 ```
 
+### Measured against real reviewers' decisions
+
+Twelve Cochrane reviews from the [CLEF eHealth Technology Assisted Reviews 2019](https://github.com/CLEF-TAR/tar) track, whose relevance judgments are made at the **title-and-abstract stage** — the stage this tool works at. Each review's criteria come from its own published selection criteria, quoted verbatim in [`benchmarks/clef_tar_2019/criteria/`](benchmarks/clef_tar_2019/criteria).
+
+Four of them were never looked at while any of this was being built or fixed:
+
+| Held-out review | Records | Eligible | Recall | Work saved | Cost |
+|---|--:|--:|--:|--:|--:|
+| Antihypertensives: RAS inhibitors vs other classes | 12,319 | 88 | 95.5% | 68.1% | $0.37 |
+| Thromboprophylaxis implementation | 3,574 | 11 | 100% | 95.1% | $0.11 |
+| Cyclodestructive procedures for glaucoma | 2,456 | 12 | 100% | 95.8% | $0.08 |
+| Psychological therapies for depression in COPD | 1,098 | 16 | 100% | 92.5% | $0.03 |
+
+**19,447 records, 127 eligible studies, 96.9% recall, 78.0% pooled work saved, $0.60.**
+
+The eight reviews used during development did far worse — 38–48% pooled, with individual topics between 0.1% and 82%. **Performance is dominated by the review, not by the tool.** The held-out reviews are large and low in prevalence (0.3–1.5% eligible), which is the regime a real search is in; the development set included 146-record topics where 10% of records were eligible and there was little to save. Treat 78% as what a large search looks like, not as a number you can expect.
+
+Three rounds of it, including the predictions that were wrong, are in [`benchmarks/clef_tar_2019/PREREGISTRATION.md`](benchmarks/clef_tar_2019/PREREGISTRATION.md). Rerunning any of it is one command.
+
 ### What this is not
 
 - **Not a replacement for a human screener.** Published evaluations of automated screening report a mean recall around 93% and a mean WSS@95 of about 55%, and they consistently conclude that these tools belong alongside human reviewers rather than in place of one. Use it as a second screener, or to prioritise the order a human screens in.
+- **The thresholds above are fitted on the same judgments they are scored against.** That is the optimistic case. It says how well the scores *could* separate eligible studies from the rest, not what you get on a review nobody has screened yet.
 - **A third of new PubMed records have no abstract at all.** Measured on 40 consecutive records: 13 had a title and nothing else. Those are never auto-excluded — they go to a manual pile — so the workload saving applies to the records that have something to read.
 - **Pin the model.** A `model` change mid-review is a protocol deviation. Every screening record stores the model that produced it.
-- Nothing here has been validated against a published review's own screening decisions. If you run it alongside one, the numbers would be worth a PR.
+- **Nobody has run this alongside a live review yet.** The benchmark replays decisions that were already made. If you shadow a review in progress, those numbers would be worth a PR more than anything here.
 
 ## Honest limits
 
@@ -231,6 +253,7 @@ It fits the threshold to your recall target and reports **WSS** — work saved o
 - [x] A public demo radar so visitors see real output without a key
 - [x] PubMed source via NCBI E-utilities
 - [x] **Screening mode** for systematic reviews: criteria as Nouls, PRISMA 2020 counts, WSS measured against your own decisions
+- [x] Validated against 12 Cochrane reviews' own title/abstract screening decisions
 - [ ] Hugging Face Daily Papers source
 - [ ] **Lab mode**: one repo, many members, a page per person plus a shared feed
 - [ ] Citation-claim checks and missing-methods flags for your must-reads

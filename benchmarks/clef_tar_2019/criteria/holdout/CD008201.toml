@@ -1,0 +1,39 @@
+# CLEF TAR 2019 topic CD008201 — Interventions for implementation of thromboprophylaxis in hospitalized patients
+#
+# HELD-OUT TOPIC. Not used while diagnosing or revising anything. These criteria were
+# written once, from the review's own published selection criteria (PMID 29687454,
+# quoted verbatim below), using the same two rules as criteria/v2, and were not touched
+# after any result was seen.
+#
+# SELECTION CRITERIA, as published:
+#   We included all types of RCTs, with random or quasi-random methods of allocation of
+#   interventions... which aimed to increase the use of prophylaxis or appropriate
+#   prophylaxis, or decrease the occurrence of VTE in hospitalized adult patients. We
+#   excluded observational studies, studies in which the intervention was simply
+#   distribution of published guidelines, and studies whose interventions were not clearly
+#   described.
+
+[benchmark]
+topic = "CD008201"
+review_pmid = "29687454"
+review_title = "Interventions for implementation of thromboprophylaxis in hospitalized patients"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a controlled trial in which participants were assigned to treatment groups"
+
+[[screening.include]]
+id = "population"
+text = "The participants are hospitalised adult patients at risk of venous thromboembolism"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates an intervention intended to increase the use of thromboprophylaxis"
+
+[[screening.exclude]]
+id = "guidelines_only"
+text = "The intervention consists only of distributing published guidelines"

@@ -1,0 +1,37 @@
+# CLEF TAR 2019 topic CD012347 — Psychological therapies for depression in chronic obstructive pulmonary disease
+#
+# HELD-OUT TOPIC. Not used while diagnosing or revising anything. These criteria were
+# written once, from the review's own published selection criteria (PMID 30838649,
+# quoted verbatim below), using the same two rules as criteria/v2, and were not touched
+# after any result was seen.
+#
+# SELECTION CRITERIA, as published:
+#   Eligible for inclusion were randomised controlled trials that compared the use of
+#   psychological therapies with either no intervention, education, or combined with a co-
+#   intervention and compared with the same co-intervention in a population of patients with
+#   COPD whose depressive symptoms were measured before or at baseline assessment.
+
+[benchmark]
+topic = "CD012347"
+review_pmid = "30838649"
+review_title = "Psychological therapies for depression in chronic obstructive pulmonary disease"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a controlled trial in which participants were assigned to treatment groups"
+
+[[screening.include]]
+id = "population"
+text = "The participants have chronic obstructive pulmonary disease"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates a psychological therapy"
+
+[[screening.include]]
+id = "outcome"
+text = "The study measures depressive symptoms"

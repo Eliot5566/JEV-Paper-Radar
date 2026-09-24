@@ -10,6 +10,11 @@ paper-radar-demo/
 # data/ is deliberately NOT ignored: it is the audit trail (every decision,
 # probability and model version) and it is what deduplication reads next run.
 
+# Benchmark caches: re-downloadable from the sources the runner names, and the
+# fetched abstracts are other people's copyrighted text. benchmarks/*/results.md
+# IS committed — the measured numbers are the point.
+benchmarks/*/cache/
+
 # ── Secrets ──────────────────────────────────────────────────────────────────
 # Keys belong in GitHub Actions secrets or your shell, never in the repo.
 .env

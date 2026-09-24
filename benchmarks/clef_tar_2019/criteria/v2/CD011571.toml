@@ -1,0 +1,44 @@
+# CLEF TAR 2019 topic CD011571 — Antistreptococcal interventions for guttate and chronic plaque psoriasis
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30835819). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   We considered randomised controlled trials (RCTs) assessing antistreptococcal
+#   interventions (tonsillectomy or systemic antibiotic treatment) in people with clinically
+#   diagnosed acute guttate and chronic plaque psoriasis compared with placebo, no
+#   intervention, or each other.
+#
+# ── v2 revision ──────────────────────────────────────────────────────────────
+# Revised after the v1 run, for two reasons that do not depend on how v1 scored:
+#
+# R1  One idea per criterion. This project's own README tells users to split a
+#     criterion that bundles several conditions; several v1 criteria broke that rule.
+# R2  Design criteria are phrased at the breadth the review actually screened at.
+#     Abstract-stage screening errs toward inclusion on design, because abstracts
+#     often do not state it: 53% of CD011571's abstract-stage inclusions are not
+#     tagged "Randomized Controlled Trial" by NLM.
+#
+# criteria/v1/ holds the literal translation, unchanged. Both are reported.
+
+[benchmark]
+topic = "CD011571"
+review_pmid = "30835819"
+review_title = "Antistreptococcal interventions for guttate and chronic plaque psoriasis"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a controlled trial in which participants were assigned to treatment groups"
+
+[[screening.include]]
+id = "population"
+text = "The participants have guttate psoriasis or chronic plaque psoriasis"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates treatment with a systemic antibiotic or tonsillectomy"

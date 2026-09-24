@@ -1,0 +1,31 @@
+# CLEF TAR 2019 topic CD008018 — Adjuvant GnRH analogues to prevent chemotherapy-induced premature ovarian failure
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30827035). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   Randomised controlled trials (RCTs), in all languages, which examined the effect of GnRH
+#   analogues for chemotherapy-induced ovarian failure in premenopausal women, were eligible
+#   for inclusion in the review.
+
+[benchmark]
+topic = "CD008018"
+review_pmid = "30827035"
+review_title = "Adjuvant GnRH analogues to prevent chemotherapy-induced premature ovarian failure"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a randomised controlled trial"
+
+[[screening.include]]
+id = "population"
+text = "The participants are premenopausal women receiving chemotherapy"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates a gonadotropin-releasing hormone analogue given to protect ovarian function"

@@ -1,0 +1,46 @@
+# CLEF TAR 2019 topic CD008170 — First-line renin angiotensin system inhibitors versus other antihypertensive classes
+#
+# HELD-OUT TOPIC. Not used while diagnosing or revising anything. These criteria were
+# written once, from the review's own published selection criteria (PMID 30480768,
+# quoted verbatim below), using the same two rules as criteria/v2, and were not touched
+# after any result was seen.
+#
+# SELECTION CRITERIA, as published:
+#   We included randomized, active-controlled, double-blinded studies (RCTs) with at least
+#   six months follow-up in people with elevated blood pressure, which compared first-line
+#   RAS inhibitors with other first-line antihypertensive drug classes and reported
+#   morbidity and mortality or blood pressure outcomes. We excluded people with proven
+#   secondary hypertension.
+#
+# NOT ENCODED:
+#   The review also required at least six months of follow-up. That is a numeric comparison,
+#   which this tool never delegates to the model, so it is not encoded.
+
+[benchmark]
+topic = "CD008170"
+review_pmid = "30480768"
+review_title = "First-line renin angiotensin system inhibitors versus other antihypertensive classes"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a controlled trial in which participants were assigned to treatment groups"
+
+[[screening.include]]
+id = "population"
+text = "The participants have high blood pressure"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates a drug that inhibits the renin angiotensin system, such as an ACE inhibitor or an angiotensin receptor blocker"
+
+[[screening.include]]
+id = "comparator"
+text = "The study compares the treatment against a different class of antihypertensive drug"
+
+[[screening.exclude]]
+id = "secondary_ht"
+text = "The participants have hypertension caused by another identified underlying condition"

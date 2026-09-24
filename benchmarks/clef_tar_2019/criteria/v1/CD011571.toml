@@ -1,0 +1,32 @@
+# CLEF TAR 2019 topic CD011571 — Antistreptococcal interventions for guttate and chronic plaque psoriasis
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30835819). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   We considered randomised controlled trials (RCTs) assessing antistreptococcal
+#   interventions (tonsillectomy or systemic antibiotic treatment) in people with clinically
+#   diagnosed acute guttate and chronic plaque psoriasis compared with placebo, no
+#   intervention, or each other.
+
+[benchmark]
+topic = "CD011571"
+review_pmid = "30835819"
+review_title = "Antistreptococcal interventions for guttate and chronic plaque psoriasis"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a randomised controlled trial"
+
+[[screening.include]]
+id = "population"
+text = "The participants have clinically diagnosed guttate psoriasis or chronic plaque psoriasis"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates an antistreptococcal intervention, either tonsillectomy or systemic antibiotic treatment"

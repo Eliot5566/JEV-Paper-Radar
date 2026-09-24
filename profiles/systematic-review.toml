@@ -37,14 +37,18 @@ max_records = 2000
 [screening]
 enabled = true
 target_recall = 0.95        # what `--report` fits the threshold to
+combine = "geometric"       # every criterion counts; "min" = strict weakest link
 threshold = 0.40            # permissive on purpose: a missed study costs far more
                             # than an abstract you did not need to read
 exclude_threshold = 0.90    # an exclusion has to be near-certain to fire
 
 # ── Include: every one of these must hold ───────────────────────────────────────
-# One PICO element per criterion. Resist combining two into one sentence — a record
-# that satisfies half of a compound criterion produces a meaningless middle score,
-# and you lose the ability to see which element failed.
+# One PICO element per criterion — but keep the list SHORT. These are a conjunction, so
+# every criterion you add is another chance to veto a record. That is the opposite of
+# the daily radar, where interests combine with max and one more can only help. Measured
+# on the CLEF TAR benchmark, splitting criteria into more of them took one review from
+# 10.0% work saved to 0.1%. Write the fewest that capture eligibility, and keep each one
+# to something an abstract can actually answer: "is this an RCT?" often cannot be.
 
 [[screening.include]]
 id = "population"

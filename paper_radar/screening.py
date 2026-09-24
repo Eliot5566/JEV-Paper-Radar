@@ -9,18 +9,28 @@ threshold it suggests is fitted to a recall target the reviewer sets, not to acc
 
 Three deliberate choices follow from that:
 
-* **Conjunction by the weakest criterion.** A record is eligible only if every include
-  criterion holds, scored as `min(p)`. Multiplying the probabilities would assume the
-  criteria are independent — they rarely are, and with six criteria the product drives
-  everything toward zero regardless of the evidence.
+* **Conjunction across every criterion, not just the weakest.** A record is eligible
+  only if all include criteria hold. The obvious way to score that is `min(p)` — and it
+  was the original default here until a benchmark showed what it costs. `min` throws
+  away everything except one number, so two records whose worst criterion scores 0.02
+  rank identically even when one matches the other criteria at 0.95 and the other at
+  0.10. The default is now the geometric mean of the criteria, which keeps the
+  conjunction (any criterion near zero still sinks the record) while letting the rest of
+  the evidence break the ties `min` collapses. `combine = "min"` restores the old
+  behaviour. See `benchmarks/clef_tar_2019/`.
 * **No abstract means manual review, never exclusion.** PubMed is full of records with
   a title and nothing else. Judging those on a title would produce confident nonsense.
 * **The threshold errs toward reading.** Missing an eligible study is the expensive
   error in a review; reading one extra abstract costs a minute.
+
+One consequence worth stating for anyone writing criteria: under a conjunction, every
+criterion you add is another chance to veto a record. That is the opposite of the daily
+radar, where relevance is a max over interests and adding one can only help.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
@@ -70,13 +80,35 @@ class ScreenDecision:
         }
 
 
+def combine_criteria(values: list[float], mode: str = "geometric") -> float:
+    """Turn one probability per criterion into one eligibility score.
+
+    `geometric` is the geometric mean: the product, which is the conjunction under
+    independence, rescaled to stay on a 0-1 scale so a threshold means the same thing
+    whether a review has three criteria or six. Within one review the rescaling does not
+    change the ranking, so this is simply "use all the evidence" instead of "use the
+    worst number and discard the rest".
+
+    `min` is the strict weakest-link reading. It is kept because it is the honest
+    interpretation of a conjunction when a low score really does mean "this criterion is
+    false" — but on abstracts a low score usually means "the abstract does not say",
+    which is not the same thing.
+    """
+    if not values:
+        return 0.0
+    if mode == "min":
+        return min(values)
+    return math.prod(values) ** (1 / len(values))
+
+
 def screen(paper: Paper, result: JevResult, config: Config) -> ScreenDecision:
     settings = config.screening
     answers = result.answers
     include = {c.id: float(answers[SCREEN_INCLUDE_PREFIX + c.id]["noul"]) for c in settings.include}
     exclude = {c.id: float(answers[SCREEN_EXCLUDE_PREFIX + c.id]["noul"]) for c in settings.exclude}
 
-    weakest_id, eligibility = min(include.items(), key=lambda kv: kv[1]) if include else ("", 0.0)
+    weakest_id = min(include, key=lambda k: include[k]) if include else ""
+    eligibility = combine_criteria(list(include.values()), settings.combine)
     triggered = sorted(k for k, v in exclude.items() if v >= settings.exclude_threshold)
 
     if not paper.abstract.strip():

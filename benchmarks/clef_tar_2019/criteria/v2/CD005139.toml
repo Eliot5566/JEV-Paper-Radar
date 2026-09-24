@@ -1,0 +1,52 @@
+# CLEF TAR 2019 topic CD005139 — Anti-VEGF for neovascular age-related macular degeneration
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30834517). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   We included randomized controlled trials (RCTs) that evaluated pegaptanib, ranibizumab,
+#   or bevacizumab versus each other or versus a control treatment (e.g. sham treatment,
+#   photodynamic therapy), in which participants were followed for at least one year.
+#
+# NOT ENCODED:
+#   The review also required at least one year of follow-up. That is a numeric comparison,
+#   which this tool never delegates to the model, so it is not encoded. Expect lower
+#   precision on this topic as a result.
+#
+# ── v2 revision ──────────────────────────────────────────────────────────────
+# Revised after the v1 run, for two reasons that do not depend on how v1 scored:
+#
+# R1  One idea per criterion. This project's own README tells users to split a
+#     criterion that bundles several conditions; several v1 criteria broke that rule.
+# R2  Design criteria are phrased at the breadth the review actually screened at.
+#     Abstract-stage screening errs toward inclusion on design, because abstracts
+#     often do not state it: 53% of CD011571's abstract-stage inclusions are not
+#     tagged "Randomized Controlled Trial" by NLM.
+#
+# criteria/v1/ holds the literal translation, unchanged. Both are reported.
+
+[benchmark]
+topic = "CD005139"
+review_pmid = "30834517"
+review_title = "Anti-VEGF for neovascular age-related macular degeneration"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a controlled trial in which participants were assigned to treatment groups"
+
+[[screening.include]]
+id = "population"
+text = "The participants have neovascular age-related macular degeneration"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates intravitreous injection of pegaptanib, ranibizumab, or bevacizumab"
+
+[[screening.include]]
+id = "comparator"
+text = "The study includes a comparison group given a different treatment or a control"

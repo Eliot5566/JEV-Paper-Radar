@@ -1,0 +1,53 @@
+# CLEF TAR 2019 topic CD012930 — Once-daily LABA/LAMA combination inhaler versus placebo for COPD
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30839102). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   We included parallel-group and cross-over randomised controlled trials (RCTs) comparing
+#   once-daily LABA/LAMA FDC versus placebo. We excluded very short-term trials with a
+#   duration of less than 3 weeks. We included adults (>= 40 years old) with a diagnosis of
+#   stable COPD.
+#
+# NOT ENCODED:
+#   The review also excluded trials shorter than three weeks. That is a numeric comparison,
+#   which this tool never delegates to the model, so it is not encoded. Expect lower
+#   precision on this topic as a result.
+#
+# ── v2 revision ──────────────────────────────────────────────────────────────
+# Revised after the v1 run, for two reasons that do not depend on how v1 scored:
+#
+# R1  One idea per criterion. This project's own README tells users to split a
+#     criterion that bundles several conditions; several v1 criteria broke that rule.
+# R2  Design criteria are phrased at the breadth the review actually screened at.
+#     Abstract-stage screening errs toward inclusion on design, because abstracts
+#     often do not state it: 53% of CD011571's abstract-stage inclusions are not
+#     tagged "Randomized Controlled Trial" by NLM.
+#
+# criteria/v1/ holds the literal translation, unchanged. Both are reported.
+
+[benchmark]
+topic = "CD012930"
+review_pmid = "30839102"
+review_title = "Once-daily LABA/LAMA combination inhaler versus placebo for COPD"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a controlled trial in which participants were assigned to treatment groups"
+
+[[screening.include]]
+id = "population"
+text = "The participants are adults with chronic obstructive pulmonary disease"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates a long-acting beta2-agonist combined with a long-acting muscarinic antagonist in one inhaler"
+
+[[screening.include]]
+id = "comparator"
+text = "The study includes a placebo group"

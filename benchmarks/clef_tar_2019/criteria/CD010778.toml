@@ -1,0 +1,32 @@
+# CLEF TAR 2019 topic CD010778 — Intralesional treatment versus wide resection for central low-grade chondrosarcoma of the long bones
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30845364). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   In the absence of prospective randomised controlled trials (RCTs), we included
+#   retrospective comparative studies and case series that evaluated outcome of treatment of
+#   central LGCS of the long bones. The primary outcome was recurrence-free survival after a
+#   minimal follow-up of 24 months.
+
+[benchmark]
+topic = "CD010778"
+review_pmid = "30845364"
+review_title = "Intralesional treatment versus wide resection for central low-grade chondrosarcoma of the long bones"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "population"
+text = "The participants have central low-grade chondrosarcoma of a long bone"
+
+[[screening.include]]
+id = "intervention"
+text = "The study reports outcomes of surgical treatment by intralesional curettage or by wide resection"
+
+[[screening.include]]
+id = "design"
+text = "The study reports outcomes for a series of treated patients"

@@ -1,0 +1,34 @@
+# CLEF TAR 2019 topic CD011436 — Ultrasound guidance for perioperative neuraxial and peripheral nerve blocks in children
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30820938). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   We included all parallel randomized controlled trials that evaluated the effects of
+#   ultrasound guidance used when a regional blockade technique was performed in children.
+#   We included studies performed in children (<= 18 years of age) undergoing any type of
+#   surgical procedure (open or laparoscopic), for which a neuraxial or peripheral nerve
+#   block, for surgical anaesthesia or for postoperative analgesia, was performed with
+#   ultrasound guidance.
+
+[benchmark]
+topic = "CD011436"
+review_pmid = "30820938"
+review_title = "Ultrasound guidance for perioperative neuraxial and peripheral nerve blocks in children"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a parallel randomised controlled trial"
+
+[[screening.include]]
+id = "population"
+text = "The participants are children undergoing a surgical procedure"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates ultrasound guidance for performing a neuraxial or peripheral nerve block"

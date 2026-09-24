@@ -1,0 +1,47 @@
+# CLEF TAR 2019 topic CD010526 — Dental cavity liners for Class I and Class II resin-based composite restorations
+#
+# Criteria derived from the review's own published selection criteria, quoted below
+# verbatim from its PubMed abstract (PMID 30834516). The quote is kept here so that the
+# translation into criteria can be checked, and disputed, by anyone rerunning this.
+#
+# SELECTION CRITERIA, as published:
+#   We included randomized controlled trials assessing the effects of the use of liners
+#   under Class I and Class II posterior resin-based composite restorations in permanent
+#   teeth (in both adults and children). We included both parallel and split-mouth designs.
+#
+# ── v2 revision ──────────────────────────────────────────────────────────────
+# Revised after the v1 run, for two reasons that do not depend on how v1 scored:
+#
+# R1  One idea per criterion. This project's own README tells users to split a
+#     criterion that bundles several conditions; several v1 criteria broke that rule.
+# R2  Design criteria are phrased at the breadth the review actually screened at.
+#     Abstract-stage screening errs toward inclusion on design, because abstracts
+#     often do not state it: 53% of CD011571's abstract-stage inclusions are not
+#     tagged "Randomized Controlled Trial" by NLM.
+#
+# criteria/v1/ holds the literal translation, unchanged. Both are reported.
+
+[benchmark]
+topic = "CD010526"
+review_pmid = "30834516"
+review_title = "Dental cavity liners for Class I and Class II resin-based composite restorations"
+
+[screening]
+enabled = true
+target_recall = 0.95
+
+[[screening.include]]
+id = "design"
+text = "The study is a controlled trial in which participants or teeth were assigned to treatment groups"
+
+[[screening.include]]
+id = "population"
+text = "The restorations are placed in permanent posterior teeth"
+
+[[screening.include]]
+id = "intervention"
+text = "The study evaluates the use of a cavity liner or base underneath a restoration"
+
+[[screening.include]]
+id = "material"
+text = "The restorations are made of resin-based composite"
