@@ -17,9 +17,18 @@ type = "arxiv"
 categories = ["cs.AI", "cs.CL", "cs.LG"]
 include_cross_lists = false   # primary submissions only, to keep the demo cheap
 
-# Interests for a public digest. Measured lesson from the first run (299 papers):
-# crisply worded, single-concept statements produced confident hits; vague ones
-# ("clearly outperforms previous approaches") never crossed 0.95 at all.
+# Interests for a public digest.
+#
+# Two measured lessons, both from real runs rather than guesses:
+#
+# 1. Crisply worded, single-concept statements produce confident hits. Vague ones
+#    ("clearly outperforms previous approaches") never crossed 0.95 at all.
+# 2. A criterion that is technically true of most papers will fire on most papers.
+#    "introduces a benchmark or an evaluation method" matched 30 of 247 submissions
+#    on 2026-09-24 — 12% — because nearly every ML paper evaluates something. Raising
+#    the threshold to 0.98 still left 16 while wiping out the other four interests, so
+#    the fix is the wording, not the threshold. Ask for the CONTRIBUTION, not the
+#    presence of the thing.
 [[interests]]
 id = "new_model"
 label = "New model"
@@ -33,7 +42,7 @@ text = "The paper is about LLM agents that use tools or browse the web"
 [[interests]]
 id = "evaluation"
 label = "Evaluation"
-text = "The paper introduces a benchmark or an evaluation method for language models"
+text = "The paper's main contribution is a new benchmark or dataset for evaluating language models"
 
 [[interests]]
 id = "efficiency"
@@ -46,7 +55,8 @@ label = "Hallucination"
 text = "The paper measures or reduces hallucination in language model outputs"
 
 [thresholds]
-must_read = 0.95      # tuned on real scores: 0.88 kept 73 of 299 papers, 0.95 keeps ~28
+must_read = 0.95      # tuned on real scores: 0.88 kept 73/299, 0.95 kept 41/247, and the
+                      # remaining looseness was one interest's wording, fixed above
 maybe = 0.90
 exclude = 0.80
 
