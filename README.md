@@ -6,7 +6,7 @@
 
 Plain-English interests · calibrated probabilities · about 6 cents a day for *all* of arXiv · fork and go, no server
 
-[Quick start](#quick-start-5-minutes-no-server) · [Try the demo](#try-it-in-10-seconds) · [How it works](#how-it-works) · [繁體中文](README.zh-TW.md)
+[Quick start](#quick-start-5-minutes-no-server) · [Try the demo](#try-it-in-10-seconds) · [How it works](#how-it-works) · [Benchmark](#measured-against-real-reviewers-decisions) · [繁體中文](README.zh-TW.md)
 
 <img src="docs/demo.png" width="720" alt="Paper Radar daily page: 50 papers read, 12 shortlisted, 4 must-read">
 
@@ -18,7 +18,9 @@ Plain-English interests · calibrated probabilities · about 6 cents a day for *
 
 arXiv now receives more than 30,000 papers a month ([32,040 in June 2026](https://blog.arxiv.org/2026/07/09/arxiv-now-hosts-over-3-million-articles/)), about 1,500 per weekday announcement. Nobody reads the listing any more. Keyword alerts miss papers that use different words, embedding recommenders quietly drop whatever does not look like your past reading, and running a chat LLM over the whole firehose every day is slow and costs real money.
 
-Paper Radar takes a different route. Every new paper gets **judged** against the interests you wrote in plain English by [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), TypeSafe's System One model. It returns a calibrated probability for each interest instead of generated text, so there is nothing to parse and no invented labels. That is fast and cheap enough to read *everything*, so nothing gets pre-filtered away before it is judged.
+Most AI tools read a paper and write you a summary. **Paper Radar does not write anything.** It asks [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) — TypeSafe's System One model — one yes/no question per interest and gets a probability back: *introduces an agent benchmark, 0.97*. Your repo's code decides what that means.
+
+Judgement instead of prose is what makes the arithmetic work. There is nothing to parse and no invented labels, and one judgement costs a fraction of a generated sentence — cheap enough to read *all* 1,500 papers rather than a pre-filtered handful, which is where keyword alerts and embedding recommenders lose the paper you actually wanted.
 
 |                       | Keyword alerts | Embedding recommenders | LLM digest bots | **Paper Radar** |
 |-----------------------|:--:|:--:|:--:|:--:|
@@ -29,6 +31,8 @@ Paper Radar takes a different route. Every new paper gets **judged** against the
 | Cost to read all of arXiv daily | free | free after setup | higher: you pay for generated text | **≈ $0.06 per day\*** |
 
 <sub>\* Measured, not guessed: a real run on 2026-09-23 read 50 papers in 5 seconds for 46,584 input tokens and $0.0020 (932 tokens per paper, `jev-1.13.0`). All of arXiv, about 1,500 papers per weekday, works out to roughly $0.06 a day. Output tokens are free. Every run logs its own tokens and cost in `data/runs.jsonl`; `paper-radar check` estimates your profile before you spend anything.</sub>
+
+**Checked against real reviewers, not just claimed:** on four Cochrane reviews it had never seen, screening 19,447 records reproduced **96.9% of the studies the reviewers included** while removing 78% of the reading, for $0.60. The predictions that were wrong on the way there are published too — [see the benchmark](#measured-against-real-reviewers-decisions).
 
 ## See one before you set anything up
 
