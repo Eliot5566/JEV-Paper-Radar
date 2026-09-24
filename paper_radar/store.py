@@ -2,8 +2,12 @@
 
 * `decisions/<day>.jsonl`          full records for must-read and maybe papers
 * `decisions/<day>.rest.jsonl.gz`  compact records for everything else (keeps git small)
+* `screening/<day>.jsonl`          every screened record, kept in full (see below)
 * `runs.jsonl`                     one line per run: counts, tokens, cost, model, time
 * `labels.jsonl`                   your yes/no feedback, used by `paper-radar calibrate`
+
+Screening records are never split or compressed: a systematic review has to be able to
+account for every record it saw, including the ones the tool said no to.
 
 Deduplication reads ids from the last `dedupe_days` of decision files, so there is no
 ever-growing "seen" file rewritten on every run.
@@ -26,6 +30,7 @@ class Store:
     def __init__(self, data_dir: Path):
         self.root = data_dir
         self.decisions_dir = data_dir / "decisions"
+        self.screening_dir = data_dir / "screening"
         self.runs_path = data_dir / "runs.jsonl"
         self.labels_path = data_dir / "labels.jsonl"
 
@@ -84,6 +89,40 @@ class Store:
             return []
         with self.runs_path.open(encoding="utf-8") as handle:
             return [json.loads(line) for line in handle if line.strip()]
+
+    # ------------------------------------------------------------------ screening
+    def _screening(self, day: str) -> Path:
+        return self.screening_dir / f"{day}.jsonl"
+
+    def write_screening(self, day: str, decisions: Iterable[Any]) -> None:
+        """Every screened record is kept in full — a review has to account for all of them."""
+        self.screening_dir.mkdir(parents=True, exist_ok=True)
+        with self._screening(day).open("a", encoding="utf-8") as handle:
+            for decision in decisions:
+                handle.write(json.dumps(decision.to_dict(), ensure_ascii=False) + "\n")
+
+    def load_screening(self, day: str) -> list[dict[str, Any]]:
+        path = self._screening(day)
+        if not path.exists():
+            return []
+        with path.open(encoding="utf-8") as handle:
+            return [json.loads(line) for line in handle if line.strip()]
+
+    def screening_days(self) -> list[str]:
+        if not self.screening_dir.exists():
+            return []
+        return sorted(p.stem for p in self.screening_dir.glob("*.jsonl"))
+
+    def screened_ids(self) -> set[str]:
+        return {r["paper"]["id"] for day in self.screening_days() for r in self.load_screening(day)}
+
+    def eligibility_index(self) -> dict[str, float]:
+        """paper id -> eligibility score, across every screening run."""
+        index: dict[str, float] = {}
+        for day in self.screening_days():
+            for record in self.load_screening(day):
+                index[record["paper"]["id"]] = float(record["eligibility"])
+        return index
 
     # --------------------------------------------------------------------- labels
     def add_label(self, paper_id: str, relevant: bool, when: str) -> None:

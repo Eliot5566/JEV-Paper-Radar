@@ -149,9 +149,72 @@ paper-radar calibrate --precision 0.9 --recall 0.9
 |------|------|-------|
 | `arxiv` | official RSS, any categories, `["*"]` = every archive | new submissions and cross-lists; revisions skipped |
 | `biorxiv` / `medrxiv` | public details API | version-1 preprints, optional category filter |
+| `pubmed` | NCBI E-utilities, any PubMed query | errata and comments skipped; set `NCBI_API_KEY` to go from 3 to 10 req/s |
 | `rss` | any RSS or Atom feed | journals, lab blogs, `hnrss.org`, newsletters |
 
+```toml
+[[sources]]
+type = "pubmed"
+query = '"atrial fibrillation"[Title/Abstract] AND "anticoagulant"[Title/Abstract]'
+days = 2
+email = "you@example.com"   # NCBI asks callers to identify themselves
+```
+
 Ready-made profiles live in [`profiles/`](profiles): LLM research, neuroscience (bioRxiv), and a whole-arXiv watch for one narrow topic. PRs with your field's profile are very welcome.
+
+## Screening mode, for systematic reviews
+
+A review's title-and-abstract stage is the same shape as a daily radar pointed at a search strategy, with one difference that changes everything: a record is eligible only if **every** inclusion criterion holds, and one exclusion criterion disqualifies it. So screening is a separate command with its own scoring.
+
+```bash
+cp profiles/systematic-review.toml review.toml   # edit the query and the criteria
+paper-radar screen -c review.toml --limit 50     # a cheap first pass
+paper-radar screen -c review.toml
+```
+
+Each criterion is one Noul. Eligibility is `min(p)` across the inclusion criteria — the weakest one — because multiplying six probabilities assumes they are independent, which they are not, and drives everything to zero regardless of the evidence. Every record ever screened is kept in full in `data/screening/`, rejects included, because a review has to account for all of them.
+
+The output is the count block PRISMA 2020 asks for:
+
+```
+  Records identified                        2314
+  Duplicate records removed                  118
+  Records screened                          2196
+  Records marked ineligible by this tool    1643
+      by an exclusion criterion              421
+      below the eligibility threshold       1222
+  Reports sought for retrieval               194
+  Needs manual review (no abstract)          359
+```
+
+PRISMA 2020 has a box for records "removed before screening" by **automation tool exclusions**, reported separately from human decisions. That box is the only one this tool is entitled to fill in.
+
+### Check it before you trust it
+
+Screen a few hundred records yourself, label them, and make the tool prove itself against your own judgement:
+
+```bash
+paper-radar label 42777254 yes
+paper-radar screen -c review.toml --report --recall 0.95
+```
+
+It fits the threshold to your recall target and reports **WSS** — work saved over sampling, the metric this literature uses — along with the studies that threshold would have cost you, by ID. Read those before deciding anything.
+
+```
+  Suggested threshold                0.372
+  Recall at that threshold           95.2%
+  Workload saved (WSS)               61.4%
+
+  You would read about 848 of 2196 abstracts and miss 1 of 21 eligible studies.
+  Missed: pubmed:42771903
+```
+
+### What this is not
+
+- **Not a replacement for a human screener.** Published evaluations of automated screening report a mean recall around 93% and a mean WSS@95 of about 55%, and they consistently conclude that these tools belong alongside human reviewers rather than in place of one. Use it as a second screener, or to prioritise the order a human screens in.
+- **A third of new PubMed records have no abstract at all.** Measured on 40 consecutive records: 13 had a title and nothing else. Those are never auto-excluded — they go to a manual pile — so the workload saving applies to the records that have something to read.
+- **Pin the model.** A `model` change mid-review is a protocol deviation. Every screening record stores the model that produced it.
+- Nothing here has been validated against a published review's own screening decisions. If you run it alongside one, the numbers would be worth a PR.
 
 ## Honest limits
 
@@ -166,8 +229,9 @@ Ready-made profiles live in [`profiles/`](profiles): LLM research, neuroscience 
 
 - [x] One-click 👍/👎 on the page via GitHub Issues, harvested into `labels.jsonl`
 - [x] A public demo radar so visitors see real output without a key
-- [ ] PubMed and Hugging Face Daily Papers sources
-- [ ] **Screening mode** for systematic reviews: inclusion and exclusion criteria as Nouls, a PRISMA-style count table, shadow runs next to human reviewers
+- [x] PubMed source via NCBI E-utilities
+- [x] **Screening mode** for systematic reviews: criteria as Nouls, PRISMA 2020 counts, WSS measured against your own decisions
+- [ ] Hugging Face Daily Papers source
 - [ ] **Lab mode**: one repo, many members, a page per person plus a shared feed
 - [ ] Citation-claim checks and missing-methods flags for your must-reads
 - [ ] Local open-model backend for fully offline use

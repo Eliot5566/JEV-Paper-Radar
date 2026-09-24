@@ -14,9 +14,10 @@ from .config import Config
 from .jev import Backend, JevError
 from .models import Paper
 from .notify import send_all
-from .questions import build_questions
+from .questions import build_questions, build_screening_questions
 from .render import day_stats, render_archive, render_day, render_feed
 from .scoring import Decision, decide
+from .screening import MANUAL, ScreenDecision, format_prisma, prisma_counts, screen
 from .sources import Getter, collect
 from .store import Store
 from .summarize import summarize_top
@@ -39,9 +40,12 @@ class RunResult:
         return {b: sum(1 for d in self.decisions if d.band == b) for b in ("must_read", "maybe", "skip", "excluded")}
 
 
-def estimate_tokens_per_paper(config: Config, avg_paper_chars: int = 1600) -> int:
+def estimate_tokens_per_paper(
+    config: Config, avg_paper_chars: int = 1600, questions: dict[str, Any] | None = None
+) -> int:
     """Rough estimate: fixed request overhead + questions + a typical title and abstract (~4 chars/token)."""
-    questions = build_questions(config)
+    if questions is None:
+        questions = build_questions(config)
     return 250 + len(json.dumps(questions)) // 4 + avg_paper_chars // 4
 
 
@@ -51,14 +55,18 @@ def judge_all(
     questions: dict[str, dict[str, Any]],
     config: Config,
     log: Log = print,
-) -> tuple[list[Decision], list[tuple[Paper, str]]]:
-    decisions: list[Decision] = []
+    verdict: Callable[[Paper, Any, Config], Any] = None,  # type: ignore[assignment]
+) -> tuple[list[Any], list[tuple[Paper, str]]]:
+    """Fan out one call per paper. `verdict` turns a Jev result into a decision;
+    the daily radar passes `decide`, screening passes `screen`."""
+    verdict = verdict or decide
+    decisions: list[Any] = []
     failures: list[tuple[Paper, str]] = []
     fatal: list[JevError] = []
     stop = threading.Event()
     lock = threading.Lock()
 
-    def work(paper: Paper) -> Decision | None:
+    def work(paper: Paper) -> Any | None:
         if stop.is_set():
             return None
         try:
@@ -71,7 +79,7 @@ def judge_all(
             with lock:
                 failures.append((paper, str(error)))
             return None
-        return decide(paper, result, config)
+        return verdict(paper, result, config)
 
     done = 0
     with ThreadPoolExecutor(max_workers=config.jev.concurrency) as pool:
@@ -205,3 +213,85 @@ def run(
         f"({c['excluded']} excluded) in {seconds:.0f}s, {tokens:,} tokens, ≈${cost:.4f}"
     )
     return result
+
+
+@dataclass
+class ScreenResult:
+    day: str
+    fetched: int
+    screened: int
+    failed: int
+    decisions: list[ScreenDecision]
+    counts: dict[str, Any]
+    seconds: float
+    tokens: int
+    cost: float
+
+
+def run_screening(
+    config: Config,
+    backend: Backend,
+    *,
+    today: date,
+    getter: Getter | None = None,
+    limit: int | None = None,
+    log: Log = print,
+) -> ScreenResult:
+    """Screen every new record against the review's eligibility criteria.
+
+    Two differences from the daily radar, both of them because this is a review and not
+    a feed. Deduplication is against every record ever screened, not a rolling window —
+    a study must be screened once and stay screened. And records without an abstract
+    never reach Jev at all: they go straight to the manual pile, which costs nothing and
+    keeps the tool from inventing a judgement out of a title.
+    """
+    day = today.isoformat()
+    store = Store(config.data_path)
+    started = time.monotonic()
+
+    log(f"Collecting records for {day}")
+    kwargs: dict[str, Any] = {"today": today, "base_dir": config.base_dir, "log": log}
+    if getter is not None:
+        kwargs["getter"] = getter
+    papers = collect(config.sources, **kwargs)
+    fetched = len(papers)
+
+    already = store.screened_ids()
+    fresh = [p for p in papers if p.id not in already and p.title]
+    duplicates = fetched - len(fresh)
+    cap = min(config.max_papers, limit) if limit else config.max_papers
+    if len(fresh) > cap:
+        log(f"  ! {len(fresh)} new records exceeds the cap of {cap}; screening the first {cap}")
+        fresh = fresh[:cap]
+
+    judgeable = [p for p in fresh if p.abstract.strip()]
+    unjudgeable = [p for p in fresh if not p.abstract.strip()]
+    questions = build_screening_questions(config)
+    log(
+        f"{fetched} fetched, {len(fresh)} new, {len(unjudgeable)} without an abstract. "
+        f"{len(questions)} criteria per record"
+    )
+
+    decisions: list[ScreenDecision] = []
+    failures: list[tuple[Paper, str]] = []
+    if judgeable:
+        log(f"Screening {len(judgeable)} records with {backend.name} ({backend.model})")
+        decisions, failures = judge_all(backend, judgeable, questions, config, log=log, verdict=screen)
+    for paper in unjudgeable:
+        decisions.append(ScreenDecision(paper=paper, verdict=MANUAL, eligibility=0.0, model=backend.model))
+    for paper, reason in failures[:5]:
+        log(f"  ! {paper.id}: {reason}")
+    if failures:
+        log(f"  ! {len(failures)} record(s) failed and will be retried next run")
+
+    if decisions:
+        store.write_screening(day, decisions)
+    counts = prisma_counts(decisions, identified=fetched, duplicates=duplicates)
+    seconds = time.monotonic() - started
+    tokens = sum(d.input_tokens for d in decisions)
+    cost = sum(d.cost for d in decisions)
+    log("")
+    log(format_prisma(counts))
+    log("")
+    log(f"{seconds:.0f}s, {tokens:,} tokens, ≈${cost:.4f}")
+    return ScreenResult(day, fetched, len(decisions), len(failures), decisions, counts, seconds, tokens, cost)

@@ -15,6 +15,8 @@ from .config import Config
 
 INTEREST_PREFIX = "i_"
 EXCLUDE_PREFIX = "x_"
+SCREEN_INCLUDE_PREFIX = "si_"
+SCREEN_EXCLUDE_PREFIX = "sx_"
 PAPER_TYPE_KEY = "s_paper_type"
 CODE_KEY = "s_code"
 EVIDENCE_KEY = "s_evidence"
@@ -69,4 +71,20 @@ def build_questions(config: Config) -> dict[str, dict[str, Any]]:
             "instructions": "How much empirical evaluation does the abstract report?",
             "criteria": list(EVIDENCE_LEVELS),
         }
+    return questions
+
+
+def build_screening_questions(config: Config) -> dict[str, dict[str, Any]]:
+    """One Noul per eligibility criterion — nothing else.
+
+    Screening asks a different question from the daily radar ("is this study eligible?"
+    rather than "would I want to read this?"), so the paper-type, code and evidence
+    signals are left out: they add tokens to every record and no screening decision
+    depends on them.
+    """
+    questions: dict[str, dict[str, Any]] = {}
+    for criterion in config.screening.include:
+        questions[SCREEN_INCLUDE_PREFIX + criterion.id] = noul(criterion.text)
+    for criterion in config.screening.exclude:
+        questions[SCREEN_EXCLUDE_PREFIX + criterion.id] = noul(criterion.text)
     return questions

@@ -1,4 +1,4 @@
-"""Command line: `paper-radar run | demo | check | label | calibrate | harvest | rebuild`."""
+"""Command line: `paper-radar run | screen | demo | check | label | calibrate | harvest | rebuild`."""
 
 from __future__ import annotations
 
@@ -18,8 +18,9 @@ from .config import ConfigError, lint, load_config
 from .feedback import harvest
 from .ids import normalize_paper_id
 from .jev import JevError, MockBackend, make_backend
-from .pipeline import estimate_tokens_per_paper, rebuild_site, run
-from .questions import build_questions
+from .pipeline import estimate_tokens_per_paper, rebuild_site, run, run_screening
+from .questions import build_questions, build_screening_questions
+from .screening import format_performance, screening_performance
 from .store import Store
 
 
@@ -87,9 +88,17 @@ def cmd_demo(args: argparse.Namespace) -> int:
 def cmd_check(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     warnings = lint(config)
-    questions = build_questions(config)
-    per_paper = estimate_tokens_per_paper(config)
-    print(f"Config OK: {len(config.interests)} interests, {len(config.exclusions)} exclusions, {len(config.sources)} sources")
+    screening = config.screening.enabled
+    questions = build_screening_questions(config) if screening else build_questions(config)
+    per_paper = estimate_tokens_per_paper(config, questions=questions)
+    if screening:
+        print(
+            f"Config OK (screening mode): {len(config.screening.include)} include criteria, "
+            f"{len(config.screening.exclude)} exclude criteria, {len(config.sources)} sources"
+        )
+        print(f"Run it with: paper-radar screen -c {args.config}")
+    else:
+        print(f"Config OK: {len(config.interests)} interests, {len(config.exclusions)} exclusions, {len(config.sources)} sources")
     print(f"Backend: {config.jev.backend}  model: {config.jev.model or '(default)'}")
     print(f"Questions per paper: {len(questions)}  (≈{per_paper} input tokens per paper, rough estimate)")
     for n in (200, 1500, 5000):
@@ -122,6 +131,38 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
         target_recall=args.recall,
     )
     print(format_report(report, args.precision, args.recall))
+    return 0
+
+
+def cmd_screen(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    if not config.screening.enabled:
+        print(
+            "error: [screening] is not enabled in this config. A screening profile needs\n"
+            "       enabled = true and at least one [[screening.include]] criterion.\n"
+            "       See profiles/systematic-review.toml for a worked example.",
+            file=sys.stderr,
+        )
+        return 2
+    for warning in lint(config):
+        print(f"warning: {warning}")
+
+    store = Store(config.data_path)
+    if args.report:
+        report = screening_performance(
+            store.eligibility_index(),
+            store.load_labels(),
+            target_recall=args.recall or config.screening.target_recall,
+        )
+        print(format_performance(report))
+        return 0
+
+    if args.backend:
+        config.jev.backend = args.backend
+    backend = make_backend(config.jev)
+    result = run_screening(config, backend, today=_today(args.date), limit=args.limit)
+    if result.screened == 0 and result.failed:
+        return 1
     return 0
 
 
@@ -160,6 +201,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="fetch and estimate cost without calling Jev")
     p.add_argument("--no-notify", action="store_true")
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("screen", help="title/abstract screening for a systematic review")
+    p.add_argument("-c", "--config", default="review.toml")
+    p.add_argument("--date", help="YYYY-MM-DD (default: today, UTC)")
+    p.add_argument("--limit", type=int, help="screen at most N records")
+    p.add_argument("--backend", choices=["typesafe", "openrouter", "mock"], help="override jev.backend")
+    p.add_argument("--report", action="store_true", help="measure recall and workload saved against your own decisions")
+    p.add_argument("--recall", type=float, help="target recall for --report (default: screening.target_recall)")
+    p.set_defaults(func=cmd_screen)
 
     p = sub.add_parser("demo", help="offline demo with sample papers and a mock model (no API key)")
     p.add_argument("--out", default="paper-radar-demo")

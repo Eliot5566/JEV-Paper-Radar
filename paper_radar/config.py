@@ -14,11 +14,12 @@ from typing import Any
 ID_RE = re.compile(r"^[a-z0-9_]{1,40}$")
 NEGATION_RE = re.compile(r"\b(not|no|never|without|except|unless|excluding|neither|nor)\b|n't\b", re.IGNORECASE)
 BACKENDS = {"typesafe", "openrouter", "mock"}
-SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "rss"}
+SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "pubmed", "rss"}
 SOURCE_KEYS = {
     "arxiv": {"categories", "include_cross_lists", "include_replacements"},
     "biorxiv": {"server", "days", "categories"},
     "medrxiv": {"server", "days", "categories"},
+    "pubmed": {"query", "days", "datetype", "email", "max_records", "exclude_types"},
     "rss": {"url", "limit"},
 }
 COMBINE_MODES = {"max", "noisy_or"}
@@ -51,6 +52,37 @@ class Exclusion:
     @property
     def display(self) -> str:
         return self.label or self.id.replace("_", " ")
+
+
+@dataclass
+class Criterion:
+    """One eligibility criterion in a systematic review, phrased as a statement."""
+
+    id: str
+    text: str
+    label: str = ""
+
+    @property
+    def display(self) -> str:
+        return self.label or self.id.replace("_", " ")
+
+
+@dataclass
+class Screening:
+    """Title/abstract screening for a systematic review.
+
+    Unlike the daily radar, criteria are a conjunction: a record is eligible only if
+    *every* include criterion holds, and any single exclude criterion disqualifies it.
+    `threshold` is deliberately permissive by default — in screening, a missed study
+    costs far more than an extra abstract to read, so the default errs toward reading.
+    """
+
+    enabled: bool = False
+    target_recall: float = 0.95
+    threshold: float = 0.40
+    exclude_threshold: float = 0.90
+    include: list[Criterion] = field(default_factory=list)
+    exclude: list[Criterion] = field(default_factory=list)
 
 
 @dataclass
@@ -114,6 +146,7 @@ class Config:
     signals: Signals = field(default_factory=Signals)
     output: Output = field(default_factory=Output)
     summaries: Summaries = field(default_factory=Summaries)
+    screening: Screening = field(default_factory=Screening)
     base_dir: Path = field(default_factory=lambda: Path("."))
 
     @property
@@ -154,7 +187,10 @@ def load_config(path: str | Path) -> Config:
 
 
 def parse_config(raw: dict[str, Any], base_dir: Path | None = None) -> Config:
-    top_allowed = {"radar", "jev", "thresholds", "signals", "output", "summaries", "sources", "interests", "exclude"}
+    top_allowed = {
+        "radar", "jev", "thresholds", "signals", "output", "summaries",
+        "sources", "interests", "exclude", "screening",
+    }
     unknown = sorted(set(raw) - top_allowed)
     if unknown:
         raise ConfigError(f"Unknown top-level section(s): {', '.join(unknown)}")
@@ -177,20 +213,52 @@ def parse_config(raw: dict[str, Any], base_dir: Path | None = None) -> Config:
         signals=_build(Signals, raw.get("signals"), "signals"),
         output=_build(Output, raw.get("output"), "output"),
         summaries=_build(Summaries, raw.get("summaries"), "summaries"),
+        screening=_build_screening(raw.get("screening")),
         base_dir=base_dir or Path("."),
     )
     validate(config)
     return config
 
 
+def _build_screening(table: Any) -> Screening:
+    """[screening] holds two arrays of tables, so the criteria are built separately."""
+    if table is None:
+        return Screening()
+    if not isinstance(table, dict):
+        raise ConfigError("[screening] must be a table")
+    criteria = {
+        "include": [_build(Criterion, item, "screening.include") for item in table.get("include", [])],
+        "exclude": [_build(Criterion, item, "screening.exclude") for item in table.get("exclude", [])],
+    }
+    scalars = {k: v for k, v in table.items() if k not in ("include", "exclude")}
+    allowed = {f.name for f in fields(Screening)} - {"include", "exclude"}
+    unknown = sorted(set(scalars) - allowed)
+    if unknown:
+        raise ConfigError(f"Unknown key(s) in [screening]: {', '.join(unknown)}. Allowed: {', '.join(sorted(allowed))}")
+    return Screening(**scalars, **criteria)
+
+
 def validate(config: Config) -> None:
-    if not config.interests:
+    screening = config.screening
+    if not config.interests and not screening.enabled:
         raise ConfigError("Add at least one [[interests]] entry: a plain-English statement about papers you want.")
     if not config.sources:
         raise ConfigError("Add at least one [[sources]] entry (for example type = \"arxiv\").")
 
+    if screening.enabled:
+        if not screening.include:
+            raise ConfigError(
+                "[screening] is enabled but has no [[screening.include]] criteria. "
+                "Every include criterion must hold for a record to be eligible."
+            )
+        if not 0.5 <= screening.target_recall <= 1:
+            raise ConfigError("screening.target_recall must be between 0.5 and 1")
+        for name in ("threshold", "exclude_threshold"):
+            if not 0 <= getattr(screening, name) <= 1:
+                raise ConfigError(f"screening.{name} must be between 0 and 1")
+
     seen: set[str] = set()
-    for item in [*config.interests, *config.exclusions]:
+    for item in [*config.interests, *config.exclusions, *screening.include, *screening.exclude]:
         if not ID_RE.match(item.id):
             raise ConfigError(f"id {item.id!r} must match [a-z0-9_]{{1,40}}")
         if item.id in seen:
@@ -242,6 +310,11 @@ def validate(config: Config) -> None:
             )
         if kind == "rss" and not (source.get("url") or source.get("file")):
             raise ConfigError(f"sources[{index}] (rss) needs a url")
+        if kind == "pubmed" and not (source.get("query") or source.get("file")):
+            raise ConfigError(
+                f'sources[{index}] (pubmed) needs a query, for example '
+                'query = \'"atrial fibrillation"[Title/Abstract]\''
+            )
 
 
 def lint(config: Config) -> list[str]:
@@ -262,9 +335,17 @@ def lint(config: Config) -> list[str]:
     for exclusion in config.exclusions:
         if NEGATION_RE.search(exclusion.text):
             warnings.append(f"exclude '{exclusion.id}' contains a negation. State what the paper IS about, positively.")
+    for criterion in config.screening.include:
+        if NEGATION_RE.search(criterion.text):
+            warnings.append(
+                f"screening.include '{criterion.id}' contains a negation. An include criterion should say what "
+                "an eligible study IS; put the negative side in [[screening.exclude]], phrased positively."
+            )
     for index, source in enumerate(config.sources):
         if source.get("type") == "arxiv" and not source.get("categories") and not source.get("file"):
             warnings.append(f"sources[{index}] (arxiv) has no categories, so only cs.AI is fetched. Add categories, or [\"*\"] for all of arXiv.")
+        if source.get("type") == "pubmed" and not source.get("email") and not source.get("file"):
+            warnings.append(f"sources[{index}] (pubmed): NCBI asks callers to identify themselves. Add email = \"you@example.com\".")
     if len(config.interests) + len(config.exclusions) > 30:
         warnings.append("More than 30 interests/exclusions: every one is a question on every paper, so cost scales with it.")
     return warnings

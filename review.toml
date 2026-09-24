@@ -1,0 +1,89 @@
+# Profile: title/abstract screening for a systematic review.
+#
+# Copy this to review.toml, replace the query and the criteria, then:
+#
+#   paper-radar screen -c review.toml --limit 50    # a cheap first pass
+#   paper-radar screen -c review.toml               # the real screen
+#
+# Screening is not the daily radar with different words. The daily radar ranks papers
+# by how interesting they are; here a record is eligible only if EVERY include
+# criterion holds, and any one exclude criterion disqualifies it. Nothing is ranked.
+#
+# Read the honest limits in the README before using this in a real review. The short
+# version: published evaluations of automated screening report a mean recall around
+# 93%, and none of them conclude that automation can replace one of two human
+# screeners. Use it as a second screener, calibrate it on records you have already
+# screened yourself, and report its exclusions in the PRISMA box that exists for them.
+
+[radar]
+title = "DOAC adherence review — screening"
+max_papers = 5000
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"        # pin it: a model change mid-review is a protocol deviation
+
+[[sources]]
+type = "pubmed"
+# Your search strategy, exactly as you would paste it into PubMed. Keep the real one
+# in your protocol — this field is a copy, and the two drifting apart is a real risk.
+query = '("atrial fibrillation"[Title/Abstract]) AND ("anticoagulant"[Title/Abstract] OR "DOAC"[Title/Abstract])'
+days = 7                    # how far back each run looks; records are screened once
+email = "you@example.com"   # NCBI asks callers to identify themselves
+max_records = 2000
+# Errata and comments are dropped by default. Keep them if your protocol says so:
+# exclude_types = []
+
+[screening]
+enabled = true
+target_recall = 0.95        # what `--report` fits the threshold to
+threshold = 0.40            # permissive on purpose: a missed study costs far more
+                            # than an abstract you did not need to read
+exclude_threshold = 0.90    # an exclusion has to be near-certain to fire
+
+# ── Include: every one of these must hold ───────────────────────────────────────
+# One PICO element per criterion. Resist combining two into one sentence — a record
+# that satisfies half of a compound criterion produces a meaningless middle score,
+# and you lose the ability to see which element failed.
+
+[[screening.include]]
+id = "population"
+label = "Population"
+text = "The study enrolls adult patients diagnosed with atrial fibrillation"
+
+[[screening.include]]
+id = "intervention"
+label = "Intervention"
+text = "The study investigates treatment with a direct oral anticoagulant"
+
+[[screening.include]]
+id = "design"
+label = "Design"
+text = "The study reports primary data collected from human participants"
+
+[[screening.include]]
+id = "outcome"
+label = "Outcome"
+text = "The study reports medication adherence, persistence, or discontinuation as an outcome"
+
+# ── Exclude: any one of these disqualifies ──────────────────────────────────────
+# Phrase these as what the study IS, never as "not X". Jev reads negations literally,
+# and `paper-radar check` will warn you about them.
+
+[[screening.exclude]]
+id = "preclinical"
+label = "Preclinical"
+text = "The study is conducted only in animals, cell cultures, or computational simulation"
+
+[[screening.exclude]]
+id = "single_case"
+label = "Case report"
+text = "The report describes a single patient or a small series of individual cases"
+
+[[screening.exclude]]
+id = "protocol_only"
+label = "Protocol only"
+text = "The article is a study protocol or trial registration that reports no results"
+
+[output]
+data_dir = "data"           # data/screening/<date>.jsonl keeps every record you saw
