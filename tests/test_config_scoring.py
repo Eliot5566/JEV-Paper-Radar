@@ -15,7 +15,8 @@ def test_example_config_is_valid():
     config = load_config(root / "radar.toml")
     assert config.interests and config.sources
     public = load_config(root / "radar.public.toml")
-    assert public.output.site_dir == "site/public" and public.output.data_dir == "data/public"
+    # the AI radar moved under site/public/ai when the feed directory took over site/public/
+    assert public.output.site_dir == "site/public/ai" and public.output.data_dir == "data/public"
     for profile in (root / "profiles").glob("*.toml"):
         load_config(profile)
 

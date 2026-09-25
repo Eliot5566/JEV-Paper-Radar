@@ -298,3 +298,75 @@ def render_feed(config: Config, items: list[tuple[str, Decision]]) -> str:
         "<description>Papers selected by Paper Radar</description>"
         f"<lastBuildDate>{now}</lastBuildDate>{self_link}{''.join(entries)}</channel></rss>"
     )
+
+
+DIRECTORY_CSS = """
+.feeds{display:grid;gap:14px;margin:22px 0 8px}
+.feed-card{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:16px 18px}
+.feed-card h2{margin:0 0 2px;font-size:17px;letter-spacing:-.01em}
+.feed-card h2 a{color:inherit}
+.feed-card .sub{margin:0 0 10px;color:var(--muted);font-size:14px}
+.counts{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;font-size:14px;color:var(--muted);margin:0 0 10px}
+.counts b{color:var(--text);font-variant-numeric:tabular-nums}
+.counts .hit{color:var(--must)}
+.peek{margin:0 0 12px;padding:0;list-style:none;font-size:14px}
+.peek li{margin:2px 0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+.links a{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-size:14px}
+.quiet{color:var(--muted);font-size:14px}
+.cta{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:16px 18px;margin:18px 0}
+.cta h2{margin:0 0 6px;font-size:16px}
+.cta p{margin:0;color:var(--muted);font-size:14px}
+"""
+
+
+def render_directory(radars: list[dict[str, Any]], *, title: str = "Paper Radar · live feeds") -> str:
+    """A directory of every public radar, so a visitor can subscribe without forking anything.
+
+    Each card carries the feed's own numbers from today, because "247 read, 14 kept" says
+    more about what the thing does than any description of it.
+    """
+    # _url() sanitises links that came out of a paper feed and rewrites anything that is
+    # not http(s) to "#". These are relative paths this function built, so they use _e().
+    cards = []
+    for r in radars:
+        peek = "".join(f"<li>· {_e(t)}</li>" for t in r.get("top", [])[:3])
+        counts = (
+            f'<p class="counts"><b>{_num(r["judged"])}</b> read <span>→</span> '
+            f'<b>{_num(r["shortlisted"])}</b> shortlisted <span>→</span> '
+            f'<b class="hit">{_num(r["must_read"])}</b> worth opening '
+            f'<span>· {_e(r["day"])} · ${r["cost"]:.4f}</span></p>'
+            if r.get("judged") is not None
+            else '<p class="counts quiet">No run recorded yet.</p>'
+        )
+        cards.append(
+            f'<article class="feed-card"><h2><a href="{_e(r["url"])}">{_e(r["title"])}</a></h2>'
+            f'<p class="sub">{_e(r["tagline"])}</p>{counts}'
+            + (f'<ul class="peek">{peek}</ul>' if peek else "")
+            + f'<p class="links"><a href="{_e(r["url"])}">Open</a>'
+            f'<a href="{_e(r["feed"])}">RSS</a></p></article>'
+        )
+
+    body = (
+        '<section class="hero"><h1>Live feeds</h1>'
+        '<p class="sub">Each one reads every new paper in its field each weekday and keeps the few that match. '
+        "Take the RSS link — nothing to install, no key, no account.</p></section>"
+        f'<div class="feeds">{"".join(cards)}</div>'
+        '<section class="cta"><h2>Want one for your own interests?</h2>'
+        f'<p>These are ordinary config files in the repo. Fork it, write what you care about in plain English, '
+        f'and a GitHub Action publishes your own page and feed. <a href="{REPO_URL}">Paper Radar on GitHub</a>.</p>'
+        "</section>"
+    )
+    return (
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        f"<title>{_e(title)}</title>"
+        '<meta name="description" content="Daily research feeds: every new paper in a field, '
+        'judged against plain-English interests, with only the few that match kept.">'
+        f"<style>{CSS}{DIRECTORY_CSS}</style></head><body><div class=\"wrap\">"
+        f'<header class="top"><a class="brand" href="index.html">{LOGO}<span>{_e(title)}</span></a>'
+        f'<nav><a href="{REPO_URL}">GitHub</a></nav></header>{body}'
+        f'<footer>Built with <a href="{REPO_URL}">Paper Radar</a> v{__version__}. Percentages are the model\'s '
+        "probability that a paper matches an interest statement, not a quality score. Every decision is logged "
+        "in <code>data/</code>.</footer></div></body></html>"
+    )

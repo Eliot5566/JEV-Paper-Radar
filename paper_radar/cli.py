@@ -1,4 +1,4 @@
-"""Command line: `paper-radar run | screen | demo | check | label | calibrate | harvest | rebuild`."""
+"""Command line: `paper-radar run | screen | demo | check | label | calibrate | harvest | rebuild | directory`."""
 
 from __future__ import annotations
 
@@ -166,6 +166,45 @@ def cmd_screen(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_directory(args: argparse.Namespace) -> int:
+    """One page listing every public radar, so a visitor can subscribe without forking."""
+    from .render import render_directory
+
+    radars = []
+    for path in args.configs:
+        config = load_config(path)
+        store = Store(config.data_path)
+        days = store.days()
+        entry = {
+            "title": config.title,
+            "tagline": config.output.tagline or "Every new paper, judged against plain-English interests.",
+            "url": args.base.rstrip("/") + "/" + Path(config.output.site_dir).name + "/",
+            "feed": args.base.rstrip("/") + "/" + Path(config.output.site_dir).name + "/feed.xml",
+            "judged": None,
+        }
+        if days:
+            day = days[-1]
+            decisions = store.load_decisions(day)
+            picks = sorted((d for d in decisions if d.band == "must_read"), key=lambda d: -d.relevance)
+            runs = [r for r in store.load_runs() if r.get("day") == day]
+            entry.update(
+                day=day,
+                judged=runs[-1]["judged"] if runs else len(decisions),
+                shortlisted=sum(1 for d in decisions if d.band in ("must_read", "maybe")),
+                must_read=len(picks),
+                cost=runs[-1].get("cost_usd", 0.0) if runs else 0.0,
+                top=[d.paper.title for d in picks[:3]],
+            )
+        radars.append(entry)
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(render_directory(radars), encoding="utf-8")
+    live = sum(1 for r in radars if r["judged"])
+    print(f"wrote {out} — {len(radars)} radars ({live} with a run recorded)")
+    return 0
+
+
 def cmd_harvest(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     repo = args.repo or config.output.feedback_repo or os.environ.get("GITHUB_REPOSITORY", "")
@@ -210,6 +249,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--report", action="store_true", help="measure recall and workload saved against your own decisions")
     p.add_argument("--recall", type=float, help="target recall for --report (default: screening.target_recall)")
     p.set_defaults(func=cmd_screen)
+
+    p = sub.add_parser("directory", help="build one page listing several radars, with each one's latest numbers")
+    p.add_argument("configs", nargs="+", help="radar config files, in the order they should appear")
+    p.add_argument("--out", required=True, help="where to write the page, e.g. site/public/index.html")
+    p.add_argument("--base", default=".", help="path prefix the radar folders sit under, relative to --out")
+    p.set_defaults(func=cmd_directory)
 
     p = sub.add_parser("demo", help="offline demo with sample papers and a mock model (no API key)")
     p.add_argument("--out", default="paper-radar-demo")

@@ -63,14 +63,28 @@ jobs:
             paper-radar run
           fi
 
-      - name: Public demo radar
+      - name: Public radars
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        continue-on-error: true   # the public page must never block your own radar
+          NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}   # optional: 10 req/s instead of 3
+        continue-on-error: true   # a public page must never block your own radar
         run: |
-          if [ -f radar.public.toml ]; then
-            paper-radar run -c radar.public.toml --no-notify
+          # One radar per config. A failure in one is logged and the rest still run,
+          # so a bad PubMed query cannot take the whole directory down with it.
+          for config in radar.public.toml radars/*.toml; do
+            [ -f "$config" ] || continue
+            echo "::group::$config"
+            paper-radar run -c "$config" --no-notify || echo "!! $config failed"
+            echo "::endgroup::"
+          done
+
+      - name: Build the feed directory
+        continue-on-error: true
+        run: |
+          configs=$(ls radar.public.toml radars/*.toml 2>/dev/null) || true
+          if [ -n "$configs" ]; then
+            paper-radar directory --out site/public/index.html --base . $configs
           fi
 
       - name: Commit audit trail

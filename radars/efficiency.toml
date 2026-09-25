@@ -1,0 +1,55 @@
+# Efficiency Radar
+# One of several public radars. Each publishes its own page and RSS feed so a visitor
+# can subscribe without forking anything; `paper-radar directory` builds the index.
+#
+# Interests are deliberately few and phrased for the CONTRIBUTION, not the presence of
+# a topic. Measured on 2026-09-24: "introduces a benchmark or an evaluation method"
+# fired on 12% of cs.* submissions because nearly every paper evaluates something.
+# Rewording to "the paper's main contribution is..." took one radar from 41 picks to 14
+# with no threshold change.
+
+[radar]
+title = "Efficiency Radar"
+max_papers = 1500
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"
+concurrency = 8
+
+[[sources]]
+type = "arxiv"
+categories = ["cs.LG", "cs.DC", "cs.AR"]
+include_cross_lists = false
+
+[[interests]]
+id = "inference"
+label = "Inference speed"
+text = "The paper's main contribution is a method that makes language model inference faster or cheaper"
+
+[[interests]]
+id = "compression"
+label = "Compression"
+text = "The paper's main contribution is a quantisation, pruning or distillation method"
+
+[[interests]]
+id = "serving"
+label = "Serving systems"
+text = "The paper's main contribution is a serving system or kernel for running models at scale"
+
+[thresholds]
+must_read = 0.95
+maybe = 0.90
+exclude = 0.80
+
+[signals]
+paper_type = true
+code_release = true
+
+[output]
+site_dir = "site/public/efficiency"
+data_dir = "data/public/efficiency"
+site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/efficiency/"
+feed_days = 14
+near_misses = 0
+tagline = "Making inference faster, smaller or cheaper — across cs.LG, cs.DC and cs.AR."

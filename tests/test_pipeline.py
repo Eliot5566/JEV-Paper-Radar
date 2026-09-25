@@ -2,6 +2,7 @@ import gzip
 import json
 import xml.etree.ElementTree as ET
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -13,6 +14,7 @@ from paper_radar.store import Store
 from paper_radar.summarize import summarize_top
 
 DAY = date(2026, 9, 22)
+DEMO = Path(__file__).resolve().parents[1] / "paper_radar" / "demo" / "arxiv_demo.xml"
 
 
 def quiet(_):
@@ -244,3 +246,41 @@ def test_custom_tagline(tmp_path):
     run(config, MockBackend(), today=DAY, notify=False, log=quiet)
     page = (config.site_path / "index.html").read_text(encoding="utf-8")
     assert "Today&#x27;s standouts across AI." in page and "against your interests" not in page
+
+
+def test_directory_lists_every_radar_with_its_own_numbers(tmp_path, capsys):
+    """The directory page is what a visitor lands on, so an empty or wrong one is a
+    silent failure of the whole public-feeds idea."""
+    from paper_radar.cli import main
+
+    live = tmp_path / "live.toml"
+    live.write_text(
+        f'[jev]\nbackend = "mock"\n'
+        f'[[sources]]\ntype = "arxiv"\nfile = "{DEMO.as_posix()}"\n'
+        '[[interests]]\nid = "agent_eval"\ntext = "Benchmarks for evaluating LLM agents"\n'
+        f'[output]\nsite_dir = "{(tmp_path / "site" / "live").as_posix()}"\n'
+        f'data_dir = "{(tmp_path / "data" / "live").as_posix()}"\n'
+        'tagline = "Live feed tagline."\n',
+        encoding="utf-8",
+    )
+    empty = tmp_path / "empty.toml"
+    empty.write_text(
+        f'[radar]\ntitle = "Never Run"\n[jev]\nbackend = "mock"\n'
+        f'[[sources]]\ntype = "arxiv"\nfile = "{DEMO.as_posix()}"\n'
+        '[[interests]]\nid = "x"\ntext = "y"\n'
+        f'[output]\nsite_dir = "{(tmp_path / "site" / "empty").as_posix()}"\n'
+        f'data_dir = "{(tmp_path / "data" / "empty").as_posix()}"\n',
+        encoding="utf-8",
+    )
+    assert main(["run", "-c", str(live), "--date", "2026-09-22", "--no-notify"]) == 0
+
+    out = tmp_path / "index.html"
+    assert main(["directory", "--out", str(out), str(live), str(empty)]) == 0
+    page = out.read_text(encoding="utf-8")
+
+    assert "Live feed tagline." in page and "Never Run" in page
+    assert "worth opening" in page and "No run recorded yet." in page   # both states render
+    assert 'href="./live/"' in page and 'href="./live/feed.xml"' in page
+    assert "TraceGrade" in page          # a real pick from today, not a placeholder
+    assert "Fork it" in page             # the page has to convert readers into users
+    assert "wrote" in capsys.readouterr().out

@@ -34,12 +34,22 @@ Judgement instead of prose is what makes the arithmetic work. There is nothing t
 
 **Checked against real reviewers, not just claimed:** on four Cochrane reviews it had never seen, screening 19,447 records reproduced **96.9% of the studies the reviewers included** while removing 78% of the reading, for $0.60. The predictions that were wrong on the way there are published too — [see the benchmark](#measured-against-real-reviewers-decisions).
 
-## See one before you set anything up
+## Subscribe to one before you set anything up
 
-A public radar runs here every weekday, so you can look at real output without a key:
-**https://eliot5566.github.io/JEV-Paper-Radar/public/** ([RSS](https://eliot5566.github.io/JEV-Paper-Radar/public/feed.xml))
+Six radars run here every weekday. Take the RSS link for your field — nothing to install, no key, no account:
 
-It uses a deliberately broad AI profile (`radar.public.toml`). Yours would be narrower and much more useful.
+**https://eliot5566.github.io/JEV-Paper-Radar/public/**
+
+| Feed | What it reads |
+|---|---|
+| [AI](https://eliot5566.github.io/JEV-Paper-Radar/public/ai/) | cs.AI, cs.CL, cs.LG — the broad one |
+| [Agents](https://eliot5566.github.io/JEV-Paper-Radar/public/agents/) | tool-using and web-browsing LLM agents |
+| [Efficiency](https://eliot5566.github.io/JEV-Paper-Radar/public/efficiency/) | faster, smaller, cheaper inference |
+| [Robot learning](https://eliot5566.github.io/JEV-Paper-Radar/public/robotics/) | cs.RO |
+| [Neuroscience](https://eliot5566.github.io/JEV-Paper-Radar/public/neuro/) | bioRxiv neuroscience + q-bio.NC |
+| [Clinical AI](https://eliot5566.github.io/JEV-Paper-Radar/public/clinical/) | PubMed — models evaluated on patients |
+
+Each is an ordinary config file in [`radars/`](radars). Fork the repo and yours will be narrower, and much more useful.
 
 ## What you get every morning
 

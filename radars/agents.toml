@@ -1,0 +1,55 @@
+# Agents Radar
+# One of several public radars. Each publishes its own page and RSS feed so a visitor
+# can subscribe without forking anything; `paper-radar directory` builds the index.
+#
+# Interests are deliberately few and phrased for the CONTRIBUTION, not the presence of
+# a topic. Measured on 2026-09-24: "introduces a benchmark or an evaluation method"
+# fired on 12% of cs.* submissions because nearly every paper evaluates something.
+# Rewording to "the paper's main contribution is..." took one radar from 41 picks to 14
+# with no threshold change.
+
+[radar]
+title = "Agents Radar"
+max_papers = 1500
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"
+concurrency = 8
+
+[[sources]]
+type = "arxiv"
+categories = ["cs.AI", "cs.CL", "cs.LG", "cs.MA"]
+include_cross_lists = false
+
+[[interests]]
+id = "agents"
+label = "Agents"
+text = "The paper's main contribution is a method or system for LLM agents that use tools or browse the web"
+
+[[interests]]
+id = "agent_eval"
+label = "Agent evaluation"
+text = "The paper's main contribution is a benchmark for evaluating agents on multi-step tasks"
+
+[[interests]]
+id = "multi_agent"
+label = "Multi-agent"
+text = "The paper studies several language model agents cooperating or competing"
+
+[thresholds]
+must_read = 0.95
+maybe = 0.90
+exclude = 0.80
+
+[signals]
+paper_type = true
+code_release = true
+
+[output]
+site_dir = "site/public/agents"
+data_dir = "data/public/agents"
+site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/agents/"
+feed_days = 14
+near_misses = 0
+tagline = "Tool-using and web-browsing LLM agents, from every new cs.AI, cs.CL, cs.LG and cs.MA submission."

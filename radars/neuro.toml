@@ -1,0 +1,60 @@
+# Neuroscience Radar
+# One of several public radars. Each publishes its own page and RSS feed so a visitor
+# can subscribe without forking anything; `paper-radar directory` builds the index.
+#
+# Interests are deliberately few and phrased for the CONTRIBUTION, not the presence of
+# a topic. Measured on 2026-09-24: "introduces a benchmark or an evaluation method"
+# fired on 12% of cs.* submissions because nearly every paper evaluates something.
+# Rewording to "the paper's main contribution is..." took one radar from 41 picks to 14
+# with no threshold change.
+
+[radar]
+title = "Neuroscience Radar"
+max_papers = 800
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"
+concurrency = 8
+
+[[sources]]
+type = "biorxiv"
+days = 2
+categories = ["neuroscience"]
+
+[[sources]]
+type = "arxiv"
+categories = ["q-bio.NC"]
+include_cross_lists = false
+
+[[interests]]
+id = "neural_coding"
+label = "Neural coding"
+text = "The paper's main contribution is an analysis of how populations of neurons represent information"
+
+[[interests]]
+id = "models"
+label = "Computational models"
+text = "The paper's main contribution is a computational or theoretical model of a neural circuit"
+
+[[interests]]
+id = "methods"
+label = "Methods"
+text = "The paper's main contribution is a new method for recording or analysing neural activity"
+
+[thresholds]
+must_read = 0.95
+maybe = 0.90
+exclude = 0.80
+
+[signals]
+paper_type = true
+code_release = false
+
+[output]
+site_dir = "site/public/neuro"
+data_dir = "data/public/neuro"
+site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/neuro/"
+feed_days = 14
+near_misses = 0
+tagline = "New bioRxiv neuroscience preprints, filtered for computational and systems work."

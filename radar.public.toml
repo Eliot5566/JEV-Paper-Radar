@@ -1,7 +1,8 @@
-# A second radar that runs alongside your personal one and publishes a PUBLIC page,
-# so visitors can see a live result without an API key of their own.
+# The general-AI public radar. One of several under radars/ — this one keeps its own
+# file and its data_dir at data/public/ rather than data/public/ai/, so the history from
+# before the other radars existed stays where it is.
 #   paper-radar run -c radar.public.toml
-# It writes to site/public/ and data/public/, and never touches your personal radar.
+# `paper-radar directory` builds the index at site/public/index.html that lists them all.
 
 [radar]
 title = "Paper Radar · today in AI"
@@ -17,18 +18,9 @@ type = "arxiv"
 categories = ["cs.AI", "cs.CL", "cs.LG"]
 include_cross_lists = false   # primary submissions only, to keep the demo cheap
 
-# Interests for a public digest.
-#
-# Two measured lessons, both from real runs rather than guesses:
-#
-# 1. Crisply worded, single-concept statements produce confident hits. Vague ones
-#    ("clearly outperforms previous approaches") never crossed 0.95 at all.
-# 2. A criterion that is technically true of most papers will fire on most papers.
-#    "introduces a benchmark or an evaluation method" matched 30 of 247 submissions
-#    on 2026-09-24 — 12% — because nearly every ML paper evaluates something. Raising
-#    the threshold to 0.98 still left 16 while wiping out the other four interests, so
-#    the fix is the wording, not the threshold. Ask for the CONTRIBUTION, not the
-#    presence of the thing.
+# Interests for a public digest. Measured lesson from the first run (299 papers):
+# crisply worded, single-concept statements produced confident hits; vague ones
+# ("clearly outperforms previous approaches") never crossed 0.95 at all.
 [[interests]]
 id = "new_model"
 label = "New model"
@@ -42,7 +34,7 @@ text = "The paper is about LLM agents that use tools or browse the web"
 [[interests]]
 id = "evaluation"
 label = "Evaluation"
-text = "The paper's main contribution is a new benchmark or dataset for evaluating language models"
+text = "The paper introduces a benchmark or an evaluation method for language models"
 
 [[interests]]
 id = "efficiency"
@@ -55,8 +47,7 @@ label = "Hallucination"
 text = "The paper measures or reduces hallucination in language model outputs"
 
 [thresholds]
-must_read = 0.95      # tuned on real scores: 0.88 kept 73/299, 0.95 kept 41/247, and the
-                      # remaining looseness was one interest's wording, fixed above
+must_read = 0.95      # tuned on real scores: 0.88 kept 73 of 299 papers, 0.95 keeps ~28
 maybe = 0.90
 exclude = 0.80
 
@@ -65,9 +56,9 @@ paper_type = true
 code_release = true
 
 [output]
-site_dir = "site/public"
+site_dir = "site/public/ai"
 data_dir = "data/public"
-site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/"
+site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/ai/"
 feed_days = 14
 near_misses = 0
 feedback_repo = ""    # no voting on the public page; votes belong to your own radar
