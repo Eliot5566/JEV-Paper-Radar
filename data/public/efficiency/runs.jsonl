@@ -1,0 +1,1 @@
+{"day": "2026-09-25", "at": "2026-09-25T16:13:06Z", "backend": "typesafe", "model": "jev-1.13.0", "fetched": 145, "judged": 145, "failed": 0, "must_read": 3, "maybe": 3, "skip": 139, "excluded": 0, "input_tokens": 132660, "cost_usd": 0.005572, "seconds": 9.0}
