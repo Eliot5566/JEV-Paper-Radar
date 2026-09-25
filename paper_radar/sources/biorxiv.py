@@ -35,7 +35,15 @@ def fetch_biorxiv(
         start, end = today - timedelta(days=days), today
         cursor = 0
         for _ in range(MAX_PAGES):
-            page = json.loads(getter(API_URL.format(server=server, start=start, end=end, cursor=cursor)))
+            url = API_URL.format(server=server, start=start, end=end, cursor=cursor)
+            payload = getter(url)
+            if not payload.strip():
+                # Observed 2026-09-26: the API answers 200 with content-type
+                # application/json and an empty body, for every server and date range.
+                # json.loads would report "Expecting value: line 1 column 1", which
+                # sends you looking for a bug in the URL rather than at the service.
+                raise ValueError(f"{server} returned an empty response for {start}..{end}; the API looks down")
+            page = json.loads(payload)
             pages.append(page)
             collection = page.get("collection") or []
             messages = (page.get("messages") or [{}])[0]

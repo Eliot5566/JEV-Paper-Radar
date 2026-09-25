@@ -96,11 +96,14 @@ def judge_all(
     return decisions, failures
 
 
-def _record_run(store: Store, result: RunResult, backend: Backend) -> None:
+def _record_run(
+    store: Store, result: RunResult, backend: Backend, source_failures: list[dict[str, str]] | None = None
+) -> None:
     """One line per run in data/runs.jsonl, including days with nothing new."""
     store.append_run(
         {
             "day": result.day,
+            "source_failures": source_failures or [],
             "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "backend": backend.name,
             "model": result.decisions[0].model if result.decisions else backend.model,
@@ -162,7 +165,13 @@ def run(
     started = time.monotonic()
 
     log(f"Collecting papers for {day}")
-    kwargs: dict[str, Any] = {"today": today, "base_dir": config.base_dir, "log": log}
+    source_failures: list[dict[str, str]] = []
+    kwargs: dict[str, Any] = {
+        "today": today,
+        "base_dir": config.base_dir,
+        "log": log,
+        "failures": source_failures,
+    }
     if getter is not None:
         kwargs["getter"] = getter
     papers = collect(config.sources, **kwargs)
@@ -184,7 +193,7 @@ def run(
         if not dry_run:
             # Still record the run and rebuild: data/ must exist for the workflow's commit
             # step, and the Pages artifact has to stay valid on days with nothing new.
-            _record_run(store, quiet, backend)
+            _record_run(store, quiet, backend, source_failures)
             rebuild_site(config, store)
         return quiet
 
@@ -201,7 +210,7 @@ def run(
     tokens = sum(d.input_tokens for d in decisions)
     cost = sum(d.cost for d in decisions)
     result = RunResult(day, fetched, len(decisions), len(failures), decisions, seconds, tokens, cost)
-    _record_run(store, result, backend)
+    _record_run(store, result, backend, source_failures)
     rebuild_site(config, store)
     if notify:
         sent = send_all(config, day, decisions, env=env, log=log)
@@ -250,11 +259,23 @@ def run_screening(
     started = time.monotonic()
 
     log(f"Collecting records for {day}")
-    kwargs: dict[str, Any] = {"today": today, "base_dir": config.base_dir, "log": log}
+    source_failures: list[dict[str, str]] = []
+    kwargs: dict[str, Any] = {
+        "today": today,
+        "base_dir": config.base_dir,
+        "log": log,
+        "failures": source_failures,
+    }
     if getter is not None:
         kwargs["getter"] = getter
     papers = collect(config.sources, **kwargs)
     fetched = len(papers)
+    if source_failures:
+        # In a review this is not a cosmetic problem: PRISMA's "records identified"
+        # would silently under-count, and a record never fetched is never screened.
+        names = ", ".join(f["source"] for f in source_failures)
+        log(f"  ! {len(source_failures)} source(s) did not answer ({names}).")
+        log("    The PRISMA counts below are incomplete — rerun before reporting them.")
 
     already = store.screened_ids()
     fresh = [p for p in papers if p.id not in already and p.title]

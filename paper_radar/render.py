@@ -40,6 +40,7 @@ nav a{margin-left:14px;font-size:14px;color:var(--muted)}
 .arrow{color:var(--muted);font-size:18px}
 .meta{font-size:13px;color:var(--muted);margin:0 0 6px;font-variant-numeric:tabular-nums}
 .banner{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px;margin:12px 0}
+.banner .why{display:block;margin-top:4px;font-size:12.5px;opacity:.8;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 h2{font-size:18px;margin:28px 0 10px;display:flex;align-items:baseline;gap:8px}
 h2 small{font-weight:400;color:var(--muted);font-size:14px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:10px 0}
@@ -107,8 +108,15 @@ def _authors(authors: list[str]) -> str:
 def day_stats(day: str, decisions: list[Decision], runs: list[dict[str, Any]]) -> dict[str, Any]:
     day_runs = [r for r in runs if r.get("day") == day]
     counts = {band: sum(1 for d in decisions if d.band == band) for band in ("must_read", "maybe", "excluded")}
+    # From the run record, not from this process, so a rebuild keeps saying which source
+    # was down on the day it was down.
+    failed: dict[str, str] = {}
+    for run in day_runs:
+        for failure in run.get("source_failures") or []:
+            failed[str(failure.get("source") or "?")] = str(failure.get("error") or "")
     return {
         "judged": len(decisions),
+        "source_failures": [{"source": k, "error": v} for k, v in failed.items()],
         **counts,
         "tokens": sum(d.input_tokens for d in decisions),
         "cost": sum(d.cost for d in decisions),
@@ -208,6 +216,14 @@ def render_day(
         banner = (
             '<div class="banner"><b>Offline demo.</b> These papers are fictional samples and the scores come from '
             "a keyword heuristic, not Jev. Add a TypeSafe or OpenRouter key to run the real model.</div>"
+        )
+    # A source that was down looks exactly like a strict filter: "1 read → 1 must-read"
+    # with no explanation. Say which feed was missing, so the number can be read properly.
+    for failure in stats.get("source_failures") or []:
+        banner += (
+            f'<div class="banner warn"><b>{_e(failure["source"])} did not answer on this run.</b> '
+            "The counts below cover the sources that did. "
+            f'<span class="why">{_e(failure["error"])}</span></div>'
         )
 
     body = [
@@ -339,9 +355,14 @@ def render_directory(radars: list[dict[str, Any]], *, title: str = "Paper Radar 
             if r.get("judged") is not None
             else '<p class="counts quiet">No run recorded yet.</p>'
         )
+        note = (
+            f'<p class="counts quiet">⚠ {_e(", ".join(r["source_failures"]))} did not answer on this run.</p>'
+            if r.get("source_failures")
+            else ""
+        )
         cards.append(
             f'<article class="feed-card"><h2><a href="{_e(r["url"])}">{_e(r["title"])}</a></h2>'
-            f'<p class="sub">{_e(r["tagline"])}</p>{counts}'
+            f'<p class="sub">{_e(r["tagline"])}</p>{counts}{note}'
             + (f'<ul class="peek">{peek}</ul>' if peek else "")
             + f'<p class="links"><a href="{_e(r["url"])}">Open</a>'
             f'<a href="{_e(r["feed"])}">RSS</a></p></article>'

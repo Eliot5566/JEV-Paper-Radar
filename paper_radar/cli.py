@@ -71,6 +71,12 @@ def _apply_env_defaults(config) -> None:
 
 def cmd_run(args: argparse.Namespace) -> int:
     config = _load(args.config, args.base_dir)
+    if getattr(args, "site_dir", None):
+        # Publishing to a different folder than the config says is a deployment concern,
+        # not a change to the radar: this repo keeps the shipped default (`site`) so a
+        # fork's own page lands at its Pages root, and moves its own personal radar aside
+        # so the root can be the public directory instead.
+        config.output.site_dir = args.site_dir
     _apply_env_defaults(config)
     for warning in lint(config):
         print(f"warning: {warning}")
@@ -211,6 +217,9 @@ def cmd_directory(args: argparse.Namespace) -> int:
                 must_read=len(picks),
                 cost=sum(float(r.get("cost_usd") or 0) for r in runs),
                 top=[d.paper.title for d in picks[:3]],
+                source_failures=sorted(
+                    {str(f.get("source") or "?") for r in runs for f in (r.get("source_failures") or [])}
+                ),
             )
         radars.append(entry)
 
@@ -255,6 +264,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--limit", type=int, help="judge at most N papers (for a first test)")
     p.add_argument("--backend", choices=["typesafe", "openrouter", "mock"], help="override jev.backend")
     p.add_argument("--base-dir", help="resolve site_dir/data_dir against this directory instead of the config's own")
+    p.add_argument("--site-dir", help="publish the page to this folder instead of output.site_dir")
     p.add_argument("--dry-run", action="store_true", help="fetch and estimate cost without calling Jev")
     p.add_argument("--no-notify", action="store_true")
     p.set_defaults(func=cmd_run)

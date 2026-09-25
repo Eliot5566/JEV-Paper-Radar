@@ -87,6 +87,16 @@ def test_biorxiv_pagination(tmp_path):
     assert calls[1].endswith("/100")
 
 
+def test_biorxiv_empty_body_says_the_api_is_down(tmp_path):
+    """Observed 2026-09-26: api.biorxiv.org answered 200, application/json, zero bytes.
+    json.loads then reports "Expecting value: line 1 column 1", which sends you looking
+    for a bug in the URL you built rather than at the service."""
+    import pytest
+
+    with pytest.raises(ValueError, match="empty response"):
+        fetch_biorxiv({"type": "biorxiv"}, getter=lambda url: "", base_dir=tmp_path, today=date(2026, 9, 22))
+
+
 def test_rss_and_atom():
     rss = """<rss version="2.0"><channel><item><title>Hello &lt;b&gt;x&lt;/b&gt;</title><link>https://e.org/1</link>
     <description>&lt;p&gt;Body &amp;amp; more&lt;/p&gt;</description><guid>g1</guid></item></channel></rss>"""

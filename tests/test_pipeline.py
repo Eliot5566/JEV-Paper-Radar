@@ -333,3 +333,73 @@ def test_directory_reports_papers_read_not_what_the_last_run_judged(tmp_path):
     out = tmp_path / "index.html"
     assert main(["directory", "--out", str(out), str(cfg)]) == 0
     assert "<b>44</b> read" in out.read_text(encoding="utf-8")
+
+
+def test_a_source_that_is_down_is_named_on_the_page(tmp_path):
+    """A dead source looks exactly like a strict filter unless the page says otherwise.
+
+    The real case: bioRxiv answered 200 with an empty body for a day, the neuroscience
+    radar published "1 paper read -> 1 must-read", and nothing on the page explained it.
+    """
+    from .conftest import make_config
+
+    config = make_config(
+        tmp_path,
+        sources=[
+            {"type": "arxiv", "file": str(DEMO)},
+            {"type": "biorxiv", "name": "biorxiv", "file": "gone.json"},
+        ],
+    )
+    result = run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    assert result.judged == 44  # the working source still runs
+
+    store = Store(config.data_path)
+    assert [f["source"] for f in store.load_runs()[-1]["source_failures"]] == ["biorxiv"]
+
+    page = (config.site_path / f"{DAY.isoformat()}.html").read_text(encoding="utf-8")
+    assert "biorxiv did not answer" in page
+
+    # The banner comes from the run record, not from this process, so it has to survive
+    # a rebuild — that is how every page on the site is actually produced.
+    rebuild_site(config, store)
+    assert "biorxiv did not answer" in (config.site_path / f"{DAY.isoformat()}.html").read_text(encoding="utf-8")
+
+
+def test_a_healthy_run_has_no_warning_banner(config):
+    run(config, MockBackend(), today=DAY, notify=False, log=quiet)
+    page = (config.site_path / f"{DAY.isoformat()}.html").read_text(encoding="utf-8")
+    assert "did not answer" not in page
+
+
+def test_directory_card_flags_a_radar_whose_source_was_down():
+    from paper_radar.render import render_directory
+
+    page = render_directory(
+        [
+            {"title": "Neuroscience Radar", "tagline": "t", "url": "./neuro/", "feed": "./neuro/feed.xml",
+             "day": "2026-09-25", "judged": 1, "shortlisted": 1, "must_read": 1, "cost": 0.0,
+             "top": [], "source_failures": ["biorxiv"]},
+            {"title": "AI Radar", "tagline": "t", "url": "./ai/", "feed": "./ai/feed.xml",
+             "day": "2026-09-25", "judged": 312, "shortlisted": 40, "must_read": 28, "cost": 0.01, "top": []},
+        ]
+    )
+    assert "biorxiv did not answer" in page
+    assert page.count("did not answer") == 1  # the healthy radar stays clean
+
+
+def test_site_dir_override_publishes_elsewhere(tmp_path):
+    """The Pages root of this repo is the public directory, so the personal radar has to
+    be publishable somewhere else without editing the config a fork inherits."""
+    from paper_radar.cli import main
+
+    cfg = tmp_path / "radar.toml"
+    cfg.write_text(
+        f'[jev]\nbackend = "mock"\n'
+        f'[[sources]]\ntype = "arxiv"\nfile = "{DEMO.as_posix()}"\n'
+        '[[interests]]\nid = "agent_eval"\ntext = "Benchmarks for evaluating LLM agents"\n'
+        '[output]\nsite_dir = "site"\ndata_dir = "data"\n',
+        encoding="utf-8",
+    )
+    assert main(["run", "-c", str(cfg), "--site-dir", "site/mine", "--date", "2026-09-22", "--no-notify"]) == 0
+    assert (tmp_path / "site" / "mine" / "index.html").exists()
+    assert not (tmp_path / "site" / "index.html").exists()

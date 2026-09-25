@@ -25,6 +25,9 @@ jobs:
   radar:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # True only in the repo that publishes the public feeds; a fork is false everywhere.
+      IS_UPSTREAM: ${{ github.repository == 'Eliot5566/JEV-Paper-Radar' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,13 +60,22 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: |
+          # In this repo the Pages root is the public feed directory, so the personal
+          # radar publishes under /mine/. In a fork there are no public radars, so its
+          # own radar stays at the root, exactly where the README says it will be.
+          SITE=()
+          [ "$IS_UPSTREAM" = "true" ] && SITE=(--site-dir site/mine)
           if [[ "$LIMIT" =~ ^[0-9]+$ ]]; then
-            paper-radar run --limit "$LIMIT"
+            paper-radar run "${SITE[@]}" --limit "$LIMIT"
           else
-            paper-radar run
+            paper-radar run "${SITE[@]}"
           fi
 
+      # The six public radars below are this repo's own feeds. A fork skips them: they
+      # would spend the forker's key on topics they did not choose, and overwrite the
+      # landing page with a directory of someone else's feeds.
       - name: Public radars
+        if: github.repository == 'Eliot5566/JEV-Paper-Radar'
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -80,11 +92,16 @@ jobs:
           done
 
       - name: Build the feed directory
+        if: github.repository == 'Eliot5566/JEV-Paper-Radar'
         continue-on-error: true
         run: |
           configs=$(ls radar.public.toml radars/*.toml 2>/dev/null) || true
           if [ -n "$configs" ]; then
             paper-radar directory --out site/public/index.html --base . --base-dir . $configs
+            # And again at the Pages root. The short URL is the one that gets shared, and
+            # a stranger who lands on one person's private radar cannot tell what this is.
+            paper-radar directory --out site/index.html --base ./public --base-dir . $configs
+            touch site/.nojekyll
           fi
 
       - name: Commit audit trail

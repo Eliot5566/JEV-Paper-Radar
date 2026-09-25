@@ -23,7 +23,14 @@ def collect(
     base_dir: Path,
     getter: Getter = http_get,
     log: Callable[[str], None] = print,
+    failures: list[dict[str, str]] | None = None,
 ) -> list[Paper]:
+    """Fetch every source, skipping the ones that break.
+
+    A source that is down is invisible otherwise: the page still renders, it just says
+    "1 read" and looks like the filter went wrong. Pass `failures` and the caller can
+    record what was missing so the page can say so.
+    """
     papers: dict[str, Paper] = {}
     for source in sources:
         kind = source["type"]
@@ -37,7 +44,10 @@ def collect(
             else:
                 batch = fetch_rss(source, getter=getter, base_dir=base_dir)
         except Exception as error:  # one broken source must not kill the daily run
-            log(f"  ! source {source.get('name') or kind} failed: {error}")
+            name = source.get("name") or kind
+            log(f"  ! source {name} failed: {error}")
+            if failures is not None:
+                failures.append({"source": str(name), "error": str(error)[:300]})
             continue
         added = 0
         for paper in batch:

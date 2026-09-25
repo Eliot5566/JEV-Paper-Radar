@@ -25,7 +25,10 @@ categories = ["neuroscience"]
 [[sources]]
 type = "arxiv"
 categories = ["q-bio.NC"]
-include_cross_lists = false
+# Cross-lists on, unlike the other radars: almost nothing is submitted to q-bio.NC
+# primarily — the computational neuroscience on arXiv arrives cross-listed from cs.NE,
+# cs.LG and stat.ML. With them off this source returned one paper a day.
+include_cross_lists = true
 
 [[interests]]
 id = "neural_coding"
