@@ -24,20 +24,26 @@ days = 2
 email = "a7868783@gmail.com"
 max_records = 1200
 
-[[interests]]
-id = "clinical_eval"
-label = "Clinical evaluation"
-text = "The paper reports a machine learning model evaluated on data from human patients"
+# The PubMed query already selects for machine learning AND patients, so asking
+# "does this evaluate a model on patients?" matched 168 of 447 records — 38%. A
+# criterion that restates the search strategy selects nothing. These ask for the two
+# things that are actually rare in clinical ML, and that clinicians treat as the
+# quality markers: was it tested forward in time, and was it tested somewhere else.
 
 [[interests]]
 id = "prospective"
-label = "Prospective study"
-text = "The study evaluates a model prospectively or in a clinical workflow rather than only retrospectively"
+label = "Prospective"
+text = "The model was tested prospectively on patients seen after the model was built"
+
+[[interests]]
+id = "external"
+label = "External validation"
+text = "The model was validated on patients from a different hospital or population than it was developed on"
 
 [[interests]]
 id = "llm_clinical"
 label = "Language models"
-text = "The paper's main contribution concerns a large language model applied to clinical text or decisions"
+text = "The paper's main contribution is a large language model applied to clinical decisions or clinical notes"
 
 [thresholds]
 must_read = 0.95

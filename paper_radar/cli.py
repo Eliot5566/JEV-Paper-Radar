@@ -49,6 +49,20 @@ def load_dotenv(path: Path) -> list[str]:
     return loaded
 
 
+def _load(path: str, base_dir: str | None = None):
+    """Load a config, optionally re-basing its relative paths.
+
+    `site_dir` and `data_dir` are resolved against the config file's own directory,
+    which is what you want for `profiles/x.toml` sitting next to its data. It is not
+    what you want for `radars/agents.toml` writing to "site/public/agents": that
+    lands in radars/site/, which no one publishes. `--base-dir .` fixes it.
+    """
+    config = load_config(path)
+    if base_dir:
+        config.base_dir = Path(base_dir).resolve()
+    return config
+
+
 def _apply_env_defaults(config) -> None:
     """In GitHub Actions, a fork points its 👍/👎 links at its own repo with no config."""
     if not config.output.feedback_repo:
@@ -56,7 +70,7 @@ def _apply_env_defaults(config) -> None:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    config = load_config(args.config)
+    config = _load(args.config, args.base_dir)
     _apply_env_defaults(config)
     for warning in lint(config):
         print(f"warning: {warning}")
@@ -172,7 +186,7 @@ def cmd_directory(args: argparse.Namespace) -> int:
 
     radars = []
     for path in args.configs:
-        config = load_config(path)
+        config = _load(path, args.base_dir)
         store = Store(config.data_path)
         days = store.days()
         entry = {
@@ -189,10 +203,13 @@ def cmd_directory(args: argparse.Namespace) -> int:
             runs = [r for r in store.load_runs() if r.get("day") == day]
             entry.update(
                 day=day,
-                judged=runs[-1]["judged"] if runs else len(decisions),
+                # How many papers were read that day, not what the most recent run
+                # judged: a rebuild that judges nothing would otherwise print
+                # "0 read -> 28 worth opening", which reads as broken.
+                judged=len(decisions),
                 shortlisted=sum(1 for d in decisions if d.band in ("must_read", "maybe")),
                 must_read=len(picks),
-                cost=runs[-1].get("cost_usd", 0.0) if runs else 0.0,
+                cost=sum(float(r.get("cost_usd") or 0) for r in runs),
                 top=[d.paper.title for d in picks[:3]],
             )
         radars.append(entry)
@@ -220,7 +237,7 @@ def cmd_harvest(args: argparse.Namespace) -> int:
 
 
 def cmd_rebuild(args: argparse.Namespace) -> int:
-    config = load_config(args.config)
+    config = _load(args.config, args.base_dir)
     _apply_env_defaults(config)
     days = rebuild_site(config, Store(config.data_path))
     print(f"Rebuilt {len(days)} day page(s) in {config.site_path}")
@@ -237,6 +254,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--date", help="YYYY-MM-DD (default: today, UTC)")
     p.add_argument("--limit", type=int, help="judge at most N papers (for a first test)")
     p.add_argument("--backend", choices=["typesafe", "openrouter", "mock"], help="override jev.backend")
+    p.add_argument("--base-dir", help="resolve site_dir/data_dir against this directory instead of the config's own")
     p.add_argument("--dry-run", action="store_true", help="fetch and estimate cost without calling Jev")
     p.add_argument("--no-notify", action="store_true")
     p.set_defaults(func=cmd_run)
@@ -254,6 +272,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("configs", nargs="+", help="radar config files, in the order they should appear")
     p.add_argument("--out", required=True, help="where to write the page, e.g. site/public/index.html")
     p.add_argument("--base", default=".", help="path prefix the radar folders sit under, relative to --out")
+    p.add_argument("--base-dir", help="resolve each config's site_dir/data_dir against this directory")
     p.set_defaults(func=cmd_directory)
 
     p = sub.add_parser("demo", help="offline demo with sample papers and a mock model (no API key)")

@@ -284,3 +284,52 @@ def test_directory_lists_every_radar_with_its_own_numbers(tmp_path, capsys):
     assert "TraceGrade" in page          # a real pick from today, not a placeholder
     assert "Fork it" in page             # the page has to convert readers into users
     assert "wrote" in capsys.readouterr().out
+
+
+def test_base_dir_override_puts_output_where_it_is_published(tmp_path):
+    """A config in a subfolder resolves site_dir against that subfolder, which silently
+    publishes nothing. This cost a day of six radars writing into radars/site/."""
+    from paper_radar.cli import main
+
+    folder = tmp_path / "radars"
+    folder.mkdir()
+    (folder / "x.toml").write_text(
+        f'[jev]\nbackend = "mock"\n'
+        f'[[sources]]\ntype = "arxiv"\nfile = "{DEMO.as_posix()}"\n'
+        '[[interests]]\nid = "agent_eval"\ntext = "Benchmarks for evaluating LLM agents"\n'
+        '[output]\nsite_dir = "site/out"\ndata_dir = "data/out"\n',
+        encoding="utf-8",
+    )
+    # without the override, everything lands next to the config
+    assert main(["run", "-c", str(folder / "x.toml"), "--date", "2026-09-22", "--no-notify"]) == 0
+    assert (folder / "site" / "out" / "index.html").exists()
+    assert not (tmp_path / "site" / "out" / "index.html").exists()
+
+    # with it, output lands where the publisher looks
+    assert main(["run", "-c", str(folder / "x.toml"), "--date", "2026-09-23",
+                 "--base-dir", str(tmp_path), "--no-notify"]) == 0
+    assert (tmp_path / "site" / "out" / "index.html").exists()
+
+    out = tmp_path / "index.html"
+    assert main(["directory", "--out", str(out), "--base-dir", str(tmp_path), str(folder / "x.toml")]) == 0
+    assert "worth opening" in out.read_text(encoding="utf-8")
+
+
+def test_directory_reports_papers_read_not_what_the_last_run_judged(tmp_path):
+    from paper_radar.cli import main
+
+    cfg = tmp_path / "r.toml"
+    cfg.write_text(
+        f'[jev]\nbackend = "mock"\n'
+        f'[[sources]]\ntype = "arxiv"\nfile = "{DEMO.as_posix()}"\n'
+        '[[interests]]\nid = "agent_eval"\ntext = "Benchmarks for evaluating LLM agents"\n'
+        f'[output]\nsite_dir = "{(tmp_path / "s").as_posix()}"\ndata_dir = "{(tmp_path / "d").as_posix()}"\n',
+        encoding="utf-8",
+    )
+    assert main(["run", "-c", str(cfg), "--date", "2026-09-22", "--no-notify"]) == 0
+    # a second run the same day judges nothing; the card must still say 44 were read
+    assert main(["run", "-c", str(cfg), "--date", "2026-09-22", "--no-notify"]) == 0
+
+    out = tmp_path / "index.html"
+    assert main(["directory", "--out", str(out), str(cfg)]) == 0
+    assert "<b>44</b> read" in out.read_text(encoding="utf-8")

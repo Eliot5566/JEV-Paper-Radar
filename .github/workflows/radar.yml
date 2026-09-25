@@ -75,7 +75,7 @@ jobs:
           for config in radar.public.toml radars/*.toml; do
             [ -f "$config" ] || continue
             echo "::group::$config"
-            paper-radar run -c "$config" --no-notify || echo "!! $config failed"
+            paper-radar run -c "$config" --base-dir . --no-notify || echo "!! $config failed"
             echo "::endgroup::"
           done
 
@@ -84,7 +84,7 @@ jobs:
         run: |
           configs=$(ls radar.public.toml radars/*.toml 2>/dev/null) || true
           if [ -n "$configs" ]; then
-            paper-radar directory --out site/public/index.html --base . $configs
+            paper-radar directory --out site/public/index.html --base . --base-dir . $configs
           fi
 
       - name: Commit audit trail
