@@ -1,0 +1,258 @@
+# Signal Radar — tech news, filtered for first-hand information.
+#
+# The other radars in this folder answer "is this paper about my field?". News does not
+# have that problem; it has the opposite one. Everything in a tech feed is about your
+# field, fifteen times over. The question worth asking is "is this new information, or
+# is it the fifteenth retelling of someone else's announcement?"
+#
+# So the three interests below are about PROVENANCE and EVIDENCE, not topic, and they
+# are deliberately not about importance: a radar cannot know what matters to you, but it
+# can tell a release note from a prediction. Interests combine with `max`, so any one of
+# the three is enough to keep an item; the exclusions then veto the retellings.
+#
+# Duplicate folding is on (see [radar] below). On a news feed it is most of the value:
+# one announcement reaches this radar from the lab's own blog, three outlets, Hacker
+# News and two subreddits, and judging all seven costs seven times as much as judging
+# one. Folding happens before Jev sees anything.
+#
+# Everything here is public and needs no key. Reddit may answer 403 from GitHub's IP
+# ranges; if the page shows "reddit did not answer", register a free script app at
+# reddit.com/prefs/apps and add REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET as repo
+# secrets. There is no X / Twitter source: X has had no free read API since 2023 and its
+# terms forbid reading a timeline through anything else. Bluesky is the substitute, and
+# checked on 2026-10-02 its author feeds answer without a key, account or rate-limit
+# deal — while `searchPosts` answers 403 unless you are logged in, so accounts are named
+# here rather than keywords.
+
+[radar]
+title = "Signal Radar"
+max_papers = 1500
+combine = "max"
+fold_duplicates = true
+fold_threshold = 0.6        # token overlap on titles; 0.6 merges retitled copies and
+                            # leaves "GPT-5 ships" and "GPT-6 ships" apart
+
+[jev]
+backend = "typesafe"
+model = "jev-1.13.0"
+concurrency = 8
+
+# ── Reddit ──────────────────────────────────────────────────────────────────────
+# `top` over the last day, not `new`: a post is an hour old and has one upvote whether
+# it is a leak from a frontier lab or a screenshot of a chatbot being rude, and a
+# once-a-day run can simply ask the subreddit which it was. The floors are per bundle
+# because a 400-point post in r/accelerate and in r/technology are not the same event.
+
+[[sources]]
+type = "reddit"
+name = "reddit-ai"
+subreddits = ["singularity", "accelerate", "LocalLLaMA", "MachineLearning"]
+listing = "top"
+period = "day"
+min_score = 60
+min_comments = 5
+
+[[sources]]
+type = "reddit"
+name = "reddit-releases"
+subreddits = ["OpenAI", "ClaudeAI", "StableDiffusion"]
+listing = "top"
+period = "day"
+min_score = 80
+
+[[sources]]
+type = "reddit"
+name = "reddit-industry"
+subreddits = ["artificial", "startups", "SaaS"]
+listing = "top"
+period = "day"
+min_score = 100
+
+[[sources]]
+type = "reddit"
+name = "reddit-tech"
+subreddits = ["technology", "programming", "hardware"]
+listing = "top"
+period = "day"
+min_score = 800             # r/technology alone runs to thousands of points a day
+
+# ── Bluesky ─────────────────────────────────────────────────────────────────────
+# Every handle below was checked against app.bsky.actor.getProfiles on 2026-10-02 and
+# is posting: a handle that merely exists is worse than no source at all, and several
+# obvious guesses turned out to be squatted, empty or parody accounts. The labs
+# themselves are NOT usefully here — anthropic.com has 16,000 followers and zero posts,
+# deepmind.bsky.social and huggingface.bsky.social are empty, openai.com does not
+# resolve — so first-party lab announcements come from their own RSS below, not from
+# here. What Bluesky gives you is the people who read the papers.
+
+[[sources]]
+type = "bluesky"
+name = "bluesky-people"
+actors = [
+  "simonwillison.net",            # 4,977 posts: releases, with what he actually tried
+  "natolambert.bsky.social",      # Interconnects; post-training and open models
+  "emollick.bsky.social",         # Wharton; evaluations of what the tools can do
+  "hardmaru.bsky.social",         # low volume, high signal
+]
+limit = 50
+filter = "posts_no_replies"
+min_likes = 10
+
+[[sources]]
+type = "bluesky"
+name = "bluesky-press"
+actors = ["theverge.com", "arstechnica.com", "wired.com", "404media.co", "technologyreview.com"]
+limit = 50
+require_link = true         # the link card is the story; a bare post from an outlet is a tease
+min_likes = 25              # these accounts post everything they publish
+
+# ── Hacker News and aggregators ─────────────────────────────────────────────────
+
+[[sources]]
+type = "rss"
+name = "hn"
+url = "https://hnrss.org/newest?points=150"
+
+[[sources]]
+type = "rss"
+name = "techmeme"
+url = "https://www.techmeme.com/feed.xml"
+
+# ── First-party: release feeds ──────────────────────────────────────────────────
+# GitHub serves <repo>/releases.atom for every public repository, which makes these the
+# most reliably first-hand source on this list: the text is written by the people who
+# shipped the thing, and the version number is a verifiable number by construction.
+
+[[sources]]
+type = "rss"
+name = "releases-vllm"
+url = "https://github.com/vllm-project/vllm/releases.atom"
+
+[[sources]]
+type = "rss"
+name = "releases-ollama"
+url = "https://github.com/ollama/ollama/releases.atom"
+
+[[sources]]
+type = "rss"
+name = "releases-llama-cpp"
+url = "https://github.com/ggml-org/llama.cpp/releases.atom"
+
+[[sources]]
+type = "rss"
+name = "releases-transformers"
+url = "https://github.com/huggingface/transformers/releases.atom"
+
+# ── First-party: blogs ──────────────────────────────────────────────────────────
+# Verify these before trusting them. Lab sites restructure often and several do not
+# serve a feed at all; a 404 here shows up on the page as "<name> did not answer"
+# rather than as a quiet gap. `paper-radar run -c radars/signal.toml --dry-run` fetches
+# every source and judges nothing, so it costs nothing to check.
+
+[[sources]]
+type = "rss"
+name = "simonwillison"
+url = "https://simonwillison.net/atom/everything/"
+
+[[sources]]
+type = "rss"
+name = "interconnects"
+url = "https://www.interconnects.ai/feed"
+
+[[sources]]
+type = "rss"
+name = "huggingface-blog"
+url = "https://huggingface.co/blog/feed.xml"
+
+# Unverified as of 2026-10-02 — uncomment one at a time once --dry-run shows it works:
+# [[sources]]
+# type = "rss"
+# name = "openai"
+# url = "https://openai.com/news/rss.xml"
+#
+# [[sources]]
+# type = "rss"
+# name = "deepmind"
+# url = "https://deepmind.google/blog/rss.xml"
+
+# ── What is worth reading ───────────────────────────────────────────────────────
+# One idea per interest, phrased as what the item IS. None of them mentions a topic:
+# the sources already decide the topic, and asking "is this about AI?" on a feed of AI
+# news fires on everything, which is the same as filtering nothing.
+
+[[interests]]
+id = "first_party"
+label = "First-party"
+text = "The item is an announcement published by the organisation that made the thing it describes: a release, a price change, a shutdown, or a result they measured themselves"
+
+[[interests]]
+id = "measurement"
+label = "Has numbers"
+text = "The item reports a specific measured quantity, such as a benchmark score, a latency, a price, a parameter count, a funding amount, or an error rate"
+
+[[interests]]
+id = "usable"
+label = "Usable today"
+text = "The item is something a reader can use immediately: source code, model weights, an API, a dataset, or a product that is generally available"
+
+# ── What gets vetoed ────────────────────────────────────────────────────────────
+# Each one is phrased as what the item IS, never as "not X": Jev reads a negation
+# literally, and `paper-radar check` will warn about one.
+
+[[exclude]]
+id = "coverage"
+label = "Coverage of coverage"
+text = "The item is a news story about an article, post, interview, or announcement that was published somewhere else"
+
+[[exclude]]
+id = "speculation"
+label = "Speculation"
+text = "The item is a prediction, forecast, or opinion about what will happen in the future"
+
+[[exclude]]
+id = "asking"
+label = "Asking the room"
+text = "The item asks a community for opinions, advice, recommendations, or help with a problem"
+
+[[exclude]]
+id = "argument"
+label = "Argument"
+text = "The item is an argument about politics, ideology, or the personalities of individual people"
+
+[[exclude]]
+id = "reaction"
+label = "Reaction"
+text = "The item is a screenshot, a meme, or a one-line reaction to something someone else said"
+
+[thresholds]
+# Starting points, not measured ones. After a week of running, `paper-radar calibrate`
+# fits these to your own 👍/👎 and prints what it would change.
+must_read = 0.90
+maybe = 0.80
+exclude = 0.70              # an exclusion vetoes at this probability; news needs a
+                            # lower bar than papers because the noise is the default
+
+[signals]
+paper_type = true
+code_release = false        # the `usable` interest already covers this, better
+
+# The contribution-type Choice, rewritten for news. The research defaults (new_method,
+# benchmark, survey...) classify nothing here.
+[signals.types]
+announcement = "A first-party announcement of something that now exists or has changed"
+measurement = "A report of measurements, results, or benchmarks someone ran"
+release = "A release of code, weights, a dataset, or an API"
+incident = "An outage, breach, recall, lawsuit, or other thing that went wrong"
+business = "Funding, hiring, acquisitions, pricing, or other business events"
+analysis = "An explanation or analysis of something that already happened"
+rumour = "A claim attributed to unnamed sources, or a leak"
+opinion = "An argument, prediction, or personal take"
+
+[output]
+site_dir = "site/public/signal"
+data_dir = "data/public/signal"
+site_url = "https://eliot5566.github.io/JEV-Paper-Radar/public/signal/"
+feed_days = 14
+near_misses = 10            # worth watching on a new radar: these are what the
+                            # thresholds are about to let through or keep out
+tagline = "Tech news with the retellings removed: first-party announcements, measured numbers, and things you can use today."

@@ -10,7 +10,9 @@ from ..http import http_get
 from ..models import Paper
 from .arxiv import fetch_arxiv
 from .biorxiv import fetch_biorxiv
+from .bluesky import fetch_bluesky
 from .pubmed import fetch_pubmed
+from .reddit import fetch_reddit
 from .rss import fetch_rss
 
 Getter = Callable[[str], str]
@@ -41,6 +43,10 @@ def collect(
                 batch = fetch_biorxiv(source, getter=getter, base_dir=base_dir, today=today)
             elif kind == "pubmed":
                 batch = fetch_pubmed(source, getter=getter, base_dir=base_dir)
+            elif kind == "reddit":
+                batch = fetch_reddit(source, getter=getter, base_dir=base_dir)
+            elif kind == "bluesky":
+                batch = fetch_bluesky(source, getter=getter, base_dir=base_dir)
             else:
                 batch = fetch_rss(source, getter=getter, base_dir=base_dir)
         except Exception as error:  # one broken source must not kill the daily run

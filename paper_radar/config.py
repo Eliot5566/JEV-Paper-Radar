@@ -14,12 +14,16 @@ from typing import Any
 ID_RE = re.compile(r"^[a-z0-9_]{1,40}$")
 NEGATION_RE = re.compile(r"\b(not|no|never|without|except|unless|excluding|neither|nor)\b|n't\b", re.IGNORECASE)
 BACKENDS = {"typesafe", "openrouter", "mock"}
-SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "pubmed", "rss"}
+SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "pubmed", "reddit", "bluesky", "rss"}
 SOURCE_KEYS = {
     "arxiv": {"categories", "include_cross_lists", "include_replacements"},
     "biorxiv": {"server", "days", "categories"},
     "medrxiv": {"server", "days", "categories"},
     "pubmed": {"query", "days", "datetype", "email", "max_records", "exclude_types"},
+    "reddit": {"subreddit", "subreddits", "listing", "period", "limit", "min_score",
+               "min_comments", "allow_nsfw", "require_link"},
+    "bluesky": {"actor", "actors", "limit", "filter", "min_likes", "min_reposts",
+                "require_link", "include_reposts", "langs"},
     "rss": {"url", "limit"},
 }
 COMBINE_MODES = {"max", "noisy_or"}
@@ -113,6 +117,9 @@ class Signals:
     paper_type: bool = True
     code_release: bool = True
     evidence: bool = False
+    # The contribution-type Choice. The defaults describe research papers; a news radar
+    # overrides them with [signals.types] (announcement / measurement / rumour ...).
+    types: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -142,6 +149,10 @@ class Config:
     title: str = "Paper Radar"
     max_papers: int = 3000
     combine: str = "max"
+    # News sources repeat each other; paper feeds do not. Off by default so a radar
+    # behaves exactly as before unless it asks for folding.
+    fold_duplicates: bool = False
+    fold_threshold: float = 0.6
     sources: list[dict[str, Any]] = field(default_factory=list)
     interests: list[Interest] = field(default_factory=list)
     exclusions: list[Exclusion] = field(default_factory=list)
@@ -200,7 +211,7 @@ def parse_config(raw: dict[str, Any], base_dir: Path | None = None) -> Config:
         raise ConfigError(f"Unknown top-level section(s): {', '.join(unknown)}")
 
     radar = raw.get("radar", {})
-    radar_allowed = {"title", "max_papers", "combine"}
+    radar_allowed = {"title", "max_papers", "combine", "fold_duplicates", "fold_threshold"}
     bad = sorted(set(radar) - radar_allowed)
     if bad:
         raise ConfigError(f"Unknown key(s) in [radar]: {', '.join(bad)}")
@@ -209,6 +220,8 @@ def parse_config(raw: dict[str, Any], base_dir: Path | None = None) -> Config:
         title=radar.get("title", "Paper Radar"),
         max_papers=int(radar.get("max_papers", 3000)),
         combine=radar.get("combine", "max"),
+        fold_duplicates=bool(radar.get("fold_duplicates", False)),
+        fold_threshold=float(radar.get("fold_threshold", 0.6)),
         sources=list(raw.get("sources", [])),
         interests=[_build(Interest, item, "interests") for item in raw.get("interests", [])],
         exclusions=[_build(Exclusion, item, "exclude") for item in raw.get("exclude", [])],
@@ -294,6 +307,16 @@ def validate(config: Config) -> None:
         raise ConfigError(f"radar.combine must be one of {sorted(COMBINE_MODES)}")
     if config.max_papers < 1:
         raise ConfigError("radar.max_papers must be >= 1")
+    for key, description in config.signals.types.items():
+        if not ID_RE.match(key):
+            raise ConfigError(f"signals.types key {key!r} must match [a-z0-9_]{{1,40}}")
+        if not str(description).strip():
+            raise ConfigError(f"signals.types.{key} must describe the category in a sentence")
+    if config.signals.types and len(config.signals.types) < 2:
+        raise ConfigError("signals.types needs at least two categories, or Choice has nothing to choose")
+    if not 0.3 <= config.fold_threshold <= 1:
+        # Below ~0.3 unrelated headlines start merging, which loses items silently.
+        raise ConfigError("radar.fold_threshold must be between 0.3 and 1")
 
     if config.output.dedupe_days < 1 or config.output.feed_days < 1 or config.output.near_misses < 0:
         raise ConfigError("output.dedupe_days and output.feed_days must be >= 1, near_misses >= 0")
@@ -320,6 +343,13 @@ def validate(config: Config) -> None:
             raise ConfigError(
                 f'sources[{index}] (pubmed) needs a query, for example '
                 'query = \'"atrial fibrillation"[Title/Abstract]\''
+            )
+        if kind == "reddit" and not (source.get("subreddit") or source.get("subreddits") or source.get("file")):
+            raise ConfigError(f'sources[{index}] (reddit) needs subreddits = ["singularity", ...]')
+        if kind == "bluesky" and not (source.get("actor") or source.get("actors") or source.get("file")):
+            raise ConfigError(
+                f'sources[{index}] (bluesky) needs actors = ["handle.bsky.social", ...]. '
+                "Keyword search is not available without a login."
             )
 
 

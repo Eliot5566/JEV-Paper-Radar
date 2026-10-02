@@ -1,0 +1,93 @@
+{
+  "kind": "Listing",
+  "data": {
+    "after": "t3_zzzzz",
+    "children": [
+      {
+        "kind": "t3",
+        "data": {
+          "id": "1aaaaa",
+          "subreddit": "singularity",
+          "title": "OpenAI publishes the full eval suite behind its latest model card",
+          "selftext": "",
+          "url": "https://openai.com/index/eval-suite/?utm_source=reddit",
+          "url_overridden_by_dest": "https://openai.com/index/eval-suite/?utm_source=reddit",
+          "permalink": "/r/singularity/comments/1aaaaa/openai_publishes_the_full_eval_suite/",
+          "domain": "openai.com",
+          "is_self": false,
+          "score": 2411,
+          "num_comments": 318,
+          "created_utc": 1791000000.0,
+          "author": "someposter",
+          "link_flair_text": "AI",
+          "over_18": false,
+          "stickied": false
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "1bbbbb",
+          "subreddit": "singularity",
+          "title": "Discussion: what will the next five years actually look like?",
+          "selftext": "I keep thinking about   this and wanted to ask everyone what they expect.",
+          "url": "https://www.reddit.com/r/singularity/comments/1bbbbb/discussion_what_will/",
+          "permalink": "/r/singularity/comments/1bbbbb/discussion_what_will/",
+          "domain": "self.singularity",
+          "is_self": true,
+          "score": 44,
+          "num_comments": 190,
+          "created_utc": 1791000100.0,
+          "author": "wondering",
+          "over_18": false,
+          "stickied": false
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "1ccccc",
+          "subreddit": "singularity",
+          "title": "Monthly discussion thread",
+          "selftext": "Pinned.",
+          "url": "https://www.reddit.com/r/singularity/comments/1ccccc/monthly/",
+          "permalink": "/r/singularity/comments/1ccccc/monthly/",
+          "domain": "self.singularity",
+          "is_self": true,
+          "score": 900,
+          "num_comments": 1200,
+          "created_utc": 1790900000.0,
+          "author": "AutoModerator",
+          "over_18": false,
+          "stickied": true
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "1ddddd",
+          "subreddit": "singularity",
+          "title": "Low effort screenshot",
+          "selftext": "",
+          "url": "https://i.redd.it/abc.png",
+          "permalink": "/r/singularity/comments/1ddddd/low_effort/",
+          "domain": "i.redd.it",
+          "is_self": false,
+          "score": 3,
+          "num_comments": 1,
+          "created_utc": 1791000200.0,
+          "author": "someone",
+          "over_18": false,
+          "stickied": false
+        }
+      },
+      {
+        "kind": "t1",
+        "data": {
+          "id": "notapost",
+          "body": "a comment that must never become a Paper"
+        }
+      }
+    ]
+  }
+}

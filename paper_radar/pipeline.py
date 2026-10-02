@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Callable
 
+from .cluster import fold
 from .config import Config
 from .jev import Backend, JevError
 from .models import Paper
@@ -178,6 +179,13 @@ def run(
     fetched = len(papers)
     seen = store.seen_ids(today, config.output.dedupe_days)
     fresh = [p for p in papers if p.id not in seen and p.title]
+    if config.fold_duplicates and fresh:
+        # Before judging, not after: fifteen outlets reporting one announcement should
+        # cost one judgement, not fifteen.
+        before = len(fresh)
+        fresh = fold(fresh, threshold=config.fold_threshold)
+        if before != len(fresh):
+            log(f"  - folded {before} items into {len(fresh)} stories")
     cap = min(config.max_papers, limit) if limit else config.max_papers
     if len(fresh) > cap:
         log(f"  ! {len(fresh)} new papers exceeds the cap of {cap}; judging the first {cap}")

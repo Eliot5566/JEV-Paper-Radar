@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -35,14 +36,30 @@ def http_get(url: str, *, timeout: float = 60.0, retries: int = 3, headers: dict
     raise last_error
 
 
-def post_json(url: str, payload: dict[str, Any], *, headers: dict[str, str] | None = None, timeout: float = 30.0) -> Any:
-    """POST JSON and return the decoded JSON body (raises urllib errors on failure)."""
-    body = json.dumps(payload).encode("utf-8")
+def post_json(
+    url: str,
+    payload: dict[str, Any],
+    *,
+    headers: dict[str, str] | None = None,
+    timeout: float = 30.0,
+    form: bool = False,
+) -> Any:
+    """POST and return the decoded JSON body (raises urllib errors on failure).
+
+    `form=True` sends the payload url-encoded instead of as JSON, which is what OAuth
+    token endpoints want (Reddit's rejects a JSON body).
+    """
+    if form:
+        body = urllib.parse.urlencode(payload).encode("utf-8")
+        content_type = "application/x-www-form-urlencoded"
+    else:
+        body = json.dumps(payload).encode("utf-8")
+        content_type = "application/json"
     request = urllib.request.Request(
         url,
         data=body,
         method="POST",
-        headers={"User-Agent": USER_AGENT, "Content-Type": "application/json", **(headers or {})},
+        headers={"User-Agent": USER_AGENT, "Content-Type": content_type, **(headers or {})},
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
         raw = response.read()

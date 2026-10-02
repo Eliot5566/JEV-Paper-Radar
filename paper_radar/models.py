@@ -19,6 +19,14 @@ class Paper:
     categories: list[str] = field(default_factory=list)
     published: str = ""
     announce_type: str = ""
+    # For news and social sources. `url` points at the thing itself (the announcement,
+    # the article); `discussion` at where people are arguing about it. `metrics` are
+    # upvotes and likes: rendered, never judged — the model is not asked to compare
+    # numbers, and popularity is not what these radars filter on.
+    discussion: str = ""
+    metrics: dict[str, int] = field(default_factory=dict)
+    # Other items that turned out to be the same story, folded in before judging.
+    duplicates: list[dict[str, str]] = field(default_factory=list)
 
     def state(self) -> dict[str, Any]:
         """What Jev sees. Only the fields the questions need ("retrieve, then judge").

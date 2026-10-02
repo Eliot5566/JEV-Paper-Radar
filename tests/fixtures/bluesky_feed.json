@@ -1,0 +1,64 @@
+{
+  "feed": [
+    {
+      "post": {
+        "uri": "at://did:plc:aaa/app.bsky.feed.post/3mwqgsd4cgs2a",
+        "cid": "bafy1",
+        "author": {"did": "did:plc:aaa", "handle": "lab.example.com", "displayName": "Example Lab"},
+        "record": {
+          "$type": "app.bsky.feed.post",
+          "createdAt": "2026-10-01T13:22:23.989Z",
+          "langs": ["en"],
+          "text": "We are releasing the weights and the eval harness today."
+        },
+        "embed": {
+          "$type": "app.bsky.embed.external#view",
+          "external": {
+            "uri": "https://blog.example.com/weights?utm_source=bluesky",
+            "title": "Releasing the weights for Example-3",
+            "description": "Weights, the eval harness and a measured 41% reduction in latency.",
+            "thumb": "https://cdn.bsky.app/img/x.webp"
+          }
+        },
+        "replyCount": 15,
+        "repostCount": 140,
+        "likeCount": 701,
+        "indexedAt": "2026-10-01T13:22:24.362Z"
+      }
+    },
+    {
+      "post": {
+        "uri": "at://did:plc:bbb/app.bsky.feed.post/3mwolmfws5k2r",
+        "cid": "bafy2",
+        "author": {"did": "did:plc:bbb", "handle": "someone.bsky.social", "displayName": "Someone"},
+        "record": {
+          "$type": "app.bsky.feed.post",
+          "createdAt": "2026-10-01T19:43:14.855Z",
+          "langs": ["en"],
+          "text": "Honestly the vibes this week are unreal"
+        },
+        "replyCount": 2,
+        "repostCount": 0,
+        "likeCount": 3,
+        "indexedAt": "2026-10-01T19:43:15.000Z"
+      }
+    },
+    {
+      "post": {
+        "uri": "at://did:plc:ccc/app.bsky.feed.post/3mwqx5kus2z24",
+        "cid": "bafy3",
+        "author": {"did": "did:plc:ccc", "handle": "elsewhere.bsky.social", "displayName": "Elsewhere"},
+        "record": {"$type": "app.bsky.feed.post", "createdAt": "2026-10-01T18:00:00.000Z", "langs": ["ja"], "text": "別の言語の投稿"},
+        "replyCount": 0,
+        "repostCount": 50,
+        "likeCount": 200,
+        "indexedAt": "2026-10-01T18:00:01.000Z"
+      },
+      "reason": {
+        "$type": "app.bsky.feed.defs#reasonRepost",
+        "by": {"did": "did:plc:aaa", "handle": "lab.example.com"},
+        "indexedAt": "2026-10-01T18:15:05.366Z"
+      }
+    }
+  ]
+}

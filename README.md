@@ -36,7 +36,7 @@ Judgement instead of prose is what makes the arithmetic work. There is nothing t
 
 ## Subscribe to one before you set anything up
 
-Six radars run here every weekday. Take the RSS link for your field — nothing to install, no key, no account:
+Seven radars run here every weekday. Take the RSS link for your field — nothing to install, no key, no account:
 
 **https://eliot5566.github.io/JEV-Paper-Radar/public/**
 
@@ -48,6 +48,7 @@ Six radars run here every weekday. Take the RSS link for your field — nothing 
 | [Robot learning](https://eliot5566.github.io/JEV-Paper-Radar/public/robotics/) | cs.RO |
 | [Neuroscience](https://eliot5566.github.io/JEV-Paper-Radar/public/neuro/) | bioRxiv neuroscience + q-bio.NC |
 | [Clinical AI](https://eliot5566.github.io/JEV-Paper-Radar/public/clinical/) | PubMed — models evaluated on patients |
+| [Signal](https://eliot5566.github.io/JEV-Paper-Radar/public/signal/) | tech news, Reddit and Bluesky — with the retellings removed |
 
 Each is an ordinary config file in [`radars/`](radars). Fork the repo and yours will be narrower, and much more useful.
 
@@ -164,7 +165,9 @@ paper-radar calibrate --precision 0.9 --recall 0.9
 | `arxiv` | official RSS, any categories, `["*"]` = every archive | new submissions and cross-lists; revisions skipped |
 | `biorxiv` / `medrxiv` | public details API | version-1 preprints, optional category filter |
 | `pubmed` | NCBI E-utilities, any PubMed query | errata and comments skipped; set `NCBI_API_KEY` to go from 3 to 10 req/s |
-| `rss` | any RSS or Atom feed | journals, lab blogs, `hnrss.org`, newsletters |
+| `rss` | any RSS or Atom feed | journals, lab blogs, `hnrss.org`, newsletters, GitHub `releases.atom` |
+| `reddit` | subreddit listings | `top`/`day` by default, score and comment floors; set `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` if Reddit 403s your CI |
+| `bluesky` | public AppView author feeds | no key, no account; named accounts only — keyword search needs a login |
 
 ```toml
 [[sources]]
@@ -175,6 +178,30 @@ email = "you@example.com"   # NCBI asks callers to identify themselves
 ```
 
 Ready-made profiles live in [`profiles/`](profiles): LLM research, neuroscience (bioRxiv), and a whole-arXiv watch for one narrow topic. PRs with your field's profile are very welcome.
+
+### News is a different problem from papers
+
+A paper feed has almost no duplicates and every item is a primary source. A news feed is
+the reverse: one announcement, then fifteen outlets reporting the announcement, then
+three subreddits linking the outlets. Asking "is this about AI?" on a feed of AI news
+fires on everything, which filters nothing.
+
+So [`radars/signal.toml`](radars/signal.toml) asks about provenance instead of topic —
+*is this a first-party announcement, does it report a number someone measured, can I use
+it today* — and vetoes coverage-of-coverage, predictions and reaction posts. Before any
+of that, near-duplicates are folded into one story by canonicalised URL plus title token
+overlap: no model, no embeddings, and it runs **before** Jev, so one announcement costs
+one judgement instead of seven. Every folded copy is listed on the card rather than
+dropped.
+
+There is no X / Twitter source. X has had no free read API since 2023 and its terms
+forbid reading a timeline through anything else, so Bluesky's public AppView stands in
+for it: author feeds answer with no key, no account and no rate-limit deal. Its
+`searchPosts` endpoint answers 403 unless you are logged in, so the config names accounts
+rather than keywords — and every handle in it was checked against the live API, because
+several obvious guesses turned out to be squatted, empty or parody accounts. The labs
+themselves are not usefully on Bluesky; their own RSS is where first-party announcements
+come from.
 
 ## Screening mode, for systematic reviews
 
@@ -268,6 +295,7 @@ Three rounds of it, including the predictions that were wrong, are in [`benchmar
 - [x] PubMed source via NCBI E-utilities
 - [x] **Screening mode** for systematic reviews: criteria as Nouls, PRISMA 2020 counts, WSS measured against your own decisions
 - [x] Validated against 12 Cochrane reviews' own title/abstract screening decisions
+- [x] News mode: Reddit and Bluesky sources, with near-duplicate folding before judging
 - [ ] Hugging Face Daily Papers source
 - [ ] **Lab mode**: one repo, many members, a page per person plus a shared feed
 - [ ] Citation-claim checks and missing-methods flags for your must-reads

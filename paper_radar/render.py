@@ -40,6 +40,7 @@ nav a{margin-left:14px;font-size:14px;color:var(--muted)}
 .arrow{color:var(--muted);font-size:18px}
 .meta{font-size:13px;color:var(--muted);margin:0 0 6px;font-variant-numeric:tabular-nums}
 .banner{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px;margin:12px 0}
+.by .discuss{color:var(--accent)}
 .banner .why{display:block;margin-top:4px;font-size:12.5px;opacity:.8;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 h2{font-size:18px;margin:28px 0 10px;display:flex;align-items:baseline;gap:8px}
 h2 small{font-weight:400;color:var(--muted);font-size:14px}
@@ -99,6 +100,11 @@ def _num(value: int) -> str:
     return f"{value:,}"
 
 
+def _metric(name: str, value: int) -> str:
+    """"1 comment", not "1 comments"."""
+    return f"{value:,} {name[:-1] if value == 1 and name.endswith('s') else name}"
+
+
 def _authors(authors: list[str]) -> str:
     if not authors:
         return ""
@@ -153,13 +159,36 @@ def _card(d: Decision, labels: dict[str, str], feedback_repo: str = "") -> str:
         f"{_e(labels.get(k, k))} {_pct(v)}</span>"
         for k, v in d.top_interests()
     )
+    if p.metrics:
+        # Shown because it is useful context, kept out of `state()` because the model is
+        # never asked to compare numbers and this radar does not rank by popularity.
+        tags.append(f'<span class="tag">{_e(" · ".join(_metric(k, v) for k, v in p.metrics.items()))}</span>')
     meta = " · ".join(x for x in [_authors(p.authors), ", ".join(p.categories[:3])] if x)
     summary = f'<p class="tldr">{_e(d.summary)}</p>' if d.summary else ""
     abstract = f"<details><summary>Abstract</summary><p>{_e(p.abstract)}</p></details>" if p.abstract else ""
+    discuss = (
+        f'<a class="discuss" href="{_url(p.discussion)}">discussion</a>'
+        if p.discussion and p.discussion != p.url
+        else ""
+    )
+    # The folded copies are listed rather than dropped: the page should admit what it
+    # decided not to show you.
+    if p.duplicates:
+        items = "".join(
+            f'<li><a href="{_url(str(x.get("url") or ""))}">{_e(str(x.get("title") or ""))}</a>'
+            f' <span class="tag">{_e(str(x.get("source") or ""))}</span></li>'
+            for x in p.duplicates
+        )
+        also = (
+            f"<details><summary>Same story elsewhere ({len(p.duplicates)})</summary>"
+            f'<div class="list"><ul>{items}</ul></div></details>'
+        )
+    else:
+        also = ""
     return (
         f'<article class="card {d.band}"><div class="row">{"".join(tags)}</div>'
         f'<h3><a href="{_url(p.url)}">{_e(p.title)}</a></h3>'
-        f'<p class="by">{_e(meta)}</p>{summary}<div class="why">{why}</div>{abstract}'
+        f'<p class="by">{_e(meta)}{" · " if meta and discuss else ""}{discuss}</p>{summary}<div class="why">{why}</div>{abstract}{also}'
         f'<div class="foot"><span class="id">{_e(p.id)}</span>{_votes(d, feedback_repo)}</div></article>'
     )
 

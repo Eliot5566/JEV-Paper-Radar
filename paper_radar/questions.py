@@ -58,10 +58,15 @@ def build_questions(config: Config) -> dict[str, dict[str, Any]]:
     for exclusion in config.exclusions:
         questions[EXCLUDE_PREFIX + exclusion.id] = noul(exclusion.text)
     if config.signals.paper_type:
+        custom = config.signals.types
         questions[PAPER_TYPE_KEY] = {
             "type": "choice",
-            "instructions": "What is the main contribution type of this paper?",
-            "criteria": dict(PAPER_TYPES),
+            "instructions": (
+                "Which of these best describes this item?"
+                if custom
+                else "What is the main contribution type of this paper?"
+            ),
+            "criteria": dict(custom or PAPER_TYPES),
         }
     if config.signals.code_release:
         questions[CODE_KEY] = noul(CODE_STATEMENT)
