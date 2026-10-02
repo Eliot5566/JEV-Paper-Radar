@@ -325,6 +325,72 @@ def test_reddit_rss_parses_with_the_plain_rss_source():
     )
     [paper] = parse_feed(atom, name="reddit-ai")
     assert paper.title == "OpenAI publishes the full eval suite behind its latest model card"
-    assert paper.url == "https://www.reddit.com/r/singularity/comments/1aaaaa/openai_publishes/"
+    # url is the thing the post links to; the thread is the discussion
+    assert paper.url == "https://openai.com/index/x/"
+    assert paper.discussion == "https://www.reddit.com/r/singularity/comments/1aaaaa/openai_publishes/"
     assert "The lab published the eval suite." in paper.abstract
     assert "<" not in paper.abstract
+
+
+def test_a_reddit_self_post_keeps_its_thread_as_the_url():
+    from paper_radar.sources.rss import parse_feed
+
+    thread = "https://www.reddit.com/r/singularity/comments/1bbbbb/discussion/"
+    atom = (
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>top : singularity</title><entry>'
+        f'<content type="html">&lt;p&gt;Thoughts?&lt;/p&gt; &lt;a href="{thread}"&gt;[link]&lt;/a&gt;</content>'
+        f'<id>t3_1bbbbb</id><link href="{thread}"/><title>What do you all think about this week</title>'
+        "</entry></feed>"
+    )
+    [paper] = parse_feed(atom, name="reddit-ai")
+    assert paper.url == thread and paper.discussion == ""
+
+
+def test_the_failure_banner_follows_the_latest_run_not_every_run_that_day():
+    """Measured 2026-10-02: reddit-ai failed four times in the morning, answered in the
+    afternoon, and the page kept saying it "did not answer" next to its own cards."""
+    from paper_radar.render import day_stats
+
+    runs = [
+        {"day": "2026-10-02", "source_failures": [{"source": "reddit-ai", "error": "403"}]},
+        {"day": "2026-10-02", "source_failures": [{"source": "hn", "error": "502"}]},
+    ]
+    assert [f["source"] for f in day_stats("2026-10-02", [], runs)["source_failures"]] == ["hn"]
+    # a run record from before failures were recorded at all does not count as "healthy"
+    older = runs + [{"day": "2026-10-02"}]
+    assert [f["source"] for f in day_stats("2026-10-02", [], older)["source_failures"]] == ["hn"]
+
+
+def test_a_rate_limit_waits_as_long_as_the_server_asks(monkeypatch):
+    """Retrying a 429 after 1, 2 and 4 seconds spends three more requests of the same budget."""
+    import io
+    import urllib.error
+    import urllib.request
+
+    from paper_radar import http
+
+    slept: list[float] = []
+    monkeypatch.setattr(http.time, "sleep", slept.append)
+    calls = {"n": 0}
+
+    def fake(request, timeout=None):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise urllib.error.HTTPError(request.full_url, 429, "Too Many", {"Retry-After": "7"}, io.BytesIO())
+        if calls["n"] == 2:
+            raise urllib.error.HTTPError(request.full_url, 429, "Too Many", {}, io.BytesIO())
+
+        class Ok(io.BytesIO):
+            headers = type("H", (), {"get_content_charset": lambda self: "utf-8"})()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        return Ok(b"<rss/>")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    assert http.http_get("https://example.org/feed") == "<rss/>"
+    assert slept == [7.0, 30], "honour Retry-After; otherwise wait out a rate window, not 1-2 s"

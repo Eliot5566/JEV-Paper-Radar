@@ -28,12 +28,27 @@ def http_get(url: str, *, timeout: float = 60.0, retries: int = 3, headers: dict
             if error.code not in _RETRYABLE:
                 raise
             last_error = error
+            if error.code == 429 and attempt < retries:
+                # A rate limit is not a hiccup: retrying after 1, 2 and 4 seconds just spends
+                # three more requests of the same budget (Reddit's RSS, 2026-10-02). Wait as
+                # long as the server says, or long enough for a per-minute window to roll.
+                time.sleep(_retry_after(error) or min(15 * 2**attempt, 60))
+                continue
         except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
             last_error = error
         if attempt < retries:
             time.sleep(min(2**attempt, 20))
     assert last_error is not None
     raise last_error
+
+
+def _retry_after(error: urllib.error.HTTPError) -> float | None:
+    """Seconds from a Retry-After header, capped; None if absent or not a number."""
+    try:
+        value = float(error.headers.get("Retry-After", ""))
+    except (TypeError, ValueError, AttributeError):
+        return None
+    return max(0.0, min(value, 60.0))
 
 
 def post_json(

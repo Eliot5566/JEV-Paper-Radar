@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import html
 import re
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Callable
@@ -13,6 +14,11 @@ from ..models import Paper
 
 ATOM = "{http://www.w3.org/2005/Atom}"
 _TAG_RE = re.compile(r"<[^>]+>")
+# Reddit's feeds link each entry to its comment thread and put the destination in the
+# body as <a href="...">[link]</a>. The radar's convention is url = the thing itself,
+# discussion = where people talk about it; without this, every Reddit card pointed at a
+# thread, and URL-based folding could never match a Reddit post to the article it links.
+_REDDIT_LINK_RE = re.compile(r'<a href="([^"]+)">\s*\[link\]\s*</a>')
 
 
 def strip_html(text: str) -> str:
@@ -23,6 +29,10 @@ def fetch_rss(source: dict[str, Any], *, getter: Callable[[str], str], base_dir:
     if source.get("file"):
         text = (base_dir / source["file"]).read_text(encoding="utf-8")
     else:
+        if source.get("delay"):
+            # For hosts that rate-limit anonymous readers per IP. Reddit's RSS answered 429
+            # to every second request when four feeds were fetched back to back.
+            time.sleep(float(source["delay"]))
         text = getter(source["url"])
     return parse_feed(text, name=source.get("name") or "rss", limit=int(source.get("limit", 500)))
 
@@ -66,6 +76,13 @@ def parse_feed(text: str, *, name: str, limit: int = 500) -> list[Paper]:
             link = link_el.get("href", "") if link_el is not None else ""
             key = entry.findtext(f"{ATOM}id") or link
             summary = entry.findtext(f"{ATOM}summary") or entry.findtext(f"{ATOM}content") or ""
+            discussion = ""
+            target = _REDDIT_LINK_RE.search(html.unescape(summary))
+            if target and "reddit.com" in link:
+                destination = html.unescape(target.group(1))
+                # A self post's [link] points back at its own thread; nothing to split.
+                if destination.rstrip("/") != link.rstrip("/"):
+                    discussion, link = link, destination
             papers.append(
                 Paper(
                     id=_pid(name, key),
@@ -73,6 +90,7 @@ def parse_feed(text: str, *, name: str, limit: int = 500) -> list[Paper]:
                     title=_title(strip_html(entry.findtext(f"{ATOM}title") or ""), feed_title),
                     abstract=strip_html(summary),
                     url=link,
+                    discussion=discussion,
                     authors=[a.findtext(f"{ATOM}name") or "" for a in entry.findall(f"{ATOM}author")],
                     published=entry.findtext(f"{ATOM}updated") or entry.findtext(f"{ATOM}published") or "",
                 )

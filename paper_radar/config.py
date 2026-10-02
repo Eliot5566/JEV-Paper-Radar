@@ -24,7 +24,7 @@ SOURCE_KEYS = {
                "min_comments", "allow_nsfw", "require_link"},
     "bluesky": {"actor", "actors", "limit", "filter", "min_likes", "min_reposts",
                 "require_link", "include_reposts", "langs"},
-    "rss": {"url", "limit"},
+    "rss": {"url", "limit", "delay"},
 }
 COMBINE_MODES = {"max", "noisy_or"}
 SCREEN_COMBINE = {"geometric", "min"}

@@ -46,8 +46,9 @@ concurrency = 8
 # `+` joins subreddits into one feed, ranked together — which is why r/technology stays
 # in a bundle of its own, where its scores cannot drown out r/MachineLearning.
 #
-# Unverified when written: whether Reddit still serves RSS to anonymous readers. If the
-# page shows "reddit-ai did not answer", it does not, and this section can go.
+# Measured 2026-10-02 from GitHub Actions: anonymous RSS works, but is rate-limited per
+# IP. Fetched back to back, the 1st and 3rd feed answered and the 2nd and 4th got 429.
+# Hence `delay`: seconds to wait before each fetch after the first.
 
 [[sources]]
 type = "rss"
@@ -57,16 +58,19 @@ url = "https://www.reddit.com/r/singularity+accelerate+LocalLLaMA+MachineLearnin
 [[sources]]
 type = "rss"
 name = "reddit-releases"
+delay = 12
 url = "https://www.reddit.com/r/OpenAI+ClaudeAI+StableDiffusion/top/.rss?t=day&limit=25"
 
 [[sources]]
 type = "rss"
 name = "reddit-industry"
+delay = 12
 url = "https://www.reddit.com/r/artificial+startups+SaaS/top/.rss?t=day&limit=20"
 
 [[sources]]
 type = "rss"
 name = "reddit-tech"
+delay = 12
 url = "https://www.reddit.com/r/technology+programming+hardware/top/.rss?t=day&limit=20"
 
 # With Reddit-approved API credentials (REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET as repo

@@ -225,8 +225,13 @@ def cmd_directory(args: argparse.Namespace) -> int:
                 must_read=len(picks),
                 cost=sum(float(r.get("cost_usd") or 0) for r in runs),
                 top=[d.paper.title for d in picks[:3]],
+                # The latest run only, as on the day page: a source that failed this
+                # morning and answered this afternoon is not down.
                 source_failures=sorted(
-                    {str(f.get("source") or "?") for r in runs for f in (r.get("source_failures") or [])}
+                    {
+                        str(f.get("source") or "?")
+                        for f in ([r for r in runs if "source_failures" in r] or [{}])[-1].get("source_failures") or []
+                    }
                 ),
             )
         radars.append(entry)

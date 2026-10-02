@@ -118,11 +118,13 @@ def day_stats(day: str, decisions: list[Decision], runs: list[dict[str, Any]]) -
     day_runs = [r for r in runs if r.get("day") == day]
     counts = {band: sum(1 for d in decisions if d.band == band) for band in ("must_read", "maybe", "excluded")}
     # From the run record, not from this process, so a rebuild keeps saying which source
-    # was down on the day it was down.
+    # was down on the day it was down. Only the LATEST run counts: the first version took
+    # the union of every run that day, so after a source recovered the page kept saying
+    # it "did not answer" — next to cards that source had just delivered.
     failed: dict[str, str] = {}
-    for run in day_runs:
-        for failure in run.get("source_failures") or []:
-            failed[str(failure.get("source") or "?")] = str(failure.get("error") or "")
+    recorded = [r for r in day_runs if "source_failures" in r]
+    for failure in (recorded[-1].get("source_failures") or []) if recorded else []:
+        failed[str(failure.get("source") or "?")] = str(failure.get("error") or "")
     return {
         "judged": len(decisions),
         "source_failures": [{"source": k, "error": v} for k, v in failed.items()],
