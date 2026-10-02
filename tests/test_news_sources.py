@@ -394,3 +394,21 @@ def test_a_rate_limit_waits_as_long_as_the_server_asks(monkeypatch):
     monkeypatch.setattr(urllib.request, "urlopen", fake)
     assert http.http_get("https://example.org/feed") == "<rss/>"
     assert slept == [7.0, 30], "honour Retry-After; otherwise wait out a rate window, not 1-2 s"
+
+
+@pytest.mark.parametrize(
+    "media",
+    ["https://v.redd.it/askdnkzrowsh1", "https://i.redd.it/gle8lqy6rxsh1.jpeg", "https://www.reddit.com/gallery/1wv2u73"],
+)
+def test_reddit_media_posts_keep_the_thread_as_the_link(media):
+    """A bare video or image is worse than the thread around it."""
+    from paper_radar.sources.rss import parse_feed
+
+    thread = "https://www.reddit.com/r/StableDiffusion/comments/1wv2u73/update/"
+    atom = (
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>top</title><entry>'
+        f'<content type="html">&lt;a href="{media}"&gt;[link]&lt;/a&gt;</content>'
+        f'<id>t3_1</id><link href="{thread}"/><title>A demo of something someone made</title></entry></feed>'
+    )
+    [paper] = parse_feed(atom, name="reddit-releases")
+    assert paper.url == thread and paper.discussion == ""

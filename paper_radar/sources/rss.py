@@ -19,6 +19,10 @@ _TAG_RE = re.compile(r"<[^>]+>")
 # discussion = where people talk about it; without this, every Reddit card pointed at a
 # thread, and URL-based folding could never match a Reddit post to the article it links.
 _REDDIT_LINK_RE = re.compile(r'<a href="([^"]+)">\s*\[link\]\s*</a>')
+# ...except when the "destination" is Reddit's own media host. A gallery, a v.redd.it
+# video or an i.redd.it image has no text and no context; the thread is the better link.
+# Measured 2026-10-02: 6 of 7 r/StableDiffusion cards pointed at a bare video or image.
+_REDDIT_MEDIA = re.compile(r"^https?://(([a-z]+\.)?redd\.it|(www\.)?reddit\.com/gallery)/", re.IGNORECASE)
 
 
 def strip_html(text: str) -> str:
@@ -81,7 +85,7 @@ def parse_feed(text: str, *, name: str, limit: int = 500) -> list[Paper]:
             if target and "reddit.com" in link:
                 destination = html.unescape(target.group(1))
                 # A self post's [link] points back at its own thread; nothing to split.
-                if destination.rstrip("/") != link.rstrip("/"):
+                if destination.rstrip("/") != link.rstrip("/") and not _REDDIT_MEDIA.match(destination):
                     discussion, link = link, destination
             papers.append(
                 Paper(
