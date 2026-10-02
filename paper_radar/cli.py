@@ -83,7 +83,15 @@ def cmd_run(args: argparse.Namespace) -> int:
     if args.backend:
         config.jev.backend = args.backend
     backend = make_backend(config.jev)
-    result = run(config, backend, today=_today(args.date), limit=args.limit, dry_run=args.dry_run, notify=not args.no_notify)
+    result = run(
+        config,
+        backend,
+        today=_today(args.date),
+        limit=args.limit,
+        dry_run=args.dry_run,
+        notify=not args.no_notify,
+        rejudge=args.rejudge,
+    )
     if result.judged == 0 and result.failed:
         return 1
     return 0
@@ -266,6 +274,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--base-dir", help="resolve site_dir/data_dir against this directory instead of the config's own")
     p.add_argument("--site-dir", help="publish the page to this folder instead of output.site_dir")
     p.add_argument("--dry-run", action="store_true", help="fetch and estimate cost without calling Jev")
+    p.add_argument(
+        "--rejudge",
+        action="store_true",
+        help="discard today's stored decisions and judge today's items again (use after changing criteria)",
+    )
     p.add_argument("--no-notify", action="store_true")
     p.set_defaults(func=cmd_run)
 

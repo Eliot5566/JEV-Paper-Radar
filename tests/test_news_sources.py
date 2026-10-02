@@ -282,3 +282,25 @@ def test_metric_labels_are_singular_properly():
 
     assert _metric("replies", 1) == "1 reply" and _metric("replies", 2) == "2 replies"
     assert _metric("points", 1) == "1 point" and _metric("comments", 2_411) == "2,411 comments"
+
+
+def test_rejudge_judges_todays_items_again(tmp_path):
+    """Change the criteria and rerun, and without this the dedupe window means nothing
+    is judged: the page keeps showing verdicts the old config produced."""
+    from paper_radar.jev import MockBackend
+    from paper_radar.pipeline import run
+    from paper_radar.store import Store
+
+    from .conftest import make_config
+
+    config = make_config(tmp_path)
+    first = run(config, MockBackend(), today=date(2026, 10, 2), notify=False, log=lambda _: None)
+    assert first.judged == 44
+
+    again = run(config, MockBackend(), today=date(2026, 10, 2), notify=False, log=lambda _: None)
+    assert again.judged == 0, "the dedupe window is doing its normal job"
+
+    fresh = run(config, MockBackend(), today=date(2026, 10, 2), notify=False, rejudge=True, log=lambda _: None)
+    assert fresh.judged == 44
+    # and the day's file is replaced, not appended to twice over
+    assert len(Store(config.data_path).load_decisions("2026-10-02")) == 44

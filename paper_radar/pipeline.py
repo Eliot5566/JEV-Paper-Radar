@@ -158,6 +158,7 @@ def run(
     limit: int | None = None,
     dry_run: bool = False,
     notify: bool = True,
+    rejudge: bool = False,
     env: dict[str, str] | None = None,
     log: Log = print,
 ) -> RunResult:
@@ -165,6 +166,10 @@ def run(
     store = Store(config.data_path)
     started = time.monotonic()
 
+    if rejudge and store.clear_day(day):
+        # Before seen_ids, so today's own decisions stop counting as "already seen".
+        # Earlier days still do: an item judged yesterday should not come back.
+        log(f"Re-judging {day}: previous decisions for that day have been discarded")
     log(f"Collecting papers for {day}")
     source_failures: list[dict[str, str]] = []
     kwargs: dict[str, Any] = {

@@ -10,6 +10,11 @@ on:
         description: "Judge at most N papers (leave blank for no limit)"
         required: false
         default: ""
+      rejudge:
+        description: "Re-judge today's items instead of skipping ones already seen (use after changing criteria)"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write   # commit the audit trail in data/
@@ -28,6 +33,9 @@ jobs:
     env:
       # True only in the repo that publishes the public feeds; a fork is false everywhere.
       IS_UPSTREAM: ${{ github.repository == 'Eliot5566/JEV-Paper-Radar' }}
+      # Today's items are inside the dedupe window, so a second run on the same day
+      # judges nothing and the page keeps the verdicts the old criteria produced.
+      REJUDGE: ${{ github.event.inputs.rejudge }}
     steps:
       - uses: actions/checkout@v4
 
@@ -65,10 +73,12 @@ jobs:
           # own radar stays at the root, exactly where the README says it will be.
           SITE=()
           [ "$IS_UPSTREAM" = "true" ] && SITE=(--site-dir site/mine)
+          AGAIN=()
+          [ "$REJUDGE" = "true" ] && AGAIN=(--rejudge)
           if [[ "$LIMIT" =~ ^[0-9]+$ ]]; then
-            paper-radar run "${SITE[@]}" --limit "$LIMIT"
+            paper-radar run "${SITE[@]}" "${AGAIN[@]}" --limit "$LIMIT"
           else
-            paper-radar run "${SITE[@]}"
+            paper-radar run "${SITE[@]}" "${AGAIN[@]}"
           fi
 
       # The six public radars below are this repo's own feeds. A fork skips them: they
@@ -84,10 +94,12 @@ jobs:
         run: |
           # One radar per config. A failure in one is logged and the rest still run,
           # so a bad PubMed query cannot take the whole directory down with it.
+          AGAIN=()
+          [ "$REJUDGE" = "true" ] && AGAIN=(--rejudge)
           for config in radar.public.toml radars/*.toml; do
             [ -f "$config" ] || continue
             echo "::group::$config"
-            paper-radar run -c "$config" --base-dir . --no-notify || echo "!! $config failed"
+            paper-radar run -c "$config" --base-dir . --no-notify "${AGAIN[@]}" || echo "!! $config failed"
             echo "::endgroup::"
           done
 

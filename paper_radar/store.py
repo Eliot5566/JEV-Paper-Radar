@@ -70,6 +70,20 @@ class Store:
         names = {p.name.split(".")[0] for p in self.decisions_dir.iterdir() if p.name[:4].isdigit()}
         return sorted(names)
 
+    def clear_day(self, day: str) -> int:
+        """Forget one day's decisions so they can be judged again.
+
+        Used by `run --rejudge` after the criteria change: today's items are inside the
+        dedupe window, so without this a rerun judges nothing and the page keeps showing
+        verdicts from the old config. Returns how many files were removed.
+        """
+        removed = 0
+        for path in (self._full(day), self._rest(day)):
+            if path.exists():
+                path.unlink()
+                removed += 1
+        return removed
+
     def seen_ids(self, today: date, window_days: int) -> set[str]:
         cutoff = (today - timedelta(days=window_days)).isoformat()
         ids: set[str] = set()
