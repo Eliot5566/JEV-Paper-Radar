@@ -187,8 +187,14 @@ text = "The item is an announcement published by the organisation that made the 
 
 [[interests]]
 id = "measurement"
-label = "Has numbers"
-text = "The item reports a specific measured quantity, such as a benchmark score, a latency, a price, a parameter count, a funding amount, or an error rate"
+label = "Measured result"
+# First version was "reports a specific measured quantity ... such as a funding amount".
+# Measured on the 2026-10-02 run it fired at 92-99% on a bird-noise story, a measles
+# death toll and someone's newsletter subscriber milestone, and it was the top chip on
+# nearly every must-read. Any prose containing a numeral satisfied it. The number now
+# has to be a property OF something named, which is what made it interesting in the
+# first place.
+text = "The item reports a measured result for a specific named product, model, or system: a benchmark score, a throughput or latency figure, a price, or an error rate"
 
 [[interests]]
 id = "usable"
@@ -199,10 +205,31 @@ text = "The item is something a reader can use immediately: source code, model w
 # Each one is phrased as what the item IS, never as "not X": Jev reads a negation
 # literally, and `paper-radar check` will warn about one.
 
+# This replaces an exclusion that read "a news story about an article, post, interview,
+# or announcement that was published somewhere else". On the 2026-10-02 run it fired 105
+# times out of 200 exclusions and threw away exactly what this radar is for: "Cloudflare
+# Python Workers are now generally available", "Claude Sonnet 5.5", "SvelteKit 3", a
+# $30M Series A. Read literally it was correct every time — a Techmeme or link-blog item
+# IS about something published elsewhere — which made it a veto on the whole aggregator
+# channel, and an aggregator is how most first-party news arrives.
+#
+# The lesson generalises: interests combine with `max`, so a loose interest can only add
+# noise, while a loose exclusion silently deletes the signal. Duplicate folding is the
+# right tool for "I have seen this already", because it keeps one copy instead of
+# dropping all of them. What is left here is the narrow case folding cannot catch.
 [[exclude]]
-id = "coverage"
-label = "Coverage of coverage"
-text = "The item is a news story about an article, post, interview, or announcement that was published somewhere else"
+id = "pure_pointer"
+label = "Just a pointer"
+text = "The item consists entirely of a quotation from someone else, or a one-line pointer to something published elsewhere"
+
+[[exclude]]
+id = "offtopic"
+label = "Off topic"
+# The press accounts on Bluesky publish everything they publish. On 2026-10-02 that put
+# a measles death toll and "Two New Birds Louder Than Jackhammers" into the must-read
+# list, both at 92-95%. The radar has no topic filter by design — the sources were meant
+# to be the topic filter — and general-interest outlets break that assumption.
+text = "The item is primarily about health, medicine, politics, sport, wildlife, crime, or entertainment rather than computing and the technology industry"
 
 [[exclude]]
 id = "speculation"

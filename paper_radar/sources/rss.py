@@ -31,8 +31,32 @@ def _pid(name: str, key: str) -> str:
     return f"rss:{hashlib.sha1(f'{name}|{key}'.encode()).hexdigest()[:16]}"
 
 
+# A GitHub release feed titles every entry with just the tag — "v0.30.0", "b11335" —
+# which is useless on a page and worse as the only thing the model gets to judge. The
+# feed's own title says which project it is, so short entry titles borrow it.
+TERSE_TITLE = re.compile(r"^(v?[\d][\w.\-]*|[a-z]{0,2}\d{3,})$", re.IGNORECASE)
+TERSE_CHARS = 24
+_FEED_TITLE_NOISE = re.compile(r"^(release notes from|releases? [-·|] |comments? on )", re.IGNORECASE)
+
+
+def _feed_title(root: ET.Element) -> str:
+    """The feed's own title, with the boilerplate GitHub puts in front of it removed."""
+    raw = root.findtext(f"{ATOM}title") or root.findtext("./channel/title") or ""
+    return _FEED_TITLE_NOISE.sub("", " ".join(raw.split())).strip()
+
+
+def _title(entry_title: str, feed_title: str) -> str:
+    entry_title = " ".join(entry_title.split())
+    if not feed_title or not entry_title:
+        return entry_title
+    if len(entry_title) <= TERSE_CHARS and TERSE_TITLE.match(entry_title):
+        return f"{feed_title} {entry_title}"
+    return entry_title
+
+
 def parse_feed(text: str, *, name: str, limit: int = 500) -> list[Paper]:
     root = ET.fromstring(text)
+    feed_title = _feed_title(root)
     papers: list[Paper] = []
     if root.tag == f"{ATOM}feed":
         for entry in root.findall(f"{ATOM}entry")[:limit]:
@@ -46,7 +70,7 @@ def parse_feed(text: str, *, name: str, limit: int = 500) -> list[Paper]:
                 Paper(
                     id=_pid(name, key),
                     source=name,
-                    title=strip_html(entry.findtext(f"{ATOM}title") or ""),
+                    title=_title(strip_html(entry.findtext(f"{ATOM}title") or ""), feed_title),
                     abstract=strip_html(summary),
                     url=link,
                     authors=[a.findtext(f"{ATOM}name") or "" for a in entry.findall(f"{ATOM}author")],
@@ -61,7 +85,7 @@ def parse_feed(text: str, *, name: str, limit: int = 500) -> list[Paper]:
             Paper(
                 id=_pid(name, key),
                 source=name,
-                title=strip_html(item.findtext("title") or ""),
+                title=_title(strip_html(item.findtext("title") or ""), feed_title),
                 abstract=strip_html(item.findtext("description") or ""),
                 url=link,
                 authors=[a for a in [item.findtext("author") or item.findtext("{http://purl.org/dc/elements/1.1/}creator")] if a],

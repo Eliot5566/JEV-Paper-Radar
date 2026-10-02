@@ -253,3 +253,32 @@ def test_the_pipeline_folds_before_judging(tmp_path):
     )
     assert plain.judged == 3 and folded.judged == 2
     assert folded.tokens < plain.tokens, "a folded story is one judgement, not two"
+
+
+def test_a_release_feed_borrows_the_project_name_for_its_terse_titles():
+    """GitHub titles every release entry with the tag alone. "v0.30.0" is useless on the
+    page and worse as the only text the model gets to judge."""
+    from paper_radar.sources.rss import parse_feed
+
+    atom = (
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>Release notes from llama.cpp</title>'
+        '<entry><title>b11335</title><id>t1</id><link rel="alternate" href="https://e.org/1"/>'
+        "<summary>Fixes</summary></entry>"
+        "<entry><title>Something descriptive that must be left exactly as it is</title><id>t2</id>"
+        '<link rel="alternate" href="https://e.org/2"/><summary>s</summary></entry></feed>'
+    )
+    titles = [p.title for p in parse_feed(atom, name="releases")]
+    assert titles == ["llama.cpp b11335", "Something descriptive that must be left exactly as it is"]
+
+    rss = (
+        '<rss version="2.0"><channel><title>Releases - vllm</title>'
+        "<item><title>v0.30.0</title><link>https://e.org/1</link><guid>g</guid></item></channel></rss>"
+    )
+    assert parse_feed(rss, name="releases")[0].title == "vllm v0.30.0"
+
+
+def test_metric_labels_are_singular_properly():
+    from paper_radar.render import _metric
+
+    assert _metric("replies", 1) == "1 reply" and _metric("replies", 2) == "2 replies"
+    assert _metric("points", 1) == "1 point" and _metric("comments", 2_411) == "2,411 comments"

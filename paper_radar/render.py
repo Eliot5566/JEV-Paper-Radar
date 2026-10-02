@@ -100,9 +100,12 @@ def _num(value: int) -> str:
     return f"{value:,}"
 
 
+SINGULAR = {"points": "point", "comments": "comment", "likes": "like", "reposts": "repost", "replies": "reply"}
+
+
 def _metric(name: str, value: int) -> str:
-    """"1 comment", not "1 comments"."""
-    return f"{value:,} {name[:-1] if value == 1 and name.endswith('s') else name}"
+    """"1 reply", not "1 replie" — chopping the s off "replies" does not work."""
+    return f"{value:,} {SINGULAR.get(name, name) if value == 1 else name}"
 
 
 def _authors(authors: list[str]) -> str:
