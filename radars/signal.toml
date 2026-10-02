@@ -205,23 +205,30 @@ text = "The item is something a reader can use immediately: source code, model w
 # Each one is phrased as what the item IS, never as "not X": Jev reads a negation
 # literally, and `paper-radar check` will warn about one.
 
-# This replaces an exclusion that read "a news story about an article, post, interview,
-# or announcement that was published somewhere else". On the 2026-10-02 run it fired 105
-# times out of 200 exclusions and threw away exactly what this radar is for: "Cloudflare
-# Python Workers are now generally available", "Claude Sonnet 5.5", "SvelteKit 3", a
-# $30M Series A. Read literally it was correct every time — a Techmeme or link-blog item
-# IS about something published elsewhere — which made it a veto on the whole aggregator
-# channel, and an aggregator is how most first-party news arrives.
+# Two exclusions have been removed from this file, both for the same reason, and the
+# reason is the most useful thing measured here:
 #
-# The lesson generalises: interests combine with `max`, so a loose interest can only add
-# noise, while a loose exclusion silently deletes the signal. Duplicate folding is the
-# right tool for "I have seen this already", because it keeps one copy instead of
-# dropping all of them. What is left here is the narrow case folding cannot catch.
-[[exclude]]
-id = "pure_pointer"
-label = "Just a pointer"
-text = "The item consists entirely of a quotation from someone else, or a one-line pointer to something published elsewhere"
-
+#   "a news story about an article, post, or announcement published somewhere else"
+#       → fired 105 of 200 exclusions (2026-10-02). Deleted "Cloudflare Python Workers
+#         are now generally available", "Claude Sonnet 5.5", "SvelteKit 3", a $30M
+#         Series A.
+#   "consists entirely of a quotation, or a one-line pointer to something published
+#   elsewhere"
+#       → written as the narrow replacement for the above, and fired 104 of 169 the very
+#         next run. Deleted "SvelteKit 3" and the Series A again.
+#
+# Both were literally correct every time. A link blog or a Techmeme item IS a short
+# pointer to something published elsewhere — that is the form of the entire channel, and
+# that channel is how most first-party news arrives. An exclusion that describes an
+# item's FORM therefore vetoes whole sources, while the ones that survive here describe
+# its SUBJECT ("off topic") or its EPISTEMIC STATUS ("speculation", "asking the room",
+# "argument", "reaction"): 28, 53, 4, 11 and 13 fires in the same run, none of them
+# eating the signal.
+#
+# Mechanical properties belong in code, not in a criterion: "I have already seen this
+# story" is duplicate folding, which keeps one copy instead of dropping all of them.
+# And remember the asymmetry — interests combine with `max`, so a loose interest can
+# only add noise, while a loose exclusion silently deletes what you were looking for.
 [[exclude]]
 id = "offtopic"
 label = "Off topic"
