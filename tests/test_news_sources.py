@@ -304,3 +304,27 @@ def test_rejudge_judges_todays_items_again(tmp_path):
     assert fresh.judged == 44
     # and the day's file is replaced, not appended to twice over
     assert len(Store(config.data_path).load_decisions("2026-10-02")) == 44
+
+
+def test_reddit_rss_parses_with_the_plain_rss_source():
+    """The fallback for a closed API. Reddit's RSS is Atom whose <link> has no rel, and
+    whose content is HTML boilerplate around the post; both have to survive."""
+    from paper_radar.sources.rss import parse_feed
+
+    atom = (
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>top scoring links : singularity+accelerate</title>'
+        "<entry><author><name>/u/someone</name></author>"
+        '<category term="singularity" label="r/singularity"/>'
+        '<content type="html">&lt;div&gt;&lt;p&gt;The lab published the eval suite.&lt;/p&gt;&lt;/div&gt;'
+        '&amp;#32; submitted by &lt;a href="https://www.reddit.com/user/someone"&gt; /u/someone &lt;/a&gt;'
+        '&lt;span&gt;&lt;a href="https://openai.com/index/x/"&gt;[link]&lt;/a&gt;&lt;/span&gt;</content>'
+        "<id>t3_1aaaaa</id>"
+        '<link href="https://www.reddit.com/r/singularity/comments/1aaaaa/openai_publishes/"/>'
+        "<updated>2026-10-02T09:00:00+00:00</updated>"
+        "<title>OpenAI publishes the full eval suite behind its latest model card</title></entry></feed>"
+    )
+    [paper] = parse_feed(atom, name="reddit-ai")
+    assert paper.title == "OpenAI publishes the full eval suite behind its latest model card"
+    assert paper.url == "https://www.reddit.com/r/singularity/comments/1aaaaa/openai_publishes/"
+    assert "The lab published the eval suite." in paper.abstract
+    assert "<" not in paper.abstract

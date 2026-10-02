@@ -15,10 +15,7 @@
 # News and two subreddits, and judging all seven costs seven times as much as judging
 # one. Folding happens before Jev sees anything.
 #
-# Everything here is public and needs no key. Reddit may answer 403 from GitHub's IP
-# ranges; if the page shows "reddit did not answer", register a free script app at
-# reddit.com/prefs/apps and add REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET as repo
-# secrets. There is no X / Twitter source: X has had no free read API since 2023 and its
+# Everything here is public and needs no key. There is no X / Twitter source: X has had no free read API since 2023 and its
 # terms forbid reading a timeline through anything else. Bluesky is the substitute, and
 # checked on 2026-10-02 its author feeds answer without a key, account or rate-limit
 # deal — while `searchPosts` answers 403 unless you are logged in, so accounts are named
@@ -38,43 +35,52 @@ model = "jev-1.13.0"
 concurrency = 8
 
 # ── Reddit ──────────────────────────────────────────────────────────────────────
-# `top` over the last day, not `new`: a post is an hour old and has one upvote whether
-# it is a leak from a frontier lab or a screenshot of a chatbot being rude, and a
-# once-a-day run can simply ask the subreddit which it was. The floors are per bundle
-# because a 400-point post in r/accelerate and in r/technology are not the same event.
+# Read through each subreddit's public RSS, because the API is closed to new projects:
+# since 2025-11-11 reddit.com/prefs/apps no longer creates apps (new access is a Data
+# Access Request, answered in weeks and not always yes), and since 2026-05-30 anonymous
+# `.json` answers 403 to everyone. Measured here: the `reddit` source failed on all four
+# bundles on every run of 2026-10-02.
+#
+# RSS gives titles and links but no scores, so the floors below are gone; `top` over
+# `t=day` is still Reddit's own ranking, and `limit` takes the head of it instead. The
+# `+` joins subreddits into one feed, ranked together — which is why r/technology stays
+# in a bundle of its own, where its scores cannot drown out r/MachineLearning.
+#
+# Unverified when written: whether Reddit still serves RSS to anonymous readers. If the
+# page shows "reddit-ai did not answer", it does not, and this section can go.
 
 [[sources]]
-type = "reddit"
+type = "rss"
 name = "reddit-ai"
-subreddits = ["singularity", "accelerate", "LocalLLaMA", "MachineLearning"]
-listing = "top"
-period = "day"
-min_score = 60
-min_comments = 5
+url = "https://www.reddit.com/r/singularity+accelerate+LocalLLaMA+MachineLearning/top/.rss?t=day&limit=40"
 
 [[sources]]
-type = "reddit"
+type = "rss"
 name = "reddit-releases"
-subreddits = ["OpenAI", "ClaudeAI", "StableDiffusion"]
-listing = "top"
-period = "day"
-min_score = 80
+url = "https://www.reddit.com/r/OpenAI+ClaudeAI+StableDiffusion/top/.rss?t=day&limit=25"
 
 [[sources]]
-type = "reddit"
+type = "rss"
 name = "reddit-industry"
-subreddits = ["artificial", "startups", "SaaS"]
-listing = "top"
-period = "day"
-min_score = 100
+url = "https://www.reddit.com/r/artificial+startups+SaaS/top/.rss?t=day&limit=20"
 
 [[sources]]
-type = "reddit"
+type = "rss"
 name = "reddit-tech"
-subreddits = ["technology", "programming", "hardware"]
-listing = "top"
-period = "day"
-min_score = 800             # r/technology alone runs to thousands of points a day
+url = "https://www.reddit.com/r/technology+programming+hardware/top/.rss?t=day&limit=20"
+
+# With Reddit-approved API credentials (REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET as repo
+# secrets), the `reddit` source gets scores, comment counts and per-bundle floors. Swap
+# a block above for one like this:
+#
+# [[sources]]
+# type = "reddit"
+# name = "reddit-ai"
+# subreddits = ["singularity", "accelerate", "LocalLLaMA", "MachineLearning"]
+# listing = "top"
+# period = "day"
+# min_score = 60
+# min_comments = 5
 
 # ── Bluesky ─────────────────────────────────────────────────────────────────────
 # Every handle below was checked against app.bsky.actor.getProfiles on 2026-10-02 and

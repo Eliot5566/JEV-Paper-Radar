@@ -166,7 +166,7 @@ paper-radar calibrate --precision 0.9 --recall 0.9
 | `biorxiv` / `medrxiv` | public details API | version-1 preprints, optional category filter |
 | `pubmed` | NCBI E-utilities, any PubMed query | errata and comments skipped; set `NCBI_API_KEY` to go from 3 to 10 req/s |
 | `rss` | any RSS or Atom feed | journals, lab blogs, `hnrss.org`, newsletters, GitHub `releases.atom` |
-| `reddit` | subreddit listings | `top`/`day` by default, score and comment floors; set `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` if Reddit 403s your CI |
+| `reddit` | subreddit listings via OAuth | needs Reddit-approved `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` (self-serve app creation closed 2025-11, anonymous JSON closed 2026-05); without them use the `rss` source on `/r/<sub>/top/.rss?t=day` |
 | `bluesky` | public AppView author feeds | no key, no account; named accounts only — keyword search needs a login |
 
 ```toml

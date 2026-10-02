@@ -11,10 +11,16 @@ screenshot of a chatbot being rude. `listing = "top"` with `t = "day"` asks the
 subreddit who was right, which is what you want from a once-a-day run. `min_score` and
 `min_comments` are the floors under that.
 
-Reddit answers 403 to a lot of datacenter traffic, including GitHub Actions. Set
-REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET (a free "script" app at
-reddit.com/prefs/apps) and this uses the OAuth host instead, which is the supported
-path and is not rate-limited by IP.
+Access, as of 2026-10: since 2025-11-11 (Reddit's "Responsible Builder Policy") the
+self-serve app form at reddit.com/prefs/apps no longer creates apps — new API access
+goes through a Data Access Request that Reddit answers by email, reportedly in 2–4
+weeks and not always favourably. Since 2026-05-30 unauthenticated `.json` requests
+return 403 to everyone. So this source works only with credentials Reddit has already
+approved: set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET and it uses the OAuth host.
+
+Without them, a subreddit's public RSS (`/r/<sub>/top/.rss?t=day`) is a plain Atom feed
+and can be read with the ordinary `rss` source — no scores or comment counts, but the
+`top` ranking is still Reddit's. See radars/signal.toml.
 """
 
 from __future__ import annotations
@@ -79,9 +85,10 @@ def fetch_reddit(
             except urllib.error.HTTPError as error:
                 if error.code in (403, 429) and not token:
                     raise ValueError(
-                        f"reddit returned {error.code} for r/{sub}. Reddit blocks much datacenter "
-                        "traffic; register a free script app at reddit.com/prefs/apps and set "
-                        "REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET."
+                        f"reddit returned {error.code} for r/{sub}. Unauthenticated JSON has been "
+                        "closed since 2026-05-30 and new API access needs Reddit's approval. Set "
+                        "REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET if you have approved "
+                        "credentials, or read the subreddit's /top/.rss feed with the rss source."
                     ) from error
                 raise
 
