@@ -28,7 +28,7 @@ include_cross_lists = true
 
 # [[sources]]
 # type = "huggingface"      # Hugging Face Daily Papers: upvoted papers from any arXiv category
-# min_upvotes = 5           # same arXiv ids, so papers your arXiv source already has merge
+# min_upvotes = 20          # 5 let 30 extra papers into one radar's shortlist in a day
 
 # [[sources]]
 # type = "rss"              # any RSS/Atom feed: journals, lab blogs, hnrss.org, newsletters

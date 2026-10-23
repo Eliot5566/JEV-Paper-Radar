@@ -19,12 +19,20 @@ categories = ["cs.AI", "cs.CL", "cs.LG"]
 include_cross_lists = false   # primary submissions only, to keep the demo cheap
 
 # What the community is upvoting, including papers outside the three categories above.
-# Most of the list is days old and already judged through the arXiv source, so those are
-# skipped before Jev sees them; what gets through is mainly the trending cs.CV / cs.RO
-# paper this radar would otherwise never read. ~50 papers a day before dedupe.
+#
+# The first version of this comment predicted that most of the list would already have
+# been judged through the arXiv source. Measured on 2026-10-23 with a floor of 5, it was
+# the reverse: four days of lists brought 189 papers the arXiv source had not listed that
+# day, 77 had been judged in the previous two weeks, and 112 were new — because this
+# radar reads primary cs.AI / cs.CL / cs.LG submissions only, and what Hugging Face
+# upvotes is, judging by the titles, largely video, 3D, vision-agent and security work.
+# 30 of the 112 made the shortlist and took the day's must-reads from 47 to 64.
+#
+# Hence 20: on that day's shortlist it would have kept 12 of the 30. Upvotes also grow
+# with time on the list, so this is a popularity floor, not a quality one.
 [[sources]]
 type = "huggingface"
-min_upvotes = 5
+min_upvotes = 20
 
 # Interests for a public digest. Measured lesson from the first run (299 papers):
 # crisply worded, single-concept statements produced confident hits; vague ones

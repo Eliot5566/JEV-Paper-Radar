@@ -14,6 +14,13 @@ skipped here, not shown again with its upvotes. So the value is papers trending 
 your arXiv categories — the cs.CV paper everyone is talking about, on a radar that reads
 cs.CL — plus the upvote count on the occasional paper that arrives the same day.
 
+How much of the list that is depends on how wide your arXiv source reads, and it can be
+most of it. On a radar reading primary cs.AI / cs.CL / cs.LG submissions only, 112 of the
+189 papers the list added on 2026-10-23 had never been judged (floor of 5 upvotes), and
+the shortlist grew by 30. Set `min_upvotes` with that in mind; 20 kept 12 of those 30.
+The list also occasionally carries old papers (one from 11 months earlier that day),
+which then appear on the radar like any new one.
+
 And the list for today fills up during the day. A run at 02:00 UTC sees part of it, and
 a Monday run sees an empty Saturday and Sunday, so `days` (default 4) reaches back far
 enough to read Friday's list in full. Items already seen are deduped before judging, so
