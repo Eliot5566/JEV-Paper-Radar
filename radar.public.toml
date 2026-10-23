@@ -18,6 +18,14 @@ type = "arxiv"
 categories = ["cs.AI", "cs.CL", "cs.LG"]
 include_cross_lists = false   # primary submissions only, to keep the demo cheap
 
+# What the community is upvoting, including papers outside the three categories above.
+# Most of the list is days old and already judged through the arXiv source, so those are
+# skipped before Jev sees them; what gets through is mainly the trending cs.CV / cs.RO
+# paper this radar would otherwise never read. ~50 papers a day before dedupe.
+[[sources]]
+type = "huggingface"
+min_upvotes = 5
+
 # Interests for a public digest. Measured lesson from the first run (299 papers):
 # crisply worded, single-concept statements produced confident hits; vague ones
 # ("clearly outperforms previous approaches") never crossed 0.95 at all.

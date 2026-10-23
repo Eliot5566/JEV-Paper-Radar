@@ -165,6 +165,7 @@ paper-radar calibrate --precision 0.9 --recall 0.9
 | `arxiv` | official RSS, any categories, `["*"]` = every archive | new submissions and cross-lists; revisions skipped |
 | `biorxiv` / `medrxiv` | public details API | version-1 preprints, optional category filter |
 | `pubmed` | NCBI E-utilities, any PubMed query | errata and comments skipped; set `NCBI_API_KEY` to go from 3 to 10 req/s |
+| `huggingface` | Hugging Face Daily Papers | upvoted papers from any arXiv category; same ids as `arxiv`, so overlaps merge and the card shows the upvotes; `min_upvotes` floor |
 | `rss` | any RSS or Atom feed | journals, lab blogs, `hnrss.org`, newsletters, GitHub `releases.atom` |
 | `reddit` | subreddit listings via OAuth | needs Reddit-approved `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` (self-serve app creation closed 2025-11, anonymous JSON closed 2026-05); without them use the `rss` source on `/r/<sub>/top/.rss?t=day` |
 | `bluesky` | public AppView author feeds | no key, no account; named accounts only — keyword search needs a login |
@@ -296,7 +297,7 @@ Three rounds of it, including the predictions that were wrong, are in [`benchmar
 - [x] **Screening mode** for systematic reviews: criteria as Nouls, PRISMA 2020 counts, WSS measured against your own decisions
 - [x] Validated against 12 Cochrane reviews' own title/abstract screening decisions
 - [x] News mode: Reddit and Bluesky sources, with near-duplicate folding before judging
-- [ ] Hugging Face Daily Papers source
+- [x] Hugging Face Daily Papers source
 - [ ] **Lab mode**: one repo, many members, a page per person plus a shared feed
 - [ ] Citation-claim checks and missing-methods flags for your must-reads
 - [ ] Local open-model backend for fully offline use

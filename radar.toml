@@ -27,6 +27,10 @@ include_cross_lists = true
 # categories = ["neuroscience", "bioinformatics"]   # empty = all categories
 
 # [[sources]]
+# type = "huggingface"      # Hugging Face Daily Papers: upvoted papers from any arXiv category
+# min_upvotes = 5           # same arXiv ids, so papers your arXiv source already has merge
+
+# [[sources]]
 # type = "rss"              # any RSS/Atom feed: journals, lab blogs, hnrss.org, newsletters
 # name = "Hacker News 100+"
 # url = "https://hnrss.org/newest?points=100"

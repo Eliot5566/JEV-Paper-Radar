@@ -1,0 +1,50 @@
+[
+  {
+    "paper": {
+      "id": "2609.99001",
+      "authors": [
+        {"_id": "a1", "name": "Ada Example", "hidden": false},
+        {"_id": "a2", "name": "Hidden Person", "hidden": true}
+      ],
+      "publishedAt": "2026-09-21T00:00:00.000Z",
+      "submittedOnDailyAt": "2026-09-22T00:00:00.000Z",
+      "title": "TraceGrade: Evaluating LLM Agents on   Long-Horizon Tool-Use Tasks",
+      "summary": "We introduce TraceGrade,\n a benchmark for agents.",
+      "upvotes": 411,
+      "discussionId": "6ad83548efdc4c3bd8229f2d",
+      "projectPage": "https://example.org/tracegrade",
+      "githubRepo": "https://github.com/example/tracegrade",
+      "ai_summary": "Not used: the model reads the authors' abstract, not a summary of it.",
+      "ai_keywords": ["agents", "benchmark"],
+      "githubStars": 130
+    },
+    "publishedAt": "2026-09-21T20:00:00.000Z",
+    "title": "TraceGrade: Evaluating LLM Agents on Long-Horizon Tool-Use Tasks",
+    "summary": "We introduce TraceGrade, a benchmark for agents.",
+    "thumbnail": "https://cdn-thumbnails.huggingface.co/x.png",
+    "numComments": 3,
+    "submittedBy": {"_id": "u1", "name": "someone"},
+    "isAuthorParticipating": false
+  },
+  {
+    "paper": {
+      "id": "2610.28577",
+      "authors": [{"_id": "b1", "name": "Vision Team", "hidden": false}],
+      "publishedAt": "2026-10-14T00:00:00.000Z",
+      "title": "A Video Model From Outside Your arXiv Categories",
+      "summary": "A cs.CV paper the community is upvoting.",
+      "upvotes": 12
+    },
+    "numComments": 1
+  },
+  {
+    "paper": {
+      "id": "2610.00001",
+      "authors": [],
+      "title": "A Barely Noticed Paper",
+      "summary": "Nobody upvoted this one.",
+      "upvotes": 0
+    },
+    "numComments": 0
+  }
+]

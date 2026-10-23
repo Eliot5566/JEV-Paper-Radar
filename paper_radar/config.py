@@ -14,7 +14,7 @@ from typing import Any
 ID_RE = re.compile(r"^[a-z0-9_]{1,40}$")
 NEGATION_RE = re.compile(r"\b(not|no|never|without|except|unless|excluding|neither|nor)\b|n't\b", re.IGNORECASE)
 BACKENDS = {"typesafe", "openrouter", "mock"}
-SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "pubmed", "reddit", "bluesky", "rss"}
+SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "pubmed", "reddit", "bluesky", "huggingface", "rss"}
 SOURCE_KEYS = {
     "arxiv": {"categories", "include_cross_lists", "include_replacements"},
     "biorxiv": {"server", "days", "categories"},
@@ -24,6 +24,7 @@ SOURCE_KEYS = {
                "min_comments", "allow_nsfw", "require_link"},
     "bluesky": {"actor", "actors", "limit", "filter", "min_likes", "min_reposts",
                 "require_link", "include_reposts", "langs"},
+    "huggingface": {"days", "limit", "min_upvotes"},
     "rss": {"url", "limit", "delay"},
 }
 COMBINE_MODES = {"max", "noisy_or"}

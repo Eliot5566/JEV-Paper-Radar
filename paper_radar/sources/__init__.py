@@ -11,6 +11,7 @@ from ..models import Paper
 from .arxiv import fetch_arxiv
 from .biorxiv import fetch_biorxiv
 from .bluesky import fetch_bluesky
+from .huggingface import fetch_huggingface
 from .pubmed import fetch_pubmed
 from .reddit import fetch_reddit
 from .rss import fetch_rss
@@ -47,6 +48,8 @@ def collect(
                 batch = fetch_reddit(source, getter=getter, base_dir=base_dir)
             elif kind == "bluesky":
                 batch = fetch_bluesky(source, getter=getter, base_dir=base_dir)
+            elif kind == "huggingface":
+                batch = fetch_huggingface(source, getter=getter, base_dir=base_dir, today=today)
             else:
                 batch = fetch_rss(source, getter=getter, base_dir=base_dir)
         except Exception as error:  # one broken source must not kill the daily run
@@ -60,5 +63,25 @@ def collect(
             if paper.id not in papers:
                 papers[paper.id] = paper
                 added += 1
+            else:
+                _merge(papers[paper.id], paper)
         log(f"  - {source.get('name') or kind}: {len(batch)} items ({added} new after dedupe)")
     return list(papers.values())
+
+
+def _merge(kept: Paper, other: Paper) -> None:
+    """A second source returned an item we already have: keep the first, but take what it adds.
+
+    The first copy wins on everything it has — an arXiv record carries the categories the
+    model reads — and the second fills gaps: Hugging Face's upvotes on an arXiv paper, or
+    a discussion link. Order-independent for what matters, so the config can list the
+    sources in any order.
+    """
+    for key, value in other.metrics.items():
+        kept.metrics.setdefault(key, value)
+    if not kept.discussion and other.discussion:
+        kept.discussion = other.discussion
+    if not kept.categories and other.categories:
+        kept.categories = list(other.categories)
+    if not kept.abstract.strip() and other.abstract.strip():
+        kept.abstract = other.abstract

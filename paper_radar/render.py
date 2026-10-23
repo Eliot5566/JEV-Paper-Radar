@@ -100,7 +100,10 @@ def _num(value: int) -> str:
     return f"{value:,}"
 
 
-SINGULAR = {"points": "point", "comments": "comment", "likes": "like", "reposts": "repost", "replies": "reply"}
+SINGULAR = {
+    "points": "point", "comments": "comment", "likes": "like", "reposts": "repost",
+    "replies": "reply", "upvotes": "upvote",
+}
 
 
 def _metric(name: str, value: int) -> str:
