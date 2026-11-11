@@ -1,13 +1,22 @@
-"""Clients for Jev's System One endpoint.
+"""Clients for Jev's System One endpoint, plus a Claude backend.
 
 Backends
 --------
 * ``typesafe``   POST {base}/v1/systemone          (TYPESAFE_API_KEY)
 * ``openrouter`` POST openrouter.ai/api/alpha/decisions (OPENROUTER_API_KEY, no waitlist)
+* ``claude``     POST api.anthropic.com/v1/messages (ANTHROPIC_API_KEY)
 * ``mock``       offline keyword heuristic for demos and tests. It is NOT Jev.
 
 Both HTTP backends share the same wire format: ``{"model", "state", "questions"}`` in,
 ``{"model", "answers", "usage"}`` out. Stdlib only, so the GitHub Action installs in seconds.
+
+The Claude backend is different in one important way: Claude is a generative
+model, not a System One decision model, so it has no calibrated probabilities
+to return. It is asked (temperature 0) for a JSON object of self-reported
+probabilities, and those numbers are NOT calibrated. Treat them like the mock
+backend's numbers: run ``paper-radar calibrate`` on your own labels and fit
+your thresholds to them before trusting a run. The Cochrane screening numbers
+in the README were measured with Jev and do NOT apply to Claude.
 """
 
 from __future__ import annotations
@@ -29,8 +38,18 @@ from .models import JevResult
 
 TYPESAFE_DEFAULT_BASE = "https://api.typesafe.ai"
 OPENROUTER_URL = "https://openrouter.ai/api/alpha/decisions"
-DEFAULT_MODELS = {"typesafe": "jev-latest", "openrouter": "typesafe/jev-1.13", "mock": "mock-heuristic"}
-KEY_ENV = {"typesafe": "TYPESAFE_API_KEY", "openrouter": "OPENROUTER_API_KEY"}
+ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
+ANTHROPIC_VERSION = "2023-06-01"
+# Latest Haiku as of 2026-11-11 (released 2026-10-07, model id claude-haiku-5-5).
+# If Anthropic ships a newer Haiku, set jev.model in radar.toml instead of
+# editing this default; do not assume a dateless id moves to the new model.
+DEFAULT_MODELS = {
+    "typesafe": "jev-latest",
+    "openrouter": "typesafe/jev-1.13",
+    "claude": "claude-haiku-5-5",
+    "mock": "mock-heuristic",
+}
+KEY_ENV = {"typesafe": "TYPESAFE_API_KEY", "openrouter": "OPENROUTER_API_KEY", "claude": "ANTHROPIC_API_KEY"}
 
 FATAL_STATUSES = {400, 401, 402, 403, 404, 422}
 RETRYABLE_STATUSES = {408, 409, 429, 500, 502, 503, 504, 529}
@@ -167,6 +186,205 @@ class HTTPBackend:
             time.sleep(delay)
 
 
+# --------------------------------------------------------------------------- claude
+
+CLAUDE_SYSTEM = (
+    "You judge research papers against plain-English statements. "
+    "Answer with ONLY a JSON object, no prose, no markdown fences. "
+    "For each question key, give a number between 0 and 1 for a 'noul' question "
+    "(your probability that the statement is true of the paper), the exact label "
+    "string for a 'choice' question (one of its criteria keys), and a number for "
+    "a 'score' question (between 0 and the number of criteria minus 1)."
+)
+
+
+def _claude_user_text(state: Any, questions: dict[str, dict[str, Any]]) -> str:
+    """The one user message: the paper, then every question with its expected shape."""
+    spec: dict[str, Any] = {}
+    for key, question in questions.items():
+        kind = question["type"]
+        entry: dict[str, Any] = {"type": kind, "instructions": question.get("instructions", "")}
+        if kind == "choice":
+            entry["criteria"] = list(question["criteria"])
+        elif kind == "score":
+            entry["criteria"] = list(question["criteria"])
+        if question.get("criteria") and kind == "noul":
+            entry["criteria"] = question["criteria"]
+        spec[key] = entry
+    return (
+        "Paper:\n" + json.dumps(state, ensure_ascii=False) + "\n\n"
+        "Questions (answer every key):\n" + json.dumps(spec, ensure_ascii=False)
+    )
+
+
+def _extract_claude_text(data: Any) -> str:
+    """The text of a Messages API response, or a JevError if there is none."""
+    if not isinstance(data, dict) or not isinstance(data.get("content"), list):
+        raise JevError("Malformed Claude response: missing 'content'")
+    parts = [
+        block.get("text", "")
+        for block in data["content"]
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    text = "".join(parts).strip()
+    if not text:
+        raise JevError("Malformed Claude response: no text content")
+    return text
+
+
+def _parse_claude_json(text: str) -> Any:
+    """Parse the model's JSON, tolerating a ```json fence around it."""
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        lines = lines[1:]  # ```json
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        stripped = "\n".join(lines).strip()
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError as error:
+        raise JevError(f"Malformed Claude response: not valid JSON ({error})") from None
+
+
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def parse_claude_answers(
+    raw: Any, questions: dict[str, dict[str, Any]], fallback_model: str, usage: dict[str, Any] | None = None
+) -> JevResult:
+    """Validate Claude's JSON object into the same JevResult shape Jev returns.
+
+    Strict on purpose: a missing key, a wrong type, a probability outside
+    0..1, or a choice label that is not one of the criteria is a JevError,
+    not a guess. The numbers that survive are self-reported by Claude and
+    are NOT calibrated — see the module docstring.
+    """
+    if not isinstance(raw, dict):
+        raise JevError("Malformed Claude response: expected a JSON object keyed by question")
+    answers: dict[str, dict[str, Any]] = {}
+    for key, question in questions.items():
+        if key not in raw:
+            raise JevError(f"Malformed Claude response: missing answer for {key!r}")
+        value = raw[key]
+        kind = question["type"]
+        if kind == "noul":
+            if isinstance(value, dict):
+                value = value.get("noul", value.get("probability"))
+            if not _is_number(value) or not 0 <= float(value) <= 1:
+                raise JevError(f"Malformed Claude response: {key!r} noul must be a number in [0, 1]")
+            answers[key] = {"type": "noul", "noul": round(float(value), 4)}
+        elif kind == "choice":
+            if isinstance(value, dict):
+                value = value.get("choice")
+            criteria = question["criteria"]
+            if not isinstance(value, str) or value not in criteria:
+                raise JevError(f"Malformed Claude response: {key!r} choice must be one of {sorted(criteria)}")
+            answers[key] = {"type": "choice", "choice": value}
+        elif kind == "score":
+            if isinstance(value, dict):
+                value = value.get("score")
+            levels = list(question["criteria"])
+            if not _is_number(value) or not 0 <= float(value) <= len(levels) - 1:
+                raise JevError(
+                    f"Malformed Claude response: {key!r} score must be a number in [0, {len(levels) - 1}]"
+                )
+            answers[key] = {
+                "type": "score",
+                "score": round(float(value), 3),
+                "legend": {str(i): level for i, level in enumerate(levels)},
+            }
+        else:
+            raise JevError(f"Malformed Claude response: unknown question type {kind!r} for {key!r}")
+    usage = usage or {}
+    return JevResult(
+        answers=answers,
+        model=fallback_model,
+        input_tokens=int(usage.get("input_tokens") or 0),
+        cost=None,  # Anthropic reports tokens, not cost; the pipeline estimates from them.
+    )
+
+
+class ClaudeBackend:
+    """Claude as the judge, via the Anthropic Messages API (stdlib urllib only).
+
+    One call per paper, temperature 0, asking for a JSON object of
+    self-reported probabilities. The key is read from ANTHROPIC_API_KEY at
+    runtime and is never stored anywhere by this code.
+
+    Differences from the Jev backends, stated plainly: Claude has no
+    calibrated probabilities, so the numbers it returns must be re-calibrated
+    with ``paper-radar calibrate`` before the thresholds mean anything; and
+    Haiku 5.5 rejects assistant prefill, so no prefill trick is used here —
+    the JSON instruction lives in the system prompt and the user message.
+    """
+
+    name = "claude"
+
+    def __init__(
+        self,
+        *,
+        url: str,
+        api_key: str,
+        model: str,
+        timeout: float,
+        max_retries: int,
+        limiter: RateLimiter,
+    ):
+        self.url = url
+        self.model = model
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.limiter = limiter
+        self._headers = {
+            "x-api-key": api_key,
+            "anthropic-version": ANTHROPIC_VERSION,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": USER_AGENT,
+        }
+
+    def decide(self, state: Any, questions: dict[str, dict[str, Any]]) -> JevResult:
+        body = json.dumps(
+            {
+                "model": self.model,
+                "max_tokens": 1024,
+                "temperature": 0,
+                "system": CLAUDE_SYSTEM,
+                "messages": [{"role": "user", "content": _claude_user_text(state, questions)}],
+            }
+        ).encode("utf-8")
+        attempt = 0
+        while True:
+            self.limiter.acquire()
+            request = urllib.request.Request(self.url, data=body, method="POST", headers=self._headers)
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    data = json.loads(response.read())
+            except urllib.error.HTTPError as error:
+                detail = error.read()[:300].decode("utf-8", errors="replace")
+                message = f"{self.name} HTTP {error.code}: {detail}"
+                if error.code in FATAL_STATUSES:
+                    raise JevError(message, fatal=True, status=error.code) from None
+                if error.code not in RETRYABLE_STATUSES or attempt >= self.max_retries:
+                    raise JevError(message, status=error.code) from None
+                delay = _retry_after(error.headers) or _backoff(attempt)
+            except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as error:
+                if attempt >= self.max_retries:
+                    raise JevError(f"{self.name} request failed: {error}") from None
+                delay = _backoff(attempt)
+            else:
+                # A malformed model answer is a JevError, not a transport failure:
+                # it is raised as-is, not retried, so a bad key or bad prompt
+                # surfaces immediately instead of burning retries.
+                text = _extract_claude_text(data)
+                raw = _parse_claude_json(text)
+                return parse_claude_answers(raw, questions, self.model, usage=data.get("usage") or {})
+            attempt += 1
+            time.sleep(delay)
+
+
 # --------------------------------------------------------------------------- mock
 
 _STOP = set(
@@ -253,13 +471,29 @@ def make_backend(settings: JevSettings, env: dict[str, str] | None = None) -> Ba
     key_name = KEY_ENV[backend]
     api_key = env.get(key_name, "").strip()
     if not api_key:
-        hint = (
-            "Set it as a repository secret (Settings -> Secrets and variables -> Actions) or export it locally. "
-            "No TypeSafe access yet? Use backend = \"openrouter\" (no waitlist) or run `paper-radar demo`."
-        )
+        if backend == "claude":
+            hint = (
+                "Create one at console.anthropic.com (Settings -> API Keys) and set it as "
+                "ANTHROPIC_API_KEY — as a repository secret (Settings -> Secrets and variables -> Actions) "
+                "or in a local .env file. The API is billed separately from a Claude Pro/Max subscription."
+            )
+        else:
+            hint = (
+                "Set it as a repository secret (Settings -> Secrets and variables -> Actions) or export it locally. "
+                "No TypeSafe access yet? Use backend = \"openrouter\" (no waitlist) or run `paper-radar demo`."
+            )
         raise JevError(f"{key_name} is not set. {hint}", fatal=True)
 
     limiter = RateLimiter(settings.requests_per_minute)
+    if backend == "claude":
+        return ClaudeBackend(
+            url=settings.base_url or ANTHROPIC_URL,
+            api_key=api_key,
+            model=model,
+            timeout=settings.timeout,
+            max_retries=settings.max_retries,
+            limiter=limiter,
+        )
     if backend == "typesafe":
         base = (settings.base_url or env.get("TYPESAFE_BASE_URL") or TYPESAFE_DEFAULT_BASE).rstrip("/")
         url = base + "/v1/systemone"
