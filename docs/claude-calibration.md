@@ -180,6 +180,32 @@ highest first.
 | 2611.13013 | 0.02 | skip | no | FaST: Factored Synthesis of Transitions for Offline Reinforcement Learning |
 | 2611.13030 | 0.02 | skip | no | APS-VLA: Action-Guided and Future-Aware Token Pruning for Efficient Vision-Language-Action Models |
 
+## How this compares with Jev
+
+The "not user-validated" warning at the top should not be read as "Jev was
+validated and Claude was not". The user never labelled papers for Jev
+either:
+
+- `data/labels.jsonl` has never existed in this repo: `git log --all --
+  data/labels.jsonl` is empty, and no file matching `*label*` has ever been
+  tracked.
+- The Jev thresholds in `radar.toml` (`must_read = 0.80`, `maybe = 0.50`)
+  are defaults from the repo's very first commit (`5cff762`, 2026-09-28),
+  whose comment says to "tune these with `paper-radar calibrate` after
+  labelling ~30 papers" — a step that was never taken.
+- Jev's "calibrated probabilities" is TypeSafe's own model claim. The
+  README says TypeSafe's accuracy and calibration figures are
+  self-reported and that its benchmark numbers "have not been reproduced
+  independently" — they were never measured on this daily radar.
+- The only ground-truth measurement in the repo is the screening benchmark
+  (`benchmarks/clef_tar_2019/`), judged against Cochrane reviewers'
+  decisions under a pre-registration — screening mode, Jev-only.
+
+So this page is the first labelled measurement for either backend on the
+daily arXiv radar. That does not make it user-validated — the caveat at the
+top still stands — but Jev and Claude start from the same place here:
+neither has ever been checked against this user's own labels.
+
 ## Limitations
 
 - **Labels are Muse's, not the user's.** The user is not familiar enough

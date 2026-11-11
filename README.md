@@ -112,7 +112,10 @@ maybe 0.35, versus the Jev thresholds of 0.80 / 0.50. Read the provenance
 warning in that doc before trusting the numbers: the labels were made by
 Muse, not by the user, from titles and trimmed abstracts — this is a
 first look, not a user-validated calibration, and Claude is not claimed to
-be calibrated.
+be calibrated. For balance: the user never labelled papers for Jev either —
+the Jev thresholds are defaults from the repo's first commit and the only
+ground-truth measurement in the repo is the screening benchmark — so this is
+the first labelled measurement for either backend on the daily radar.
 
 After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcement. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
 
