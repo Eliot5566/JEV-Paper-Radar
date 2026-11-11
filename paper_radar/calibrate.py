@@ -1,8 +1,17 @@
-"""Check Jev's calibration against *your* judgement and fit thresholds to it.
+"""Check a backend's calibration against *your* judgement and fit thresholds to it.
 
 TypeSafe's accuracy and calibration numbers are self-reported. This command lets every user
 measure them on their own labels: Brier score, expected calibration error, and a
 precision/recall table that suggests `must_read` and `maybe` thresholds.
+
+The thresholds it fits belong to the backend that produced the stored decisions.
+Jev returns a calibrated `noul`; Claude returns a self-reported number that is NOT
+calibrated, so thresholds fitted on Jev-judged labels do not transfer to Claude,
+and thresholds fitted on Claude-judged labels do not transfer to Jev. If you
+switch backends, label a fresh set of papers judged by the new backend and run
+`paper-radar calibrate` again before trusting a run. The Cochrane screening
+numbers quoted in the README (96.9% recall, 78% work saved on 19,447 records)
+were measured with Jev and do not apply to Claude.
 """
 
 from __future__ import annotations

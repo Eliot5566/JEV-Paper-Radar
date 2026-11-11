@@ -106,6 +106,32 @@ Claude Pro/Max subscription, and costs more per paper than Jev; set
 
 After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcement. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
 
+### Use as a GitHub Action
+
+No fork needed: any repository with a `radar.toml` can run Paper Radar as one step. Add a key as a repository secret (*Settings → Secrets and variables → Actions*), then:
+
+```yaml
+# .github/workflows/radar.yml
+on:
+  schedule:
+    - cron: "0 2 * * 1-5"   # 02:00 UTC, weekdays
+  workflow_dispatch:
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Eliot5566/JEV-Paper-Radar@main
+        with:
+          config: radar.toml
+          typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
+          # anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}  # with backend: claude
+          # limit: "50"    # a cheap first test
+```
+
+Pin to a release tag (for example `@v0.1.2`) once one is cut — `@v0.1.1` predates `action.yml`, so it cannot work. Other inputs: `command` (`run` or `screen`), `backend` (`typesafe`, `openrouter`, `claude`, `mock`), and `args` for extra flags such as `--rejudge --no-notify`. Keys are passed as secrets and are never printed in the log.
+
 ## Try it in 10 seconds
 
 No key needed. The demo uses fictional papers and a keyword heuristic in place of Jev, so you can see the output before you set anything up.
@@ -235,6 +261,8 @@ come from.
 ## Screening mode, for systematic reviews
 
 A review's title-and-abstract stage is the same shape as a daily radar pointed at a search strategy, with one difference that changes everything: a record is eligible only if **every** inclusion criterion holds, and one exclusion criterion disqualifies it. So screening is a separate command with its own scoring.
+
+The full story for review teams — how it works, how to run it, and the benchmark against Cochrane reviewers' decisions, with the honest limits — is in [`docs/screening.md`](docs/screening.md).
 
 ```bash
 cp profiles/systematic-review.toml review.toml   # edit the query and the criteria
