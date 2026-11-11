@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Claude calibration, first look: new `docs/claude-calibration.md` — Claude
+  Haiku 5.5 judged 49 papers from the 2026-11-11 arXiv listing (6 relevant),
+  Brier 0.040, ECE 0.081, suggested Claude thresholds must_read 0.65 /
+  maybe 0.35 (versus Jev 0.80 / 0.50). Labels were made by Muse, not by the
+  user, from titles and trimmed abstracts — a first look, not a
+  user-validated calibration. Thresholds in `radar.toml` are unchanged.
+
 ## 0.1.2 — 2026-11-11
 
 - Honest calibration labelling (A6): `paper-radar check` now warns when
