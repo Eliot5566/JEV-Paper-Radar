@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.1.0 — Unreleased
+## 0.1.1 — Unreleased
+
+- Claude backend: stop sending `temperature` — `claude-haiku-5-5` rejects it
+  with 400 "`temperature` is deprecated for this model" (verified against
+  the live API 2026-11-11). Without this fix every Claude run failed.
+
+## 0.1.0 — 2026-11-11
 
 First packaged release (`pip install paper-radar`).
 
