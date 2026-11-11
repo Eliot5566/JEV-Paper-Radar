@@ -4,6 +4,8 @@
 
 **每天早上，Jev 幫你讀完 arXiv 上所有新論文；你只需要讀真正重要的那幾篇。**
 
+也可以用 Claude（Haiku）跑——同樣的每日頁面，機率是自述的未校準數字，[初版校準](docs/claude-calibration.md)在此。
+
 用白話寫興趣 · 校準過的機率 · 讀完*整個* arXiv 一天約 6 美分 · Fork 即用，不需要伺服器
 
 [English](README.md) · [專案企劃](docs/PLAN.zh-TW.md)

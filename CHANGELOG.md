@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.1.3 — 2026-11-11
 
+- Discoverability: the PyPI description now names Claude as an alternative
+  backend alongside Jev, and the keywords add `claude` and `anthropic`;
+  the README first screen says the radar also runs on Claude (Haiku), with
+  a link to the Claude section and the first-look calibration doc. The PyPI
+  page itself only changes once this release is published.
 - Claude calibration, first look: new `docs/claude-calibration.md` — Claude
   Haiku 5.5 judged 49 papers from the 2026-11-11 arXiv listing (6 relevant),
   Brier 0.040, ECE 0.081, suggested Claude thresholds must_read 0.65 /
