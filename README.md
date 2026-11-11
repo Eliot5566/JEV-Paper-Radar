@@ -4,6 +4,8 @@
 
 **Jev reads every new paper on arXiv each morning. You read the few that matter.**
 
+Also runs on [Claude (Haiku)](#use-claude-instead-of-jev) — same daily page, self-reported probabilities, [first-look calibration](docs/claude-calibration.md).
+
 Plain-English interests · calibrated probabilities · about 6 cents a day for *all* of arXiv · fork and go, no server
 
 [Quick start](#quick-start-5-minutes-no-server) · [Try the demo](#try-it-in-10-seconds) · [How it works](#how-it-works) · [Benchmark](#measured-against-real-reviewers-decisions) · [繁體中文](README.zh-TW.md)
@@ -135,7 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Eliot5566/JEV-Paper-Radar@v0.1.2
+      - uses: Eliot5566/JEV-Paper-Radar@v0.1.3
         with:
           config: radar.toml
           typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}

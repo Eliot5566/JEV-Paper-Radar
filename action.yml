@@ -1,6 +1,6 @@
 # Paper Radar as a GitHub Action.
 #
-#   - uses: Eliot5566/JEV-Paper-Radar@v0.1.2
+#   - uses: Eliot5566/JEV-Paper-Radar@v0.1.3
 #     with:
 #       config: radar.toml
 #       typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
