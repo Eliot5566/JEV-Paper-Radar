@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.2 — 2026-11-11
 
 - Honest calibration labelling (A6): `paper-radar check` now warns when
   the backend is Claude that its probabilities are self-reported, not

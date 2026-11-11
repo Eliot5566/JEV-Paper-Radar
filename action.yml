@@ -1,6 +1,6 @@
 # Paper Radar as a GitHub Action.
 #
-#   - uses: Eliot5566/JEV-Paper-Radar@v0.1.1
+#   - uses: Eliot5566/JEV-Paper-Radar@v0.1.2
 #     with:
 #       config: radar.toml
 #       typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
@@ -14,8 +14,8 @@
 # printed: the run step only echoes the command name and config path.
 #
 # NOTE on versions: a ref only contains this file if it was tagged after
-# this file was merged. v0.1.1 predates it, so pin to the first release
-# that includes it (or to @main until that release is cut) — do not expect
+# this file was merged. v0.1.1 predates it, so pin to v0.1.2 or later —
+# v0.1.2 is the first release that includes this file. Do not expect
 # @v0.1.1 to work.
 
 name: "Paper Radar"
