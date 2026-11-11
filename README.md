@@ -122,7 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Eliot5566/JEV-Paper-Radar@main
+      - uses: Eliot5566/JEV-Paper-Radar@v0.1.2
         with:
           config: radar.toml
           typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
@@ -130,7 +130,7 @@ jobs:
           # limit: "50"    # a cheap first test
 ```
 
-Pin to a release tag (for example `@v0.1.2`) once one is cut — `@v0.1.1` predates `action.yml`, so it cannot work. Other inputs: `command` (`run` or `screen`), `backend` (`typesafe`, `openrouter`, `claude`, `mock`), and `args` for extra flags such as `--rejudge --no-notify`. Keys are passed as secrets and are never printed in the log.
+Pin to a release tag — `@v0.1.2` is the first tag that contains `action.yml` (`@v0.1.1` predates it, so it cannot work). Other inputs: `command` (`run` or `screen`), `backend` (`typesafe`, `openrouter`, `claude`, `mock`), and `args` for extra flags such as `--rejudge --no-notify`. Keys are passed as secrets and are never printed in the log.
 
 ## Try it in 10 seconds
 
