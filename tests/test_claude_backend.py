@@ -101,7 +101,8 @@ def test_request_shape_and_parse(server_factory):
     assert headers["anthropic-version"] == "2023-06-01"
     body = req["body"]
     assert body["model"] == "claude-haiku-5-5"
-    assert body["temperature"] == 0
+    # No temperature: Haiku 5.5 rejects it (live API 400, 2026-11-11).
+    assert "temperature" not in body
     assert body["max_tokens"] == 1024
     # No assistant prefill: Haiku 5.5 rejects it, so the last message is the user turn.
     assert body["messages"][-1]["role"] == "user"
