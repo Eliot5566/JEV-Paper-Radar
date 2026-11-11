@@ -12,8 +12,10 @@ Both HTTP backends share the same wire format: ``{"model", "state", "questions"}
 
 The Claude backend is different in one important way: Claude is a generative
 model, not a System One decision model, so it has no calibrated probabilities
-to return. It is asked (temperature 0) for a JSON object of self-reported
-probabilities, and those numbers are NOT calibrated. Treat them like the mock
+to return. It is asked for a JSON object of self-reported
+probabilities, and those numbers are NOT calibrated. (No ``temperature`` is
+sent: Haiku 5.5 rejects it with 400 "`temperature` is deprecated for this
+model", verified against the live API 2026-11-11.) Treat them like the mock
 backend's numbers: run ``paper-radar calibrate`` on your own labels and fit
 your thresholds to them before trusting a run. The Cochrane screening numbers
 in the README were measured with Jev and do NOT apply to Claude.
@@ -309,7 +311,7 @@ def parse_claude_answers(
 class ClaudeBackend:
     """Claude as the judge, via the Anthropic Messages API (stdlib urllib only).
 
-    One call per paper, temperature 0, asking for a JSON object of
+    One call per paper, asking for a JSON object of
     self-reported probabilities. The key is read from ANTHROPIC_API_KEY at
     runtime and is never stored anywhere by this code.
 
@@ -350,7 +352,8 @@ class ClaudeBackend:
             {
                 "model": self.model,
                 "max_tokens": 1024,
-                "temperature": 0,
+                # No "temperature": claude-haiku-5-5 rejects it with
+                # 400 "`temperature` is deprecated for this model".
                 "system": CLAUDE_SYSTEM,
                 "messages": [{"role": "user", "content": _claude_user_text(state, questions)}],
             }
