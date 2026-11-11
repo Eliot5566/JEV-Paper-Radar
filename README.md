@@ -72,9 +72,37 @@ Each is an ordinary config file in [`radars/`](radars). Fork the repo and yours 
    ```
 3. **Add a key** under *Settings → Secrets and variables → Actions*:
    - `TYPESAFE_API_KEY` from [console.typesafe.ai](https://console.typesafe.ai/settings/keys), **or**
-   - `OPENROUTER_API_KEY` if you are still on TypeSafe's waitlist. Set `backend = "openrouter"` and `model = "typesafe/jev-1.13"` in `radar.toml`; [OpenRouter serves Jev without a waitlist](https://openrouter.ai/typesafe/jev-1.13).
+   - `OPENROUTER_API_KEY` if you are still on TypeSafe's waitlist. Set `backend = "openrouter"` and `model = "typesafe/jev-1.13"` in `radar.toml`; [OpenRouter serves Jev without a waitlist](https://openrouter.ai/typesafe/jev-1.13), **or**
+   - `ANTHROPIC_API_KEY` to judge with Claude instead of Jev (see below). Set `backend = "claude"` in `radar.toml`.
 4. **Turn on Pages:** *Settings → Pages → Source: GitHub Actions*.
 5. **Run it:** *Actions → Paper Radar → Run workflow* (type `50` in *limit* for a cheap first test).
+
+### Use Claude instead of Jev
+
+If you already have an Anthropic API key, Claude can do the judging — same
+pipeline, same calibration step, no Jev waitlist:
+
+```toml
+[jev]
+backend = "claude"
+# model = "claude-haiku-5-5"   # the default; set it explicitly to pin a version
+```
+
+```bash
+paper-radar run --backend claude --limit 50
+```
+
+Two honest warnings. First, **Claude's probabilities are self-reported, not
+calibrated**: Jev returns a calibrated `noul`; Claude returns a number it
+wrote in JSON. Run `paper-radar label` on a few dozen papers and then
+`paper-radar calibrate` to fit your thresholds to Claude before trusting a
+run — the Jev thresholds in `radar.toml` will not transfer. Second, **the
+benchmark numbers in this README are Jev-only**: the Cochrane screening
+result (96.9% recall, 78% work saved on 19,447 records) was measured with
+Jev and does not apply to Claude. The API is also billed separately from a
+Claude Pro/Max subscription, and costs more per paper than Jev; set
+`jev.price_per_mtok` to roughly 0.15 for a Haiku cost estimate, and lower
+`jev.requests_per_minute` if you are on a low API tier.
 
 After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcement. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
 

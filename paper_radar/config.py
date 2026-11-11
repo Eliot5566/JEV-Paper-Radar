@@ -13,7 +13,7 @@ from typing import Any
 
 ID_RE = re.compile(r"^[a-z0-9_]{1,40}$")
 NEGATION_RE = re.compile(r"\b(not|no|never|without|except|unless|excluding|neither|nor)\b|n't\b", re.IGNORECASE)
-BACKENDS = {"typesafe", "openrouter", "mock"}
+BACKENDS = {"typesafe", "openrouter", "claude", "mock"}
 SOURCE_TYPES = {"arxiv", "biorxiv", "medrxiv", "pubmed", "reddit", "bluesky", "huggingface", "rss"}
 SOURCE_KEYS = {
     "arxiv": {"categories", "include_cross_lists", "include_replacements"},
