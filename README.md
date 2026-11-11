@@ -104,6 +104,19 @@ Claude Pro/Max subscription, and costs more per paper than Jev; set
 `jev.price_per_mtok` to roughly 0.15 for a Haiku cost estimate, and lower
 `jev.requests_per_minute` if you are on a low API tier.
 
+There is now a first-look calibration for the Claude backend — see
+[`docs/claude-calibration.md`](docs/claude-calibration.md). On 49 papers from
+the 2026-11-11 arXiv listing (6 relevant), Claude Haiku 5.5 scored Brier
+0.040 and ECE 0.081, with suggested Claude thresholds of must_read 0.65 and
+maybe 0.35, versus the Jev thresholds of 0.80 / 0.50. Read the provenance
+warning in that doc before trusting the numbers: the labels were made by
+Muse, not by the user, from titles and trimmed abstracts — this is a
+first look, not a user-validated calibration, and Claude is not claimed to
+be calibrated. For balance: the user never labelled papers for Jev either —
+the Jev thresholds are defaults from the repo's first commit and the only
+ground-truth measurement in the repo is the screening benchmark — so this is
+the first labelled measurement for either backend on the daily radar.
+
 After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcement. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
 
 ### Use as a GitHub Action
