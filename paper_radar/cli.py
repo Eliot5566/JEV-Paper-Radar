@@ -128,6 +128,13 @@ def cmd_check(args: argparse.Namespace) -> int:
     else:
         print(f"Config OK: {len(config.interests)} interests, {len(config.exclusions)} exclusions, {len(config.sources)} sources")
     print(f"Backend: {config.jev.backend}  model: {config.jev.model or '(default)'}")
+    if config.jev.backend == "claude":
+        print(
+            "warning: backend is claude — its probabilities are self-reported, not calibrated. "
+            "Run `paper-radar calibrate` on Claude-judged labels before trusting thresholds; "
+            "the Cochrane screening numbers (96.9% recall, 78% work saved) were measured with Jev "
+            "and do not apply to Claude."
+        )
     print(f"Questions per paper: {len(questions)}  (≈{per_paper} input tokens per paper, rough estimate)")
     for n in (200, 1500, 5000):
         cost = n * per_paper * config.jev.price_per_mtok / 1e6
@@ -158,6 +165,13 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
         target_precision=args.precision,
         target_recall=args.recall,
     )
+    if config.jev.backend == "claude":
+        print(
+            "note: backend is claude — these thresholds are fitted to Claude's self-reported, "
+            "uncalibrated probabilities, for Claude-judged papers only. They do not transfer "
+            "to Jev, and the Cochrane screening numbers (96.9% recall, 78% work saved) were "
+            "measured with Jev and do not apply to Claude."
+        )
     print(format_report(report, args.precision, args.recall))
     return 0
 

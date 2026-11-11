@@ -1,0 +1,90 @@
+# Paper Radar as a GitHub Action.
+#
+#   - uses: Eliot5566/JEV-Paper-Radar@v0.1.1
+#     with:
+#       config: radar.toml
+#       typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
+#
+# This is a composite action: it installs Paper Radar (stdlib only, so the
+# install is just `pip install` of this repository) and runs it in the
+# caller's repository, against the caller's config file. The caller's
+# repository needs its own radar.toml (copy profiles/llm-research.toml to
+# start) and a key stored as a repository secret — never as a literal in
+# the workflow file. Keys are passed through the environment and are never
+# printed: the run step only echoes the command name and config path.
+#
+# NOTE on versions: a ref only contains this file if it was tagged after
+# this file was merged. v0.1.1 predates it, so pin to the first release
+# that includes it (or to @main until that release is cut) — do not expect
+# @v0.1.1 to work.
+
+name: "Paper Radar"
+description: "Let Jev or Claude read new papers each day and show you the few worth reading."
+author: "Eliot5566"
+
+branding:
+  icon: "rss"
+  color: "blue"
+
+inputs:
+  config:
+    description: "Path to the radar config file, relative to the repository root."
+    required: false
+    default: "radar.toml"
+  command:
+    description: "What to run: 'run' for the daily radar, 'screen' for systematic-review screening."
+    required: false
+    default: "run"
+  backend:
+    description: "Judge backend: typesafe, openrouter, claude, or mock. Overrides jev.backend in the config."
+    required: false
+    default: ""
+  limit:
+    description: "Judge at most N papers/records (leave blank for no limit)."
+    required: false
+    default: ""
+  typesafe-api-key:
+    description: "TypeSafe API key (TYPESAFE_API_KEY). Pass via secrets, never as a literal."
+    required: false
+    default: ""
+  openrouter-api-key:
+    description: "OpenRouter API key (OPENROUTER_API_KEY). Pass via secrets, never as a literal."
+    required: false
+    default: ""
+  anthropic-api-key:
+    description: "Anthropic API key (ANTHROPIC_API_KEY). Pass via secrets, never as a literal."
+    required: false
+    default: ""
+  args:
+    description: "Extra arguments passed to paper-radar, e.g. '--rejudge --no-notify'."
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install Paper Radar
+      shell: bash
+      run: python -m pip install "${GITHUB_ACTION_PATH}"
+
+    - name: Run Paper Radar
+      shell: bash
+      env:
+        TYPESAFE_API_KEY: ${{ inputs.typesafe-api-key }}
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: |
+        set -euo pipefail
+        cmd=(paper-radar "${{ inputs.command }}" -c "${{ inputs.config }}")
+        if [[ -n "${{ inputs.backend }}" ]]; then cmd+=(--backend "${{ inputs.backend }}"); fi
+        if [[ -n "${{ inputs.limit }}" ]]; then cmd+=(--limit "${{ inputs.limit }}"); fi
+        # Inputs are split on whitespace here on purpose: args is a free-form
+        # extra-flags string, e.g. '--rejudge --no-notify'.
+        # shellcheck disable=SC2086
+        cmd+=(${{ inputs.args }})
+        echo "Running: paper-radar ${{ inputs.command }} -c ${{ inputs.config }}"
+        "${cmd[@]}"

@@ -35,6 +35,36 @@ def test_check(capsys):
     assert "Config OK" in out and "papers/day" in out
 
 
+def test_check_warns_for_claude_backend(tmp_path, capsys):
+    cfg = tmp_path / "radar.toml"
+    cfg.write_text(
+        '[jev]\nbackend = "claude"\n[[sources]]\ntype = "arxiv"\n[[interests]]\nid = "a"\ntext = "x"\n',
+        encoding="utf-8",
+    )
+    assert main(["check", "-c", str(cfg)]) == 0
+    out = capsys.readouterr().out
+    assert "self-reported, not calibrated" in out
+    assert "do not apply to Claude" in out
+
+
+def test_check_does_not_warn_for_jev_backend(capsys):
+    assert main(["check", "-c", str(ROOT / "radar.toml")]) == 0
+    assert "self-reported, not calibrated" not in capsys.readouterr().out
+
+
+def test_calibrate_notes_claude_backend(tmp_path, capsys):
+    import re
+
+    out = tmp_path / "demo"
+    assert main(["demo", "--out", str(out), "--date", "2026-09-22"]) == 0
+    cfg = out / "radar.demo.toml"
+    cfg.write_text(re.sub(r'backend = "[^"]+"', 'backend = "claude"', cfg.read_text(encoding="utf-8")), encoding="utf-8")
+    assert main(["label", "2609.99001", "yes", "-c", str(cfg)]) == 0
+    assert main(["label", "2609.99007", "no", "-c", str(cfg)]) == 0
+    assert main(["calibrate", "-c", str(cfg)]) == 0
+    assert "self-reported, uncalibrated" in capsys.readouterr().out
+
+
 def test_missing_key_exit_code(tmp_path, monkeypatch, capsys):
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     cfg = tmp_path / "radar.toml"
