@@ -147,6 +147,10 @@ jobs:
 
 Pin to a release tag — `@v0.1.2` is the first tag that contains `action.yml` (`@v0.1.1` predates it, so it cannot work). Other inputs: `command` (`run` or `screen`), `backend` (`typesafe`, `openrouter`, `claude`, `mock`), and `args` for extra flags such as `--rejudge --no-notify`. Keys are passed as secrets and are never printed in the log.
 
+### Use with Claude
+
+There is a Claude Skill for this repo: copy `skills/paper-radar/` to `~/.claude/skills/paper-radar/` (or `.claude/skills/paper-radar/` in a project) and Claude can set up, run, and calibrate a radar for you — install, `radar.toml`, first run, `label` + `calibrate`. See [`skills/paper-radar/SKILL.md`](skills/paper-radar/SKILL.md).
+
 ## Try it in 10 seconds
 
 No key needed. The demo uses fictional papers and a keyword heuristic in place of Jev, so you can see the output before you set anything up.
