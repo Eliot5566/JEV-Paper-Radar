@@ -36,7 +36,7 @@
   never printed.
 - Screening story (A8): new `docs/screening.md` for systematic-review
   readers — how screening mode works, how to run and measure it, and
-  the CLEF TAR 2019 benchmark against Cochrane reviewers decisions.
+  the CLEF TAR 2019 benchmark against Cochrane reviewers' decisions.
 
 ## 0.1.1 — 2026-11-11
 
@@ -51,7 +51,7 @@ First packaged release (`pip install paper-radar`).
 - Claude backend: `backend = "claude"` in `radar.toml` (or
   `paper-radar run --backend claude`) judges papers with Claude via the
   Anthropic Messages API, using `ANTHROPIC_API_KEY` and defaulting to
-  `claude-haiku-5-5`. Stdlib only, like the Jev backends. Claude s
+  `claude-haiku-5-5`. Stdlib only, like the Jev backends. Claude's
   probabilities are self-reported, not calibrated — run
   `paper-radar calibrate` on your own labels before trusting a run, and
   note that the Cochrane screening numbers in the README were measured
