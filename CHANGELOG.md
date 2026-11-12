@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4 — 2026-11-12
+
+- Fix `__version__` lagging behind `pyproject.toml`: it still read 0.1.0
+  on the 0.1.3 install, so `paper-radar --version` printed 0.1.0 while
+  pip reported 0.1.3. New regression test asserts `__version__` matches
+  `pyproject.toml`, so a future bump cannot silently drift again.
+
 ## 0.1.3 — 2026-11-11
 
 - Discoverability: the PyPI description now names Claude as an alternative
