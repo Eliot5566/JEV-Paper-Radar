@@ -20,7 +20,7 @@ from .render import day_stats, render_archive, render_day, render_feed
 from .scoring import Decision, decide
 from .screening import MANUAL, ScreenDecision, format_prisma, prisma_counts, screen
 from .sources import Getter, collect
-from .store import Store
+from .store import QUARANTINE_AFTER, Store
 from .summarize import summarize_top
 
 Log = Callable[[str], None]
@@ -183,7 +183,10 @@ def run(
     papers = collect(config.sources, **kwargs)
     fetched = len(papers)
     seen = store.seen_ids(today, config.output.dedupe_days)
-    fresh = [p for p in papers if p.id not in seen and p.title]
+    quarantined = store.quarantined_ids(today)
+    fresh = [p for p in papers if p.id not in seen and p.id not in quarantined and p.title]
+    if quarantined:
+        log(f"  - skipping {len(quarantined)} paper(s) quarantined after repeated failures (data/quarantine.jsonl)")
     if config.fold_duplicates and fresh:
         # Before judging, not after: fifteen outlets reporting one announcement should
         # cost one judgement, not fifteen.
@@ -216,6 +219,12 @@ def run(
         log(f"  ! {paper.id}: {reason}")
     if failures:
         log(f"  ! {len(failures)} paper(s) failed and will be retried next run")
+        newly = store.record_failures(day, failures)
+        if newly:
+            log(
+                f"  ! {len(newly)} paper(s) quarantined after {QUARANTINE_AFTER} failed attempts "
+                f"(skipped for 30 days, see data/quarantine.jsonl): {', '.join(newly[:5])}"
+            )
 
     summarize_top(config.summaries, decisions, env=env, log=log)
     store.write_decisions(day, decisions)

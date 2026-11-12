@@ -142,6 +142,8 @@ def test_malformed_json_raises(server_factory):
     server = server_factory([(200, {}, bad)])
     with pytest.raises(JevError, match="not valid JSON"):
         _backend(server.url).decide("state", QUESTIONS)
+    # The malformed answer gets one repair attempt (same bad reply again).
+    assert len(server.requests) == 2
 
 
 def test_missing_text_content_raises(server_factory):
@@ -150,6 +152,42 @@ def test_missing_text_content_raises(server_factory):
     server = server_factory([(200, {}, bad)])
     with pytest.raises(JevError, match="no text content"):
         _backend(server.url).decide("state", QUESTIONS)
+    assert len(server.requests) == 2
+
+
+def test_json_with_surrounding_prose_is_accepted(server_factory):
+    text = "Here is my answer:\n" + json.dumps(GOOD_ANSWERS) + "\nHope this helps."
+    server = server_factory([(200, {}, _claude_response(GOOD_ANSWERS) | {"content": [{"type": "text", "text": text}]})])
+    result = _backend(server.url).decide({"title": "T", "abstract": "A"}, QUESTIONS)
+    assert result.answers["i_a"]["noul"] == 0.93
+
+
+def test_numeric_string_is_coerced():
+    result = parse_claude_answers({**GOOD_ANSWERS, "i_a": "0.93"}, QUESTIONS, "claude-haiku-5-5")
+    assert result.answers["i_a"]["noul"] == 0.93
+    result = parse_claude_answers({**GOOD_ANSWERS, "s_evidence": "1"}, QUESTIONS, "claude-haiku-5-5")
+    assert result.answers["s_evidence"]["score"] == 1.0
+
+
+def test_repair_retry_fixes_bad_answer(server_factory):
+    bad = _claude_response({**GOOD_ANSWERS, "i_a": "high"})
+    server = server_factory([(200, {}, bad), (200, {}, _claude_response(GOOD_ANSWERS))])
+    result = _backend(server.url).decide({"title": "T", "abstract": "A"}, QUESTIONS)
+    assert result.answers["i_a"]["noul"] == 0.93
+    assert len(server.requests) == 2
+    repair = server.requests[1]["body"]["messages"]
+    assert [m["role"] for m in repair] == ["user", "assistant", "user"]
+    assert "high" in repair[1]["content"]  # the bad reply is echoed back
+    assert "ONLY a JSON object" in repair[2]["content"]
+
+
+def test_repair_retry_gives_up_after_two_bad_answers(server_factory):
+    bad = _claude_response(GOOD_ANSWERS)
+    bad["content"] = [{"type": "text", "text": "not json at all"}]
+    server = server_factory([(200, {}, bad), (200, {}, bad)])
+    with pytest.raises(JevError, match="not valid JSON"):
+        _backend(server.url).decide("state", QUESTIONS)
+    assert len(server.requests) == 2
 
 
 @pytest.mark.parametrize(
