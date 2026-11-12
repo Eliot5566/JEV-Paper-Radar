@@ -114,7 +114,15 @@ Any repo with a `radar.toml` can run it as one step:
 
 Pin to a release tag. Keys are passed as secrets and are never printed in
 the log. A one-minute example lives at
-github.com/Eliot5566/paper-radar-claude-example.
+github.com/Eliot5566/paper-radar-claude-example — its latest daily runs:
+2026-11-11, 454 papers, 68 shortlisted, 29 must-read, 460,564 input
+tokens, $0.069; 2026-11-12, 11 new papers, 1 must-read, 11,001 tokens,
+$0.0017.
+
+Schedule the workflow after 05:00 UTC, not 02:00 UTC. The arXiv RSS feed
+rebuilds around 05:00 UTC, so a 02:00 UTC run reads the previous day's
+listing and only re-judges the papers that failed before (verified
+2026-11-12: a 02:50 UTC run judged 11 new papers out of 478 fetched).
 
 ## Troubleshooting
 
