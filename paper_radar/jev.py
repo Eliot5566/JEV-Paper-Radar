@@ -200,6 +200,14 @@ CLAUDE_SYSTEM = (
 )
 
 
+CLAUDE_REPAIR = (
+    "Your previous reply could not be used: {reason} "
+    "Reply with ONLY a JSON object keyed by question, no prose, no markdown fences. "
+    "For each 'noul' question give a number between 0 and 1; for each 'choice' "
+    "question give the exact label string; for each 'score' question give a number."
+)
+
+
 def _claude_user_text(state: Any, questions: dict[str, dict[str, Any]]) -> str:
     """The one user message: the paper, then every question with its expected shape."""
     spec: dict[str, Any] = {}
@@ -234,8 +242,39 @@ def _extract_claude_text(data: Any) -> str:
     return text
 
 
+def _extract_json_object(text: str) -> Any:
+    """Parse the first balanced {...} object in text (tolerates surrounding prose)."""
+    start = text.find("{")
+    if start < 0:
+        raise JevError("Malformed Claude response: not valid JSON (no object found)") from None
+    depth = 0
+    in_string = False
+    escaped = False
+    for i in range(start, len(text)):
+        char = text[i]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(text[start : i + 1])
+                except json.JSONDecodeError as error:
+                    raise JevError(f"Malformed Claude response: not valid JSON ({error})") from None
+    raise JevError("Malformed Claude response: not valid JSON (unbalanced braces)") from None
+
+
 def _parse_claude_json(text: str) -> Any:
-    """Parse the model's JSON, tolerating a ```json fence around it."""
+    """Parse the model's JSON, tolerating a ```json fence or prose around it."""
     stripped = text.strip()
     if stripped.startswith("```"):
         lines = stripped.splitlines()
@@ -245,12 +284,32 @@ def _parse_claude_json(text: str) -> Any:
         stripped = "\n".join(lines).strip()
     try:
         return json.loads(stripped)
-    except json.JSONDecodeError as error:
-        raise JevError(f"Malformed Claude response: not valid JSON ({error})") from None
+    except json.JSONDecodeError:
+        pass
+    # Fallback: the model wrapped the object in prose — take the first
+    # balanced {...}. Still raises if there is no balanced object.
+    return _extract_json_object(stripped)
 
 
 def _is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _coerce_number(value: Any) -> float | None:
+    """A number, or a string that parses as one ("0.85"); anything else is None.
+
+    The model sometimes writes a probability as a string. That is a
+    representation slip, not a different judgement, so it is coerced; a
+    non-numeric string, null, or a boolean is still rejected.
+    """
+    if _is_number(value):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip())
+        except ValueError:
+            return None
+    return None
 
 
 def parse_claude_answers(
@@ -274,9 +333,10 @@ def parse_claude_answers(
         if kind == "noul":
             if isinstance(value, dict):
                 value = value.get("noul", value.get("probability"))
-            if not _is_number(value) or not 0 <= float(value) <= 1:
+            number = _coerce_number(value)
+            if number is None or not 0 <= number <= 1:
                 raise JevError(f"Malformed Claude response: {key!r} noul must be a number in [0, 1]")
-            answers[key] = {"type": "noul", "noul": round(float(value), 4)}
+            answers[key] = {"type": "noul", "noul": round(number, 4)}
         elif kind == "choice":
             if isinstance(value, dict):
                 value = value.get("choice")
@@ -288,13 +348,14 @@ def parse_claude_answers(
             if isinstance(value, dict):
                 value = value.get("score")
             levels = list(question["criteria"])
-            if not _is_number(value) or not 0 <= float(value) <= len(levels) - 1:
+            number = _coerce_number(value)
+            if number is None or not 0 <= number <= len(levels) - 1:
                 raise JevError(
                     f"Malformed Claude response: {key!r} score must be a number in [0, {len(levels) - 1}]"
                 )
             answers[key] = {
                 "type": "score",
-                "score": round(float(value), 3),
+                "score": round(number, 3),
                 "legend": {str(i): level for i, level in enumerate(levels)},
             }
         else:
@@ -320,6 +381,11 @@ class ClaudeBackend:
     with ``paper-radar calibrate`` before the thresholds mean anything; and
     Haiku 5.5 rejects assistant prefill, so no prefill trick is used here —
     the JSON instruction lives in the system prompt and the user message.
+    One exception: a malformed answer gets a single repair attempt in which
+    the model's own reply is echoed back as an assistant turn (an ordinary
+    multi-turn exchange, ending on a user turn) with what was wrong with it.
+    A second bad answer raises, and the pipeline quarantines the paper after
+    repeated failures instead of retrying it every day.
     """
 
     name = "claude"
@@ -348,19 +414,22 @@ class ClaudeBackend:
         }
 
     def decide(self, state: Any, questions: dict[str, dict[str, Any]]) -> JevResult:
-        body = json.dumps(
-            {
-                "model": self.model,
-                "max_tokens": 1024,
-                # No "temperature": claude-haiku-5-5 rejects it with
-                # 400 "`temperature` is deprecated for this model".
-                "system": CLAUDE_SYSTEM,
-                "messages": [{"role": "user", "content": _claude_user_text(state, questions)}],
-            }
-        ).encode("utf-8")
+        user_text = _claude_user_text(state, questions)
+        messages: list[dict[str, str]] = [{"role": "user", "content": user_text}]
+        repaired = False
         attempt = 0
         while True:
             self.limiter.acquire()
+            body = json.dumps(
+                {
+                    "model": self.model,
+                    "max_tokens": 1024,
+                    # No "temperature": claude-haiku-5-5 rejects it with
+                    # 400 "`temperature` is deprecated for this model".
+                    "system": CLAUDE_SYSTEM,
+                    "messages": messages,
+                }
+            ).encode("utf-8")
             request = urllib.request.Request(self.url, data=body, method="POST", headers=self._headers)
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
@@ -378,12 +447,28 @@ class ClaudeBackend:
                     raise JevError(f"{self.name} request failed: {error}") from None
                 delay = _backoff(attempt)
             else:
-                # A malformed model answer is a JevError, not a transport failure:
-                # it is raised as-is, not retried, so a bad key or bad prompt
-                # surfaces immediately instead of burning retries.
-                text = _extract_claude_text(data)
-                raw = _parse_claude_json(text)
-                return parse_claude_answers(raw, questions, self.model, usage=data.get("usage") or {})
+                # A malformed model answer gets ONE repair attempt: the model's
+                # own reply is echoed back with what was wrong with it. (This
+                # is an ordinary multi-turn exchange, not an assistant
+                # prefill — the conversation still ends on a user turn.)
+                # A second bad answer raises, so a systematically bad prompt
+                # still surfaces instead of burning retries — and the pipeline
+                # quarantines the paper after repeated failures instead of
+                # retrying it every day.
+                text = ""
+                try:
+                    text = _extract_claude_text(data)
+                    raw = _parse_claude_json(text)
+                    return parse_claude_answers(raw, questions, self.model, usage=data.get("usage") or {})
+                except JevError as error:
+                    if repaired:
+                        raise
+                    repaired = True
+                    messages = [{"role": "user", "content": user_text}]
+                    if text:
+                        messages.append({"role": "assistant", "content": text})
+                    messages.append({"role": "user", "content": CLAUDE_REPAIR.format(reason=error)})
+                    continue
             attempt += 1
             time.sleep(delay)
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- Claude backend: a malformed answer no longer fails the paper outright.
+  The parser now tolerates prose around the JSON object and probabilities
+  written as strings ("0.85"); a still-malformed answer gets one repair
+  attempt, with the model's own reply echoed back and what was wrong with
+  it. Verified against the live API: a bad reply `{"ai-agents": "high"}`
+  was repaired to `{"ai-agents": 0.95}` in one turn.
+- Quarantine: a paper that fails three days in a row is skipped for 30
+  days (`data/quarantine.jsonl`) instead of being retried — and billed —
+  every morning; it gets one fresh attempt when the window expires, and
+  `run --rejudge` gives it a fresh chance immediately. This stops the
+  13 papers in the Claude example repo that failed every day on Claude
+  response-format errors from burning tokens on retries that never resolve.
+
 ## 0.1.4 — 2026-11-12
 
 - Fix `__version__` lagging behind `pyproject.toml`: it still read 0.1.0

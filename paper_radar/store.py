@@ -5,12 +5,16 @@
 * `screening/<day>.jsonl`          every screened record, kept in full (see below)
 * `runs.jsonl`                     one line per run: counts, tokens, cost, model, time
 * `labels.jsonl`                   your yes/no feedback, used by `paper-radar calibrate`
+* `quarantine.jsonl`               papers that failed repeatedly: id, failure count,
+                                  first/last failed day, last reason, quarantined_until
 
 Screening records are never split or compressed: a systematic review has to be able to
 account for every record it saw, including the ones the tool said no to.
 
 Deduplication reads ids from the last `dedupe_days` of decision files, so there is no
-ever-growing "seen" file rewritten on every run.
+ever-growing "seen" file rewritten on every run. Quarantined papers are skipped the
+same way, for 30 days after their third consecutive failure, so a paper the model
+cannot judge stops costing a call every morning.
 """
 
 from __future__ import annotations
@@ -25,6 +29,11 @@ from .scoring import Decision
 
 SHOWN_BANDS = {"must_read", "maybe"}
 
+# A paper that fails this many days in a row is quarantined for this long,
+# instead of being retried (and billed) every morning.
+QUARANTINE_AFTER = 3
+QUARANTINE_DAYS = 30
+
 
 class Store:
     def __init__(self, data_dir: Path):
@@ -33,6 +42,7 @@ class Store:
         self.screening_dir = data_dir / "screening"
         self.runs_path = data_dir / "runs.jsonl"
         self.labels_path = data_dir / "labels.jsonl"
+        self.quarantine_path = data_dir / "quarantine.jsonl"
 
     # ------------------------------------------------------------------ decisions
     def _full(self, day: str) -> Path:
@@ -82,6 +92,13 @@ class Store:
             if path.exists():
                 path.unlink()
                 removed += 1
+        # A changed config may fix what made a paper fail, so rejudging a day
+        # also gives its quarantined papers a fresh chance.
+        if self.quarantine_path.exists():
+            records = self.load_quarantine()
+            kept = {k: v for k, v in records.items() if v.get("last_failed") != day}
+            if len(kept) != len(records):
+                self._write_quarantine(kept)
         return removed
 
     def seen_ids(self, today: date, window_days: int) -> set[str]:
@@ -91,6 +108,57 @@ class Store:
             if day >= cutoff:
                 ids.update(d.paper.id for d in self.load_decisions(day))
         return ids
+
+    # ----------------------------------------------------------------- quarantine
+
+    def load_quarantine(self) -> dict[str, dict[str, Any]]:
+        """Papers that failed repeatedly: {id: {failures, first_failed, last_failed, last_reason, quarantined_until}}."""
+        records: dict[str, dict[str, Any]] = {}
+        if self.quarantine_path.exists():
+            with self.quarantine_path.open(encoding="utf-8") as handle:
+                for line in handle:
+                    if line.strip():
+                        record = json.loads(line)
+                        records[str(record["id"])] = record
+        return records
+
+    def _write_quarantine(self, records: dict[str, dict[str, Any]]) -> None:
+        self.root.mkdir(parents=True, exist_ok=True)
+        with self.quarantine_path.open("w", encoding="utf-8") as handle:
+            for record in sorted(records.values(), key=lambda r: str(r["id"])):
+                handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    def quarantined_ids(self, today: date) -> set[str]:
+        """Ids to skip this run: failed QUARANTINE_AFTER times and still in the window."""
+        now = today.isoformat()
+        return {
+            paper_id
+            for paper_id, record in self.load_quarantine().items()
+            if record.get("quarantined_until") and record["quarantined_until"] >= now
+        }
+
+    def record_failures(self, day: str, failures: list[tuple[Any, str]]) -> list[str]:
+        """Count today's failures; quarantine a paper after QUARANTINE_AFTER of them.
+
+        Returns the ids newly quarantined by this call. A quarantined paper is
+        skipped for QUARANTINE_DAYS, then gets one fresh attempt; a further
+        failure quarantines it again.
+        """
+        records = self.load_quarantine()
+        newly: list[str] = []
+        for paper, reason in failures:
+            record = records.get(paper.id, {"id": paper.id, "failures": 0, "first_failed": day})
+            record["failures"] = int(record.get("failures") or 0) + 1
+            record["last_failed"] = day
+            record["last_reason"] = reason
+            until = str(record.get("quarantined_until") or "")
+            if record["failures"] >= QUARANTINE_AFTER and until < day:
+                record["quarantined_until"] = (date.fromisoformat(day) + timedelta(days=QUARANTINE_DAYS)).isoformat()
+                newly.append(paper.id)
+            records[paper.id] = record
+        if failures:
+            self._write_quarantine(records)
+        return newly
 
     # ----------------------------------------------------------------------- runs
     def append_run(self, summary: dict[str, Any]) -> None:
