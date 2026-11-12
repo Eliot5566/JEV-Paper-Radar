@@ -137,7 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Eliot5566/JEV-Paper-Radar@v0.1.4
+      - uses: Eliot5566/JEV-Paper-Radar@v0.1.5
         with:
           config: radar.toml
           typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
