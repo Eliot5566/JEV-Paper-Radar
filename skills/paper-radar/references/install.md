@@ -14,9 +14,12 @@ Next: "Use paper-radar to rank the fictional abstracts in examples/papers.json
 for benchmarks evaluating tool-using LLM agents. Export HTML, CSV, JSON and RSS,
 and explain that the current chat made the scores."
 
-For your own work, provide an interest and titles/abstracts you are authorized
-to share with Claude. The conversation-native mode uses normal Claude plan
-usage; it needs no separate API key or external data service. It is not an
+For your own work, provide a research interest or arXiv/PubMed/DOI links. Version
+0.2.0 can retrieve public titles and abstracts before ranking (see retrieval.md);
+you do not need to prepare CSV. You can still paste titles/abstracts directly.
+Public retrieval needs permitted network or existing Claude web tools and sends
+the search terms/identifiers to public metadata sources. No model API key is
+needed. The conversation-native mode uses normal Claude plan usage. It is not an
 automatic background research feed. Keep your exported files yourself.
 
 ## Claude Code
@@ -34,7 +37,10 @@ A source-folder copy can use a separately installed CLI; see live-api.md.
 第一次可說：「使用 paper-radar 技能跑內附離線示範，不安裝套件、不連網、
 不要求 API 金鑰，提供 HTML 與 RSS。」示範使用 44 篇虛構論文與關鍵字規則。
 
-接著提供自己的研究興趣、論文標題與摘要，Claude 可在目前對話中評分，
+0.2.0 版可以直接提供研究興趣或 arXiv／PubMed／DOI 連結，不必先整理 CSV。
+技能透過公開來源取得標題摘要，再由目前對話評分。需要環境允許連線，
+或使用既有 Claude 網頁工具；無法連線、缺摘要與不支援連結都會明示。
+也可繼續直接貼上論文標題與摘要。Claude 可在目前對話中評分，
 輸出網頁、CSV、JSON、RSS。不需額外 API 金鑰，但仍使用 Claude 對話方案額度。
 分數是助理自述、不是校準後的機率；程式無法取得對話 token 或費用，記為未知。
 
@@ -46,6 +52,7 @@ A source-folder copy can use a separately installed CLI; see live-api.md.
 - SKILL.md: workflow instructions (description under 200 characters)
 - scripts/run.py: bundled CLI entry point
 - scripts/chat_report.py: offline, validated chat-score exporter
+- scripts/retrieve.py: bounded public metadata search and identifier resolution
 - vendor/paper_radar/: Python source and fictional demo data
 - examples/papers.json: three fictional abstracts without prewritten scores
 - references/: format, setup, live-API notes and starter configuration

@@ -32,14 +32,14 @@ def build(output: Path, source_commit: str = "working-tree") -> dict:
             files["vendor/paper_radar/" + path.relative_to(runtime).as_posix()] = path.read_bytes()
     files["LICENSE"] = (ROOT / "LICENSE").read_bytes()
     files["references/claude-starter.toml"] = (ROOT / "profiles/claude-starter.toml").read_bytes()
-    for required in ("scripts/run.py", "scripts/chat_report.py", "examples/papers.json",
+    for required in ("scripts/run.py", "scripts/chat_report.py", "scripts/retrieve.py", "examples/papers.json",
                      "vendor/paper_radar/cli.py", "vendor/paper_radar/demo/arxiv_demo.xml"):
         if required not in files:
             raise ValueError(f"missing bundled file: {required}")
     # Text normalization makes the archive identical on Windows and Linux.
     files = {name: data.replace(b"\r\n", b"\n") for name, data in files.items()}
     version = re.search(r'__version__\s*=\s*"([^"]+)"', files["vendor/paper_radar/__init__.py"].decode()).group(1)
-    manifest = {"skill": name, "skill_bundle_version": "0.1.0", "paper_radar_version": version,
+    manifest = {"skill": name, "skill_bundle_version": "0.2.0", "paper_radar_version": version,
                 "source_commit": source_commit, "description_characters": len(description),
                 "python": ">=3.11", "external_runtime_dependencies": [],
                 "files": {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}

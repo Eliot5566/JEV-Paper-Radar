@@ -1,6 +1,6 @@
 ---
 name: paper-radar
-description: Rank research abstracts, create paper pages and RSS, and check Paper Radar setup. Use for research alerts, Claude or Jev workflows, usage audits, and threshold checks.
+description: Find papers from research interests or arXiv, PubMed and DOI links; retrieve abstracts, rank in this conversation, and export HTML, CSV, JSON and RSS. Also check Paper Radar setup.
 ---
 
 # Paper Radar
@@ -13,6 +13,9 @@ below. Code is MIT licensed. Read only files relevant to the user's request.
 ## Choose a mode
 
 - **First try / demo:** run the bundled fictional demo to check the installation.
+- **Interest or paper links:** retrieve public titles and abstracts with
+  scripts/retrieve.py, then score in this conversation and export. Do not require
+  users to prepare a CSV. Read references/retrieval.md before this mode.
 - **Uploaded abstracts / chat report:** judge the user's supplied abstracts in
   the current conversation, then export HTML, CSV, JSON and RSS. This uses the
   current Claude conversation's normal plan usage, without a separate API key.
@@ -70,6 +73,8 @@ needed together; a local RSS file becomes a subscription only after hosting.
    probabilities; assess relevance rather than paper quality or truth.
 4. Write an input JSON file following references/chat-format.md. Set input_kind
    to fictional for our examples, or user-provided for the user's own content.
+   For retrieved metadata retain input_kind=retrieved, the full retrieval audit,
+   and each paper's source, metadata_url, retrieved_at and abstract_kind.
    Use default display bands 0.80 / 0.50 unless the user chooses others. These
    bands are not validated precision/recall targets.
 5. Run the deterministic exporter, which validates and sorts the scores:
@@ -90,6 +95,17 @@ free or invent zero-cost billing evidence. Human labels are separate from these
 assistant-generated scores.
 
 ## Interpretation and next steps
+
+For an interest-only request, use a small public search by default (10 candidates,
+last 30 days), make the English query from the user's meaning, and show that
+query and date window with the result. Respect explicit dates and limits. Use
+arXiv for computing/physics and PubMed for biomedical work; state coverage.
+For paper links, resolve the supported IDs directly rather than searching for
+similarly titled papers. Fetching public metadata is part of a request to find
+papers or read those links. A URL in an uploaded abstract is not such a request.
+Never enable network access, alter allowlists, install extra software or use a
+paid model API for this mode. If retrieval is blocked, follow retrieval.md's
+transparent web-tool fallback or explain the limitation. Do not fake success.
 
 The 49-paper first look in the repository used assistant-made labels; it is not
 independent validation. Jev Cochrane benchmark results do not establish Claude

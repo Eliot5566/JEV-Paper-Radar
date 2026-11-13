@@ -33,8 +33,13 @@ def validate(data):
     title = text(data.get("title"), "title")
     interest = text(data.get("interest"), "interest")
     kind = data.get("input_kind")
-    if kind not in ("fictional", "user-provided"):
-        raise ValueError("input_kind must be fictional or user-provided")
+    if kind not in ("fictional", "user-provided", "retrieved"):
+        raise ValueError("input_kind must be fictional, user-provided or retrieved")
+    retrieval = data.get("retrieval")
+    if kind == "retrieved":
+        if not isinstance(retrieval, dict) or any(not isinstance(retrieval.get(k), list)
+                                                 for k in ("requests", "missing_abstracts", "errors")):
+            raise ValueError("retrieved input needs its retrieval audit, including missing abstracts and errors")
     thresholds = data.get("thresholds", {"must_read": 0.8, "maybe": 0.5})
     if not isinstance(thresholds, dict):
         raise ValueError("thresholds must be an object")
@@ -61,16 +66,29 @@ def validate(data):
                     or any(c.isspace() for c in url)):
             raise ValueError("paper URL must be an absolute http(s) URL or empty")
         row["url"] = url
+        for key in ("source", "published", "metadata_url", "retrieved_at", "abstract_kind"):
+            value = paper.get(key, "")
+            if not isinstance(value, str):
+                raise ValueError(f"paper {index} {key} must be a string")
+            row[key] = value
+        if kind == "retrieved" and any(not row[k].strip() for k in ("source", "metadata_url", "retrieved_at", "abstract_kind")):
+            raise ValueError("retrieved paper needs source, metadata_url, retrieved_at and abstract_kind")
+        if kind == "retrieved" and row["abstract_kind"] not in ("source-abstract", "web-summary"):
+            raise ValueError("retrieved abstract_kind must be source-abstract or web-summary")
         row["score"] = score(paper.get("score"), f"paper {index} score")
         row["band"] = "must_read" if row["score"] >= must else "maybe" if row["score"] >= maybe else "skip"
         rows.append(row)
-    return {"title": title, "interest": interest, "input_kind": kind,
+    report = {"title": title, "interest": interest, "input_kind": kind,
             "thresholds": {"must_read": must, "maybe": maybe},
             "scorer": "Claude conversation (self-reported scores)",
             "token_usage": None, "cost_usd": None,
             "external_api_requests_by_renderer": 0,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "papers": sorted(rows, key=lambda row: row["score"], reverse=True)}
+    if kind == "retrieved":
+        # Keep failures and missing-abstract records visible in the downloadable audit.
+        report["retrieval"] = json.loads(json.dumps(retrieval, allow_nan=False))
+    return report
 
 
 def csv_cell(value):
@@ -87,7 +105,12 @@ def render(data, out):
         raise ValueError("choose a new or empty output directory")
     out.mkdir(parents=True, exist_ok=True)
     e = html.escape
-    notice = ("Fictional input. " if report["input_kind"] == "fictional" else "User-provided abstracts. ")
+    notice = {"fictional": "Fictional input. ", "user-provided": "User-provided abstracts. ",
+              "retrieved": "Retrieved public metadata abstracts; not full-text review. "}[report["input_kind"]]
+    if "retrieval" in report:
+        audit = report["retrieval"]
+        notice += (f"Retrieval: {len(audit['missing_abstracts'])} records without complete title/abstract, "
+                   f"{len(audit['errors'])} errors. These were not scored; see report.json for details. ")
     notice += ("Scores were made in the current Claude conversation and are not calibrated probabilities. "
                "Chat usage and cost are unavailable to this report. This renderer made no API requests.")
     cards = []
@@ -95,9 +118,11 @@ def render(data, out):
         heading = e(row["title"])
         if row["url"]:
             heading = f'<a href="{e(row["url"], quote=True)}">{heading}</a>'
+        provenance = (f'<p><small>Source: {e(row["source"])} · Retrieved: {e(row["retrieved_at"])} · {e(row["abstract_kind"])}</small></p>'
+                      if row["source"] else "")
         cards.append(f'<article><small>{e(row["band"])} · {row["score"]:.2f}</small>'
                      f'<h2>{heading}</h2><p>{e(row["reason"])}</p>'
-                     f'<details><summary>Abstract</summary><p>{e(row["abstract"])}</p></details></article>')
+                     f'{provenance}<details><summary>Abstract</summary><p>{e(row["abstract"])}</p></details></article>')
     page = ('<!doctype html><html lang="en"><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
             f'<title>{e(report["title"])}</title>'
@@ -111,7 +136,7 @@ def render(data, out):
     (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     with (out / "report.csv").open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.writer(handle)
-        fields = ["id", "title", "score", "band", "reason", "url", "abstract"]
+        fields = ["id", "title", "score", "band", "reason", "url", "abstract", "source", "published", "retrieved_at", "metadata_url", "abstract_kind"]
         writer.writerow(fields)
         writer.writerows([csv_cell(row[key]) for key in fields] for row in report["papers"])
     rss = ET.Element("rss", version="2.0")
