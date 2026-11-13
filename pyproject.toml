@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paper-radar"
-version = "0.1.5"
+version = "0.2.0"
 description = "Let Jev or Claude read every new paper on arXiv and bioRxiv each day, then show you the few worth reading. Plain-English interests, probabilities, cents per day."
 readme = "README.md"
 requires-python = ">=3.11"

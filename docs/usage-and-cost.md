@@ -1,6 +1,6 @@
 # Request usage and cost accounting
 
-This describes the source on main after the usage-accounting change; releases before it do not include this audit.
+This describes Paper Radar 0.2.0 and later. Earlier releases do not include this audit.
 
 ## What is recorded
 

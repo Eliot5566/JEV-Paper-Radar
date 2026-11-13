@@ -124,14 +124,14 @@ After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcem
 
 ### Inspect usage and cost
 
-The source on main now records judging attempts in `data/usage.jsonl`, including
+Version 0.2.0 records judging attempts in `data/usage.jsonl`, including
 repair responses and failed judgements. Input, output and cache tokens are kept
 separately; unset rates or missing usage produce **cost unknown**, not a zero bill.
 Historical figures above are the measurements or estimates described with them,
 not reconstructed provider invoices. Optional TL;DR generation is outside this
 auditing scope. Configure the rates for your model and prompt-length tier;
 [usage and cost accounting](docs/usage-and-cost.md) explains the fields and limits.
-Releases before this change do not include the new audit.
+Releases before 0.2.0 do not include the new audit.
 
 ### Use as a GitHub Action
 
@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Eliot5566/JEV-Paper-Radar@v0.1.5
+      - uses: Eliot5566/JEV-Paper-Radar@v0.2.0
         with:
           config: radar.toml
           typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}

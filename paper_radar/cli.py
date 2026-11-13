@@ -353,6 +353,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Pipes on Windows can still use cp950/cp1252. Keep their chosen encoding,
+    # but do not let an unrepresentable log symbol abort a completed workflow.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="backslashreplace")
     args = build_parser().parse_args(argv)
     load_dotenv(Path(".env"))
     config_path = getattr(args, "config", None)

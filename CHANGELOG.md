@@ -1,12 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-11-13
 
 - Reject out-of-range, non-finite and boolean numeric answers before ranking or screening.
 - Audit judging input/output/cache usage, including repair responses, failed judgements and aborted batches, in `data/usage.jsonl`.
 - Configure output/cache rates and a pricing date; show unknown totals when usage or a required rate is missing. Day, archive and directory costs use request-level accounting.
 - Keep historical and per-decision estimates distinct from complete judging costs; optional TL;DR generation is outside the audit.
 - Tests also clear `ANTHROPIC_API_KEY` from the inherited environment.
+- Keep CLI logging usable when a Windows pipe uses a legacy encoding: unrepresentable characters are escaped instead of aborting the command.
+- Compatibility: `RunResult.cost`, `ScreenResult.cost` and run-level `cost_usd` can now be null when the total is unknown. Downstream consumers must handle that value rather than treating it as zero.
 
 
 ## 0.1.5 — 2026-11-12
