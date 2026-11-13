@@ -115,3 +115,5 @@ paper-radar calibrate --precision 0.9 --recall 0.9
 - 本專案與 TypeSafe AI 無關聯
 
 MIT 授權。
+
+目前 main 原始碼已加入判斷請求的使用量稽核（既有發布版本尚未包含）：`data/usage.jsonl` 保留輸入、輸出、快取與格式修復／失敗請求；缺少使用量或費率時顯示費用未知。歷史輸入估算不當成完整帳單，額外 TL;DR 生成也不在此範圍。詳見[使用量與成本說明](docs/usage-and-cost.md)。

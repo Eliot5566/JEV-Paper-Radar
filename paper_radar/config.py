@@ -111,6 +111,10 @@ class JevSettings:
     timeout: float = 20.0
     max_retries: int = 4
     price_per_mtok: float = 0.042
+    output_price_per_mtok: float | None = None
+    cache_read_price_per_mtok: float | None = None
+    cache_creation_price_per_mtok: float | None = None
+    pricing_as_of: str = ""
 
 
 @dataclass
@@ -323,8 +327,12 @@ def validate(config: Config) -> None:
         raise ConfigError("output.dedupe_days and output.feed_days must be >= 1, near_misses >= 0")
     if config.output.feedback_repo and not re.match(r"^[\w.-]+/[\w.-]+$", config.output.feedback_repo):
         raise ConfigError('output.feedback_repo must look like "owner/name"')
-    if config.jev.price_per_mtok < 0:
-        raise ConfigError("jev.price_per_mtok must be >= 0")
+    if isinstance(config.jev.price_per_mtok, bool) or not isinstance(config.jev.price_per_mtok, (int, float)) or not 0 <= config.jev.price_per_mtok < float("inf"):
+        raise ConfigError("jev.price_per_mtok must be a finite number >= 0")
+    for name in ("output_price_per_mtok", "cache_read_price_per_mtok", "cache_creation_price_per_mtok"):
+        value = getattr(config.jev, name)
+        if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value < float("inf")):
+            raise ConfigError(f"jev.{name} must be a finite number >= 0")
     if config.summaries.enabled and config.summaries.top_k < 1:
         raise ConfigError("summaries.top_k must be >= 1")
 

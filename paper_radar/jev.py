@@ -37,6 +37,7 @@ from typing import Any, Protocol
 from .config import JevSettings
 from .http import USER_AGENT
 from .models import JevResult
+from .usage import response_usage
 
 TYPESAFE_DEFAULT_BASE = "https://api.typesafe.ai"
 OPENROUTER_URL = "https://openrouter.ai/api/alpha/decisions"
@@ -62,6 +63,7 @@ class JevError(RuntimeError):
         super().__init__(message)
         self.fatal = fatal
         self.status = status
+        self.request_usage: list[dict[str, Any]] = []
 
 
 class Backend(Protocol):
@@ -119,12 +121,16 @@ def parse_response(data: Any, questions: dict[str, dict[str, Any]], fallback_mod
         if not isinstance(answer, dict) or answer.get("type") != question["type"]:
             raise JevError(f"Malformed response: answer {key!r} missing or wrong type")
         kind = question["type"]
-        if kind == "noul" and not isinstance(answer.get("noul"), (int, float)):
-            raise JevError(f"Malformed noul answer for {key!r}")
+        if kind == "noul":
+            value = answer.get("noul")
+            if not _is_number(value) or not 0 <= value <= 1:
+                raise JevError(f"Malformed noul answer for {key!r}: expected a number in [0, 1]")
         if kind == "choice" and answer.get("choice") not in question["criteria"]:
             raise JevError(f"Choice answer for {key!r} is outside the criteria")
-        if kind == "score" and not isinstance(answer.get("score"), (int, float)):
-            raise JevError(f"Malformed score answer for {key!r}")
+        if kind == "score":
+            value = answer.get("score")
+            if not _is_number(value) or not 0 <= value <= len(question["criteria"]) - 1:
+                raise JevError(f"Malformed score answer for {key!r}: expected a number within the criteria range")
     usage = data.get("usage") or {}
     cost = usage.get("cost")
     return JevResult(
@@ -163,6 +169,16 @@ class HTTPBackend:
         }
 
     def decide(self, state: Any, questions: dict[str, dict[str, Any]]) -> JevResult:
+        records: list[dict[str, Any]] = []
+        try:
+            result = self._decide(state, questions, records)
+        except JevError as error:
+            error.request_usage = records or [response_usage({})]
+            raise
+        result.request_usage = records
+        return result
+
+    def _decide(self, state: Any, questions: dict[str, dict[str, Any]], records: list[dict[str, Any]]) -> JevResult:
         body = json.dumps({"model": self.model, "state": state, "questions": questions}).encode("utf-8")
         attempt = 0
         while True:
@@ -171,8 +187,10 @@ class HTTPBackend:
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     data = json.loads(response.read())
+                records.append(response_usage(data))
                 return parse_response(data, questions, self.model)
             except urllib.error.HTTPError as error:
+                records.append(response_usage({}))
                 detail = error.read()[:300].decode("utf-8", errors="replace")
                 message = f"{self.name} HTTP {error.code}: {detail}"
                 if error.code in FATAL_STATUSES:
@@ -181,6 +199,7 @@ class HTTPBackend:
                     raise JevError(message, status=error.code) from None
                 delay = _retry_after(error.headers) or _backoff(attempt)
             except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as error:
+                records.append(response_usage({}))
                 if attempt >= self.max_retries:
                     raise JevError(f"{self.name} request failed: {error}") from None
                 delay = _backoff(attempt)
@@ -414,6 +433,17 @@ class ClaudeBackend:
         }
 
     def decide(self, state: Any, questions: dict[str, dict[str, Any]]) -> JevResult:
+        records: list[dict[str, Any]] = []
+        try:
+            result = self._decide(state, questions, records)
+        except JevError as error:
+            error.request_usage = records or [response_usage({})]
+            raise
+        result.request_usage = records
+        result.input_tokens = sum(r.get("input_tokens") or 0 for r in records)
+        return result
+
+    def _decide(self, state: Any, questions: dict[str, dict[str, Any]], records: list[dict[str, Any]]) -> JevResult:
         user_text = _claude_user_text(state, questions)
         messages: list[dict[str, str]] = [{"role": "user", "content": user_text}]
         repaired = False
@@ -435,6 +465,7 @@ class ClaudeBackend:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     data = json.loads(response.read())
             except urllib.error.HTTPError as error:
+                records.append(response_usage({}))
                 detail = error.read()[:300].decode("utf-8", errors="replace")
                 message = f"{self.name} HTTP {error.code}: {detail}"
                 if error.code in FATAL_STATUSES:
@@ -443,10 +474,12 @@ class ClaudeBackend:
                     raise JevError(message, status=error.code) from None
                 delay = _retry_after(error.headers) or _backoff(attempt)
             except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as error:
+                records.append(response_usage({}))
                 if attempt >= self.max_retries:
                     raise JevError(f"{self.name} request failed: {error}") from None
                 delay = _backoff(attempt)
             else:
+                records.append(response_usage(data))
                 # A malformed model answer gets ONE repair attempt: the model's
                 # own reply is echoed back with what was wrong with it. (This
                 # is an ordinary multi-turn exchange, not an assistant

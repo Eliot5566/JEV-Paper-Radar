@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Reject out-of-range, non-finite and boolean numeric answers before ranking or screening.
+- Audit judging input/output/cache usage, including repair responses, failed judgements and aborted batches, in `data/usage.jsonl`.
+- Configure output/cache rates and a pricing date; show unknown totals when usage or a required rate is missing. Day, archive and directory costs use request-level accounting.
+- Keep historical and per-decision estimates distinct from complete judging costs; optional TL;DR generation is outside the audit.
+- Tests also clear `ANTHROPIC_API_KEY` from the inherited environment.
+
+
 ## 0.1.5 — 2026-11-12
 
 - Claude backend: a malformed answer no longer fails the paper outright.

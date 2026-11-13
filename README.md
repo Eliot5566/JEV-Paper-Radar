@@ -103,7 +103,8 @@ benchmark numbers in this README are Jev-only**: the Cochrane screening
 result (96.9% recall, 78% work saved on 19,447 records) was measured with
 Jev and does not apply to Claude. The API is also billed separately from a
 Claude Pro/Max subscription, and costs more per paper than Jev; set
-`jev.price_per_mtok` to roughly 0.15 for a Haiku cost estimate, and lower
+`jev.price_per_mtok = 0.10` and `jev.output_price_per_mtok = 0.50`
+for the Haiku 5.5 ≤100K prompt tier checked on 2026-11-13, and lower
 `jev.requests_per_minute` if you are on a low API tier.
 
 There is now a first-look calibration for the Claude backend — see
@@ -120,6 +121,17 @@ ground-truth measurement in the repo is the screening benchmark — so this is
 the first labelled measurement for either backend on the daily radar.
 
 After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcement. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
+
+### Inspect usage and cost
+
+The source on main now records judging attempts in `data/usage.jsonl`, including
+repair responses and failed judgements. Input, output and cache tokens are kept
+separately; unset rates or missing usage produce **cost unknown**, not a zero bill.
+Historical figures above are the measurements or estimates described with them,
+not reconstructed provider invoices. Optional TL;DR generation is outside this
+auditing scope. Configure the rates for your model and prompt-length tier;
+[usage and cost accounting](docs/usage-and-cost.md) explains the fields and limits.
+Releases before this change do not include the new audit.
 
 ### Use as a GitHub Action
 

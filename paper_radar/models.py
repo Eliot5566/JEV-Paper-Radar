@@ -57,3 +57,4 @@ class JevResult:
     model: str
     input_tokens: int
     cost: float | None = None  # USD, when the backend reports it (OpenRouter does)
+    request_usage: list[dict[str, Any]] = field(default_factory=list)

@@ -136,6 +136,7 @@ def cmd_check(args: argparse.Namespace) -> int:
             "and do not apply to Claude."
         )
     print(f"Questions per paper: {len(questions)}  (≈{per_paper} input tokens per paper, rough estimate)")
+    print("The pre-run amounts below estimate input only; output, caching and retries are excluded. See data/usage.jsonl after a run.")
     for n in (200, 1500, 5000):
         cost = n * per_paper * config.jev.price_per_mtok / 1e6
         print(f"  {n:>5} papers/day ≈ ${cost:.3f}/day ≈ ${cost * 22:.2f}/month (22 announcement days)")
@@ -210,7 +211,7 @@ def cmd_screen(args: argparse.Namespace) -> int:
 
 def cmd_directory(args: argparse.Namespace) -> int:
     """One page listing every public radar, so a visitor can subscribe without forking."""
-    from .render import render_directory
+    from .render import day_stats, render_directory
 
     radars = []
     for path in args.configs:
@@ -237,7 +238,7 @@ def cmd_directory(args: argparse.Namespace) -> int:
                 judged=len(decisions),
                 shortlisted=sum(1 for d in decisions if d.band in ("must_read", "maybe")),
                 must_read=len(picks),
-                cost=sum(float(r.get("cost_usd") or 0) for r in runs),
+                cost=day_stats(day, decisions, runs, store.load_usage())["cost"],
                 top=[d.paper.title for d in picks[:3]],
                 # The latest run only, as on the day page: a source that failed this
                 # morning and answered this afternoon is not down.

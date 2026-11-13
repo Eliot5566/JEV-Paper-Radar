@@ -100,6 +100,10 @@ def _num(value: int) -> str:
     return f"{value:,}"
 
 
+def _money(value: float | None) -> str:
+    return f"≈ ${value:.4f}" if value is not None else "cost unknown"
+
+
 SINGULAR = {
     "points": "point", "comments": "comment", "likes": "like", "reposts": "repost",
     "replies": "reply", "upvotes": "upvote",
@@ -117,8 +121,27 @@ def _authors(authors: list[str]) -> str:
     return ", ".join(authors[:3]) + (" et al." if len(authors) > 3 else "")
 
 
-def day_stats(day: str, decisions: list[Decision], runs: list[dict[str, Any]]) -> dict[str, Any]:
+def day_stats(day: str, decisions: list[Decision], runs: list[dict[str, Any]], usage: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     day_runs = [r for r in runs if r.get("day") == day]
+    # Costs belong to requests, including failed/repaired judgements and reruns.
+    # Historical decision-only estimates cannot establish the full day's bill.
+    accounted = [r for r in day_runs if r.get("billing") or not (r.get("judged") or r.get("failed"))]
+    complete = bool(day_runs) and len(accounted) == len(day_runs) and all(r.get("cost_usd") is not None for r in day_runs)
+    cost = sum(float(r["cost_usd"]) for r in day_runs) if complete else None
+    tokens = sum(int(r.get("input_tokens") or 0) for r in day_runs) if day_runs else sum(d.input_tokens for d in decisions)
+    if usage is not None:
+        audits = [r for r in usage if r.get("day") == day]
+        legacy = [r for r in day_runs if not r.get("billing") and (r.get("judged") or r.get("failed"))]
+        # Aborted attempts have an audit but no normal run record. Count them
+        # here, without counting the normal run's copy of its billing twice.
+        audited_tokens = sum(int(r.get("input_tokens") or 0) for r in audits)
+        run_tokens = sum(int(r.get("input_tokens") or 0) for r in day_runs if r.get("billing"))
+        tokens = max(audited_tokens, run_tokens) + sum(int(r.get("input_tokens") or 0) for r in legacy)
+        expected_requests = sum(int(r.get("billing", {}).get("requests") or 0) for r in day_runs)
+        recorded_requests = sum(int(r.get("requests") or 0) for r in audits)
+        missing_audit = recorded_requests < expected_requests or (bool(decisions) and not audits)
+        complete = not legacy and not missing_audit and all(r.get("cost_usd") is not None for r in audits)
+        cost = sum(float(r["cost_usd"]) for r in audits) if complete else None
     counts = {band: sum(1 for d in decisions if d.band == band) for band in ("must_read", "maybe", "excluded")}
     # From the run record, not from this process, so a rebuild keeps saying which source
     # was down on the day it was down. Only the LATEST run counts: the first version took
@@ -132,8 +155,8 @@ def day_stats(day: str, decisions: list[Decision], runs: list[dict[str, Any]]) -
         "judged": len(decisions),
         "source_failures": [{"source": k, "error": v} for k, v in failed.items()],
         **counts,
-        "tokens": sum(d.input_tokens for d in decisions),
-        "cost": sum(d.cost for d in decisions),
+        "tokens": tokens,
+        "cost": cost,
         "seconds": sum(float(r.get("seconds") or 0) for r in day_runs),
         "fetched": sum(int(r.get("fetched") or 0) for r in day_runs),
         "backend": (day_runs[-1].get("backend") if day_runs else "") or "",
@@ -245,7 +268,7 @@ def render_day(
         meta_bits.append(f"{stats['seconds']:.0f} s")
     meta_bits.append(f"{_num(stats['tokens'])} input tokens")
     if not mock:
-        meta_bits.append(f"≈ ${stats['cost']:.4f}")
+        meta_bits.append("judging " + _money(stats.get("cost")))
     meta_bits.append(engine)
 
     banner = ""
@@ -306,12 +329,12 @@ def render_day(
 def render_archive(config: Config, rows: list[tuple[str, dict[str, Any]]]) -> str:
     lines = "".join(
         f'<tr><td><a href="{_e(day)}.html">{_e(day)}</a></td><td>{_num(s["judged"])}</td>'
-        f'<td>{_num(s["maybe"] + s["must_read"])}</td><td>{_num(s["must_read"])}</td><td>${s["cost"]:.4f}</td></tr>'
+        f'<td>{_num(s["maybe"] + s["must_read"])}</td><td>{_num(s["must_read"])}</td><td>{_money(s.get("cost"))}</td></tr>'
         for day, s in sorted(rows, reverse=True)
     )
     body = (
         '<section class="hero"><h1>Archive</h1><p class="sub">Every run, newest first.</p></section>'
-        "<table><thead><tr><th>Day</th><th>Read</th><th>Shortlisted</th><th>Must-read</th><th>Cost</th></tr></thead>"
+        "<table><thead><tr><th>Day</th><th>Read</th><th>Shortlisted</th><th>Must-read</th><th>Judging cost</th></tr></thead>"
         f"<tbody>{lines}</tbody></table>"
     )
     return _page(config, f"{config.title} · Archive", body)
@@ -388,7 +411,7 @@ def render_directory(radars: list[dict[str, Any]], *, title: str = "Paper Radar 
             f'<p class="counts"><b>{_num(r["judged"])}</b> read <span>→</span> '
             f'<b>{_num(r["shortlisted"])}</b> shortlisted <span>→</span> '
             f'<b class="hit">{_num(r["must_read"])}</b> worth opening '
-            f'<span>· {_e(r["day"])} · ${r["cost"]:.4f}</span></p>'
+            f'<span>· {_e(r["day"])} · judging {_money(r.get("cost"))}</span></p>'
             if r.get("judged") is not None
             else '<p class="counts quiet">No run recorded yet.</p>'
         )

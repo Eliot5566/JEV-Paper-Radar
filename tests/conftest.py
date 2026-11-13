@@ -17,6 +17,7 @@ DEMO_FEED = Path(__file__).resolve().parents[1] / "paper_radar" / "demo" / "arxi
 LIVE_ENV_VARS = (
     "TYPESAFE_API_KEY",
     "OPENROUTER_API_KEY",
+    "ANTHROPIC_API_KEY",
     "LLM_API_KEY",
     "GITHUB_REPOSITORY",
     "GITHUB_TOKEN",

@@ -6,7 +6,7 @@ import json
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Callable
 
@@ -22,6 +22,7 @@ from .screening import MANUAL, ScreenDecision, format_prisma, prisma_counts, scr
 from .sources import Getter, collect
 from .store import QUARANTINE_AFTER, Store
 from .summarize import summarize_top
+from .usage import response_usage, summarize_usage
 
 Log = Callable[[str], None]
 
@@ -35,7 +36,8 @@ class RunResult:
     decisions: list[Decision]
     seconds: float
     tokens: int
-    cost: float
+    cost: float | None
+    billing: dict[str, Any] = field(default_factory=dict)
 
     def counts(self) -> dict[str, int]:
         return {b: sum(1 for d in self.decisions if d.band == b) for b in ("must_read", "maybe", "skip", "excluded")}
@@ -57,6 +59,7 @@ def judge_all(
     config: Config,
     log: Log = print,
     verdict: Callable[[Paper, Any, Config], Any] = None,  # type: ignore[assignment]
+    usage: list[dict[str, Any]] | None = None,
 ) -> tuple[list[Any], list[tuple[Paper, str]]]:
     """Fan out one call per paper. `verdict` turns a Jev result into a decision;
     the daily radar passes `decide`, screening passes `screen`."""
@@ -73,6 +76,9 @@ def judge_all(
         try:
             result = backend.decide(paper.state(), questions)
         except JevError as error:
+            if usage is not None:
+                with lock:
+                    usage.extend(error.request_usage or [response_usage({})])
             if error.fatal:
                 stop.set()
                 with lock:
@@ -80,6 +86,14 @@ def judge_all(
             with lock:
                 failures.append((paper, str(error)))
             return None
+        if usage is not None:
+            with lock:
+                usage.extend(result.request_usage or [response_usage({
+                    "model": result.model,
+                    "usage": {"input_tokens": result.input_tokens,
+                              "output_tokens": 0 if backend.name == "mock" else None,
+                              "cost": result.cost},
+                })])
         return verdict(paper, result, config)
 
     done = 0
@@ -95,6 +109,24 @@ def judge_all(
     if fatal:
         raise fatal[0]
     return decisions, failures
+
+
+def _judge_with_audit(backend, papers, questions, config, store, day, log, verdict=None):
+    """Persist usage even if a fatal error stops the run before decisions exist."""
+    records: list[dict[str, Any]] = []
+    try:
+        decisions, failures = judge_all(backend, papers, questions, config, log, verdict, usage=records)
+    finally:
+        billing = summarize_usage(records, config.jev)
+        store.root.mkdir(parents=True, exist_ok=True)
+        with (store.root / "usage.jsonl").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"day": day, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                                     "backend": backend.name, "model": backend.model, **billing}, allow_nan=False) + "\n")
+    return decisions, failures, billing
+
+
+def _cost_text(cost):
+    return f"≈${cost:.4f}" if cost is not None else "cost unknown (see data/usage.jsonl)"
 
 
 def _record_run(
@@ -113,7 +145,8 @@ def _record_run(
             "failed": result.failed,
             **result.counts(),
             "input_tokens": result.tokens,
-            "cost_usd": round(result.cost, 6),
+            "cost_usd": round(result.cost, 6) if result.cost is not None else None,
+            "billing": result.billing,
             "seconds": round(result.seconds, 1),
         }
     )
@@ -125,12 +158,13 @@ def rebuild_site(config: Config, store: Store, *, mock: bool = False) -> list[st
     site.mkdir(parents=True, exist_ok=True)
     (site / ".nojekyll").write_text("", encoding="utf-8")
     runs = store.load_runs()
+    usage = store.load_usage()
     days = store.days()
     rows: list[tuple[str, dict[str, Any]]] = []
     feed_items: list[tuple[str, Decision]] = []
     for day in days:
         decisions = store.load_decisions(day)
-        stats = day_stats(day, decisions, runs)
+        stats = day_stats(day, decisions, runs, usage)
         rows.append((day, stats))
         day_mock = mock or stats.get("backend") == "mock"
         (site / f"{day}.html").write_text(render_day(config, day, decisions, stats, mock=day_mock), encoding="utf-8")
@@ -202,7 +236,7 @@ def run(
     per_paper = estimate_tokens_per_paper(config)
     log(
         f"{fetched} fetched, {len(fresh)} new. {len(questions)} questions per paper "
-        f"(≈{per_paper} tokens, ≈${len(fresh) * per_paper * config.jev.price_per_mtok / 1e6:.4f} estimated)"
+        f"(≈{per_paper} input tokens, ≈${len(fresh) * per_paper * config.jev.price_per_mtok / 1e6:.4f} input-only estimate)"
     )
     if dry_run or not fresh:
         quiet = RunResult(day, fetched, 0, 0, [], time.monotonic() - started, 0, 0.0)
@@ -214,7 +248,7 @@ def run(
         return quiet
 
     log(f"Asking {backend.name} ({backend.model}) about {len(fresh)} papers")
-    decisions, failures = judge_all(backend, fresh, questions, config, log=log)
+    decisions, failures, billing = _judge_with_audit(backend, fresh, questions, config, store, day, log)
     for paper, reason in failures[:5]:
         log(f"  ! {paper.id}: {reason}")
     if failures:
@@ -229,9 +263,9 @@ def run(
     summarize_top(config.summaries, decisions, env=env, log=log)
     store.write_decisions(day, decisions)
     seconds = time.monotonic() - started
-    tokens = sum(d.input_tokens for d in decisions)
-    cost = sum(d.cost for d in decisions)
-    result = RunResult(day, fetched, len(decisions), len(failures), decisions, seconds, tokens, cost)
+    tokens = billing["input_tokens"]
+    cost = billing["cost_usd"]
+    result = RunResult(day, fetched, len(decisions), len(failures), decisions, seconds, tokens, cost, billing)
     _record_run(store, result, backend, source_failures)
     rebuild_site(config, store)
     if notify:
@@ -241,7 +275,7 @@ def run(
     c = result.counts()
     log(
         f"Done: {len(decisions):,} read → {c['maybe'] + c['must_read']} shortlisted → {c['must_read']} must-read "
-        f"({c['excluded']} excluded) in {seconds:.0f}s, {tokens:,} tokens, ≈${cost:.4f}"
+        f"({c['excluded']} excluded) in {seconds:.0f}s, {tokens:,} input tokens, {_cost_text(cost)}"
     )
     return result
 
@@ -256,7 +290,8 @@ class ScreenResult:
     counts: dict[str, Any]
     seconds: float
     tokens: int
-    cost: float
+    cost: float | None
+    billing: dict[str, Any] = field(default_factory=dict)
 
 
 def run_screening(
@@ -317,9 +352,10 @@ def run_screening(
 
     decisions: list[ScreenDecision] = []
     failures: list[tuple[Paper, str]] = []
+    billing = summarize_usage([], config.jev)
     if judgeable:
         log(f"Screening {len(judgeable)} records with {backend.name} ({backend.model})")
-        decisions, failures = judge_all(backend, judgeable, questions, config, log=log, verdict=screen)
+        decisions, failures, billing = _judge_with_audit(backend, judgeable, questions, config, store, day, log, screen)
     for paper in unjudgeable:
         decisions.append(ScreenDecision(paper=paper, verdict=MANUAL, eligibility=0.0, model=backend.model))
     for paper, reason in failures[:5]:
@@ -331,10 +367,10 @@ def run_screening(
         store.write_screening(day, decisions)
     counts = prisma_counts(decisions, identified=fetched, duplicates=duplicates)
     seconds = time.monotonic() - started
-    tokens = sum(d.input_tokens for d in decisions)
-    cost = sum(d.cost for d in decisions)
+    tokens = billing["input_tokens"]
+    cost = billing["cost_usd"]
     log("")
     log(format_prisma(counts))
     log("")
-    log(f"{seconds:.0f}s, {tokens:,} tokens, ≈${cost:.4f}")
-    return ScreenResult(day, fetched, len(decisions), len(failures), decisions, counts, seconds, tokens, cost)
+    log(f"{seconds:.0f}s, {tokens:,} input tokens, {_cost_text(cost)}")
+    return ScreenResult(day, fetched, len(decisions), len(failures), decisions, counts, seconds, tokens, cost, billing)

@@ -44,6 +44,12 @@ class Store:
         self.labels_path = data_dir / "labels.jsonl"
         self.quarantine_path = data_dir / "quarantine.jsonl"
 
+    def load_usage(self) -> list[dict[str, Any]]:
+        path = self.root / "usage.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
     # ------------------------------------------------------------------ decisions
     def _full(self, day: str) -> Path:
         return self.decisions_dir / f"{day}.jsonl"
