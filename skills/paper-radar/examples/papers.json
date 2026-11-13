@@ -1,0 +1,24 @@
+{
+  "input_kind": "fictional",
+  "notice": "These are invented abstracts for a functionality test, not real publications.",
+  "papers": [
+    {
+      "id": "fictional:agent-benchmark",
+      "title": "ToolBench Mini: Evaluating Repeated Tool Calls",
+      "abstract": "We introduce a benchmark for LLM agents that must plan and execute sequences of tool calls. Tasks require retrieving information, checking intermediate results and recovering from a failed tool. We report completion rate and error recovery across several agent policies.",
+      "url": ""
+    },
+    {
+      "id": "fictional:tomato-images",
+      "title": "Tomato Leaf Image Classification with a Small Network",
+      "abstract": "We train a compact image classifier to identify tomato leaf diseases from photographs. The study compares classification accuracy and model size on a leaf-image dataset. It contains no language-model agent tasks.",
+      "url": ""
+    },
+    {
+      "id": "fictional:kv-compression",
+      "title": "KV Compression for Long-Context Inference",
+      "abstract": "We compress the key-value cache used by a language model during long-context inference. Evaluation measures memory savings, latency and language-model quality. The method does not introduce a benchmark for tool-using agents.",
+      "url": ""
+    }
+  ]
+}

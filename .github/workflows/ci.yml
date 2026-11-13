@@ -22,3 +22,9 @@ jobs:
       - run: paper-radar check
       - run: paper-radar check -c profiles/claude-starter.toml --show-questions
       - run: paper-radar demo --out /tmp/demo
+      - name: Build Claude upload package
+        run: python scripts/build_claude_skill.py --source-commit "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-radar-claude-python-${{ matrix.python }}
+          path: dist/paper-radar-claude.zip
