@@ -4,11 +4,11 @@
 
 **每天早上，Jev 幫你讀完 arXiv 上所有新論文；你只需要讀真正重要的那幾篇。**
 
-也可以用 Claude（Haiku）跑——同樣的每日頁面，機率是自述的未校準數字，[初版校準](docs/claude-calibration.md)在此。
+也可以用 Claude（Haiku）跑。**[Claude 入門教學](docs/claude-quickstart.zh-TW.md)** · [English guide](docs/claude-quickstart.md) · [可直接 Fork 的 Claude 範例](https://github.com/Eliot5566/paper-radar-claude-example)。分數是自述的未校準數字，[初步觀察與限制](docs/claude-calibration.md)在此。
 
 用白話寫興趣 · 校準過的機率 · 讀完*整個* arXiv 一天約 6 美分 · Fork 即用，不需要伺服器
 
-[English](README.md) · [專案企劃](docs/PLAN.zh-TW.md)
+[English](README.md) · [Claude 入門](docs/claude-quickstart.zh-TW.md)
 
 <img src="docs/demo.png" width="720" alt="Paper Radar 每日頁面">
 
@@ -56,12 +56,18 @@ Paper Radar 的做法：每一篇新論文都交給 TypeSafe 的 System One 模�
 4. **開啟 Pages**：*Settings → Pages → Source: GitHub Actions*
 5. **執行**：*Actions → Paper Radar → Run workflow*（第一次可在 limit 填 `50` 便宜試跑）
 
-之後每個工作日 UTC 02:00（台灣時間早上 10 點）自動執行，剛好在 arXiv 每日公告之後。
+之後每個工作日 UTC 06:00（台灣時間 14 點）自動執行，預留資料來源更新時間；GitHub 排程仍可能延遲。
+
+### 使用 Claude
+
+建議從 [Claude 入門教學](docs/claude-quickstart.zh-TW.md)開始：離線示範、每次 20 篇的入門設定、API 金鑰、使用量檢查與個人標註驗證。也可安裝選用的 [Claude Code 技能](skills/paper-radar/SKILL.md)，或使用[完整自動發布範例](https://github.com/Eliot5566/paper-radar-claude-example)。
+
+真實判斷需要 `ANTHROPIC_API_KEY`，API 另行計費，不包含在 Claude 聊天訂閱裡。Claude 自述分數不是校準過的機率；本專案的 Jev benchmark 不能直接套用。遇到問題可[回報設定問題](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=setup-help.yml)，或到[討論區分享使用經驗](https://github.com/Eliot5566/JEV-Paper-Radar/discussions)。
 
 ## 10 秒試玩（不需金鑰）
 
 ```bash
-pip install git+https://github.com/Eliot5566/JEV-Paper-Radar
+python -m pip install "paper-radar==0.2.0"
 paper-radar demo
 ```
 

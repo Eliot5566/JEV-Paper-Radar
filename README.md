@@ -4,7 +4,7 @@
 
 **Jev reads every new paper on arXiv each morning. You read the few that matter.**
 
-Also runs on [Claude (Haiku)](#use-claude-instead-of-jev) — same daily page, self-reported probabilities, [first-look calibration](docs/claude-calibration.md).
+Also runs on Claude (Haiku). **[Claude quickstart](docs/claude-quickstart.md)** · **[繁體中文教學](docs/claude-quickstart.zh-TW.md)** · [Ready-to-fork Claude example](https://github.com/Eliot5566/paper-radar-claude-example). Scores are self-reported; see the [first-look limitations](docs/claude-calibration.md).
 
 Plain-English interests · calibrated probabilities · about 6 cents a day for *all* of arXiv · fork and go, no server
 
@@ -120,7 +120,7 @@ the Jev thresholds are defaults from the repo's first commit and the only
 ground-truth measurement in the repo is the screening benchmark — so this is
 the first labelled measurement for either backend on the daily radar.
 
-After that it runs on weekdays at 02:00 UTC, right after arXiv's daily announcement. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
+After that it runs on weekdays at 06:00 UTC. The schedule leaves time for feed updates; GitHub scheduled runs can be delayed. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
 
 ### Inspect usage and cost
 
@@ -141,7 +141,7 @@ No fork needed: any repository with a `radar.toml` can run Paper Radar as one st
 # .github/workflows/radar.yml
 on:
   schedule:
-    - cron: "0 2 * * 1-5"   # 02:00 UTC, weekdays
+    - cron: "0 6 * * 1-5"   # 06:00 UTC, weekdays; allow time for feed updates
   workflow_dispatch:
 
 jobs:
@@ -161,14 +161,14 @@ Pin to a release tag — `@v0.1.2` is the first tag that contains `action.yml` (
 
 ### Use with Claude
 
-There is a Claude Skill for this repo: copy `skills/paper-radar/` to `~/.claude/skills/paper-radar/` (or `.claude/skills/paper-radar/` in a project) and Claude can set up, run, and calibrate a radar for you — install, `radar.toml`, first run, `label` + `calibrate`. See [`skills/paper-radar/SKILL.md`](skills/paper-radar/SKILL.md).
+Start with the [Claude guide](docs/claude-quickstart.md): an offline demo, a validated 20-paper starter profile, API setup, usage inspection and checks against your own labels. It also explains the optional [Claude Code skill](skills/paper-radar/SKILL.md). Claude chat subscriptions do not include this tool's API usage. [Setup help](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=setup-help.yml) and [experience reports](https://github.com/Eliot5566/JEV-Paper-Radar/discussions) are welcome.
 
 ## Try it in 10 seconds
 
 No key needed. The demo uses fictional papers and a keyword heuristic in place of Jev, so you can see the output before you set anything up.
 
 ```bash
-pip install git+https://github.com/Eliot5566/JEV-Paper-Radar
+python -m pip install "paper-radar==0.2.0"
 paper-radar demo          # writes ./paper-radar-demo/site/index.html
 ```
 

@@ -1,0 +1,34 @@
+# Small first-run profile. The 20-paper cap is not a dollar spending limit.
+[radar]
+title = "My Claude Paper Radar"
+max_papers = 20
+
+[jev]
+backend = "claude"
+model = "claude-haiku-5-5"
+concurrency = 2
+requests_per_minute = 30
+# Editable USD/MTok estimates; verify your model and prompt-length tier.
+# Source and accounting limits: ../docs/usage-and-cost.md
+price_per_mtok = 0.10
+output_price_per_mtok = 0.50
+pricing_as_of = "2026-11-13"
+
+[[sources]]
+type = "arxiv"
+categories = ["cs.AI", "cs.CL"]
+
+[[interests]]
+id = "agent_eval"
+label = "Agent evaluation"
+text = "Benchmarks for evaluating LLM agents on multi-step tool-use tasks"
+
+[thresholds]
+# Display bands only: these are not validated precision or recall targets.
+must_read = 0.80
+maybe = 0.50
+exclude = 0.80
+
+[output]
+site_dir = "site"
+data_dir = "data"

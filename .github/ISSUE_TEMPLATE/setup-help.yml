@@ -1,0 +1,42 @@
+name: Setup help / 使用設定協助
+description: Report a first-run problem or documentation gap without sharing credentials.
+title: "[Setup]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with [Claude quickstart](https://github.com/Eliot5566/JEV-Paper-Radar/blob/main/docs/claude-quickstart.md).
+        This is a public issue. Do not include keys, full environment variables, private paper text or unpublished research.
+  - type: input
+    id: version
+    attributes:
+      label: Paper Radar version
+      placeholder: "paper-radar --version"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment and backend
+      description: OS, Python version, local or Actions, backend and model. Never include credentials.
+      placeholder: "Windows, Python 3.12, local, Claude Haiku"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What happened?
+      description: Command or workflow step, expected result, actual result, and a short redacted error. Share configuration only if it can be public.
+    validations:
+      required: true
+  - type: dropdown
+    id: demo
+    attributes:
+      label: Does the offline demo work?
+      options:
+        - "Not tried"
+        - "Yes"
+        - "No"
+    validations:
+      required: true

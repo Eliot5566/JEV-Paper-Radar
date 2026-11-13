@@ -2,8 +2,8 @@ name: Paper Radar
 
 on:
   schedule:
-    # 02:00 UTC Mon–Fri (10:00 in Taipei): after arXiv's 20:00 US-Eastern announcement, all year round.
-    - cron: "0 2 * * 1-5"
+    # 06:00 UTC Mon–Fri (14:00 Taipei): leave time for source feed updates.
+    - cron: "0 6 * * 1-5"
   workflow_dispatch:
     inputs:
       limit:
@@ -57,6 +57,7 @@ jobs:
           LIMIT: ${{ github.event.inputs.limit }}
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

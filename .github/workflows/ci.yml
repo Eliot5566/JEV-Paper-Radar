@@ -19,4 +19,5 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest -q
       - run: paper-radar check
+      - run: paper-radar check -c profiles/claude-starter.toml --show-questions
       - run: paper-radar demo --out /tmp/demo
