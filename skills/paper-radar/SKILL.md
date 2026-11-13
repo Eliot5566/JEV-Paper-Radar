@@ -28,9 +28,10 @@ merely because this skill is installed.
 
 Resolve paths relative to this installed skill directory, containing SKILL.md,
 scripts/, references/, examples/ and vendor/. Do not assume a fixed mount path.
-In Claude chat put generated files in a fresh directory under /mnt/data, never
-inside this skill or over an existing user directory. Use the Python executable
-provided by the environment.
+Put generated files in a fresh directory in the environment's output workspace
+(/mnt/data when available, otherwise the provided working directory), never
+inside this skill or over an existing user directory. Use the environment's
+file-sharing tools for downloadable outputs and its available Python executable.
 
 A direct source-folder install in Claude Code may lack vendor/; in that case
 follow references/live-api.md for the published CLI, or use the complete ZIP.

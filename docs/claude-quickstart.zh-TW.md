@@ -1,5 +1,8 @@
 # Claude 使用者的 Paper Radar 入門
 
+想在 Claude 對話中上傳技能、直接替提供的摘要排序，請先看[技能安裝教學](claude-install.md#繁體中文)。
+本頁說明自動抓取論文與另外計費的 API 流程。
+
 [English](claude-quickstart.md) · [專案介紹](../README.zh-TW.md) · [使用量與費用](usage-and-cost.md)
 
 用一句白話描述研究興趣，把新論文整理成每日網頁與 RSS。

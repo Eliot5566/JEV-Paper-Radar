@@ -1,5 +1,9 @@
 # Paper Radar for Claude users
 
+For an uploadable skill that works on supplied abstracts inside a Claude conversation,
+start with the [Claude install guide](claude-install.md). This page covers the
+separately billed API workflow for live feeds and automation.
+
 [繁體中文](claude-quickstart.zh-TW.md) · [Project](../README.md) · [Usage and cost](usage-and-cost.md)
 
 Turn plain-English research interests into a daily paper page and RSS feed.

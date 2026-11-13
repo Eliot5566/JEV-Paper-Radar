@@ -4,7 +4,9 @@
 
 **Jev reads every new paper on arXiv each morning. You read the few that matter.**
 
-Also runs on Claude (Haiku). **[Claude quickstart](docs/claude-quickstart.md)** · **[繁體中文教學](docs/claude-quickstart.zh-TW.md)** · [Ready-to-fork Claude example](https://github.com/Eliot5566/paper-radar-claude-example). Scores are self-reported; see the [first-look limitations](docs/claude-calibration.md).
+**Use inside Claude:** [Download the upload ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.1.0/paper-radar-claude.zip) · [Install guide / 安裝教學](docs/claude-install.md). Upload and enable the skill to try its offline demo or rank supplied abstracts in the current conversation, without pip or a separate API key. Normal Claude plan usage applies.
+
+For scheduled Claude API judging: **[API quickstart](docs/claude-quickstart.md)** · **[繁體中文教學](docs/claude-quickstart.zh-TW.md)** · [Ready-to-fork example](https://github.com/Eliot5566/paper-radar-claude-example). Scores are self-reported; see the [first-look limitations](docs/claude-calibration.md).
 
 Plain-English interests · calibrated probabilities · about 6 cents a day for *all* of arXiv · fork and go, no server
 
@@ -161,7 +163,9 @@ Pin to a release tag — `@v0.1.2` is the first tag that contains `action.yml` (
 
 ### Use with Claude
 
-Start with the [Claude guide](docs/claude-quickstart.md): an offline demo, a validated 20-paper starter profile, API setup, usage inspection and checks against your own labels. It also explains the optional [Claude Code skill](skills/paper-radar/SKILL.md). Claude chat subscriptions do not include this tool's API usage. [Setup help](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=setup-help.yml) and [experience reports](https://github.com/Eliot5566/JEV-Paper-Radar/discussions) are welcome.
+For use inside a Claude conversation, [upload the complete skill ZIP](docs/claude-install.md). It bundles the CLI and fictional demo, plus an exporter for scores made in the current chat. No separate API key is needed for these modes; chat usage and cost are unavailable to the exporter. In a Claude web conversation with Opus 5.5, the uploaded skill completed the 44-paper demo and a three-paper fictional chat-report export. Other clients and live API connectivity are not covered by that check.
+
+For daily feed automation, use the [API guide](docs/claude-quickstart.md): a 20-paper starter profile, private API setup, request-usage inspection and checks against your own labels. API judging is separately billed. [Setup help](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=setup-help.yml) and [experience reports](https://github.com/Eliot5566/JEV-Paper-Radar/discussions) are welcome.
 
 ## Try it in 10 seconds
 
