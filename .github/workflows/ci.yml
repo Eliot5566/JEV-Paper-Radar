@@ -4,6 +4,7 @@ on:
   push:
     paths-ignore: ["data/**", "site/**", "**.md"]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
