@@ -11,18 +11,31 @@ body:
   - type: input
     id: version
     attributes:
-      label: Paper Radar version
-      placeholder: "paper-radar --version"
+      label: Version or release used
+      description: For the Claude upload, paste the release tag. For the CLI, use paper-radar --version. Say unknown if you are unsure.
+      placeholder: "claude-skill-v0.1.0, paper-radar 0.2.0, or unknown"
     validations:
       required: true
   - type: input
     id: environment
     attributes:
       label: Environment and backend
-      description: OS, Python version, local or Actions, backend and model. Never include credentials.
-      placeholder: "Windows, Python 3.12, local, Claude Haiku"
+      description: Claude web/desktop/Code, or local/Actions with OS and Python version. Add the model if known. Never include credentials.
+      placeholder: "Claude web, Opus; or Windows, Python 3.12, local CLI"
     validations:
       required: true
+  - type: dropdown
+    id: first_step
+    attributes:
+      label: Which step needs help?
+      options:
+        - "Viewing the examples"
+        - "Downloading or uploading the skill ZIP"
+        - "Enabling or finding the skill"
+        - "Running the offline demo"
+        - "Ranking my abstracts"
+        - "Opening or downloading a report"
+        - "Live feeds or automation"
   - type: textarea
     id: steps
     attributes:

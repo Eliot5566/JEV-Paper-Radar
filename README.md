@@ -2,13 +2,15 @@
 
 # ◎ Paper Radar
 
-**Jev reads every new paper on arXiv each morning. You read the few that matter.**
+**Turn your research interests into a shorter paper list, with a reason for every pick.**
+
+**[Try the examples in your browser](https://eliot5566.github.io/JEV-Paper-Radar/try/)** · **[繁體中文試用入口](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)** — preview the output, prepare a prompt, or download an abstract template before installing anything. Examples are fictional and clearly labelled.
 
 **Use inside Claude:** [Download the upload ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.1.0/paper-radar-claude.zip) · [Install guide / 安裝教學](docs/claude-install.md). Upload and enable the skill to try its offline demo or rank supplied abstracts in the current conversation, without pip or a separate API key. Normal Claude plan usage applies.
 
 For scheduled Claude API judging: **[API quickstart](docs/claude-quickstart.md)** · **[繁體中文教學](docs/claude-quickstart.zh-TW.md)** · [Ready-to-fork example](https://github.com/Eliot5566/paper-radar-claude-example). Scores are self-reported; see the [first-look limitations](docs/claude-calibration.md).
 
-Plain-English interests · calibrated probabilities · about 6 cents a day for *all* of arXiv · fork and go, no server
+Plain-English interests · per-interest scores · pages and RSS · Claude conversations or automated Jev/Claude API workflows
 
 [Quick start](#quick-start-5-minutes-no-server) · [Try the demo](#try-it-in-10-seconds) · [How it works](#how-it-works) · [Benchmark](#measured-against-real-reviewers-decisions) · [繁體中文](README.zh-TW.md)
 

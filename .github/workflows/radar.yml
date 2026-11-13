@@ -117,6 +117,10 @@ jobs:
             touch site/.nojekyll
           fi
 
+      - name: Include the getting-started showcase
+        if: github.repository == 'Eliot5566/JEV-Paper-Radar'
+        run: python -c "import shutil; shutil.copytree('showcase', 'site/try', dirs_exist_ok=True)"
+
       - name: Commit audit trail
         run: |
           git config user.name "paper-radar[bot]"

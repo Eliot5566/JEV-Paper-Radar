@@ -2,6 +2,10 @@
 
 [繁體中文](#繁體中文) · [API automation guide](claude-quickstart.md)
 
+**[Preview examples before installing](https://eliot5566.github.io/JEV-Paper-Radar/try/)**
+· [繁體中文試用入口](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)
+· [Three practical starting workflows](recipes.md)
+
 The upload bundle includes the CLI, fictional sample data and a conversation
 report exporter. Python 3.11+ and Claude's code execution/file creation feature
 are required. The first two modes need no pip install, separate API key or

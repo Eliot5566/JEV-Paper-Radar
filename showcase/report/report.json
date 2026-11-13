@@ -1,0 +1,43 @@
+{
+  "title": "Paper Radar 實測：三篇虛構摘要（分數未校準）",
+  "interest": "Benchmarks for evaluating tool-using LLM agents",
+  "input_kind": "fictional",
+  "thresholds": {
+    "must_read": 0.8,
+    "maybe": 0.5
+  },
+  "scorer": "Claude conversation (self-reported scores)",
+  "token_usage": null,
+  "cost_usd": null,
+  "external_api_requests_by_renderer": 0,
+  "created_at": "2026-11-13T15:29:04.625766+00:00",
+  "papers": [
+    {
+      "id": "fictional:agent-benchmark",
+      "title": "ToolBench Mini: Evaluating Repeated Tool Calls",
+      "abstract": "We introduce a benchmark for LLM agents that must plan and execute sequences of tool calls. Tasks require retrieving information, checking intermediate results and recovering from a failed tool. We report completion rate and error recovery across several agent policies.",
+      "reason": "直接命中：摘要提出評測 LLM agent 規劃與執行多步工具呼叫的 benchmark，含失敗工具復原，並報告完成率與錯誤復原指標。",
+      "url": "",
+      "score": 0.93,
+      "band": "must_read"
+    },
+    {
+      "id": "fictional:kv-compression",
+      "title": "KV Compression for Long-Context Inference",
+      "abstract": "We compress the key-value cache used by a language model during long-context inference. Evaluation measures memory savings, latency and language-model quality. The method does not introduce a benchmark for tool-using agents.",
+      "reason": "僅與 LLM 相關：主題是長上下文推論的 KV 快取壓縮，評估記憶體、延遲與模型品質；摘要明言未提出工具型 agent 的 benchmark。",
+      "url": "",
+      "score": 0.1,
+      "band": "skip"
+    },
+    {
+      "id": "fictional:tomato-images",
+      "title": "Tomato Leaf Image Classification with a Small Network",
+      "abstract": "We train a compact image classifier to identify tomato leaf diseases from photographs. The study compares classification accuracy and model size on a leaf-image dataset. It contains no language-model agent tasks.",
+      "reason": "無關：番茄葉病害影像分類，摘要明言不含語言模型 agent 任務，也非 LLM 評測。",
+      "url": "",
+      "score": 0.02,
+      "band": "skip"
+    }
+  ]
+}
