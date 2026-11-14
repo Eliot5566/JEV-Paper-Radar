@@ -40,6 +40,11 @@ id = "position_only"
 label = "Position papers"
 text = "The paper is a position or opinion piece"
 
+[[exclude]]
+id = "leaderboard_only"
+label = "Leaderboard only"
+text = "The paper presents a leaderboard ranking as its only contribution"
+
 [thresholds]
 must_read = 0.85
 maybe = 0.55
