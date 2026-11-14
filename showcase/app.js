@@ -4,16 +4,16 @@ const zh = {
   skip: "跳至主要內容", navStart: "開始使用", navFeeds: "公開 Jev 論文雷達",
   eyebrow: "研究日常，少一點整理工作", headline: "讀少一點。<br>每篇都有理由。",
   lead: "寫下研究興趣，或貼上論文連結。技能取得公開標題與摘要，再由目前的 Claude 對話排序，留下理由與可繼續使用的檔案。",
-  preview: "先看一份報告 ↗", install: "在 Claude 裡使用",
+  preview: "先看真實論文報告 ↗", install: "在 Claude 裡使用",
   fine: "MIT 開源授權 · 對話模式不需額外 API 金鑰 · 仍使用 Claude 方案額度",
-  previewCaption: "對話內產生的報告", fictional: "虛構範例", interestLabel: "研究興趣",
-  interest: "工具型 LLM agent 的評測基準", abstracts: "篇摘要", shortlisted: "篇入選", all: "全部 3 篇", picks: "只看入選",
-  mustRead: "必讀", skipBand: "略過", reasonOne: "提出多步工具呼叫與工具失敗復原的評測基準。",
-  reasonTwo: "研究推論效率，並非 agent 評測基準。", reasonThree: "影像分類研究，與設定的興趣無關。",
-  previewNote: "這些是實際功能驗收使用的虛構論文。分數由 Claude 自述，未經校準；不同對話可能給出不同分數。",
+  previewCaption: "對話內產生的報告", realPapers: "真實論文", interestLabel: "研究興趣",
+  interest: "LLM agent 評測與工具使用", abstracts: "篇摘要", shortlisted: "篇入選", all: "兩篇都看", picks: "只看必讀",
+  mustRead: "必讀", maybeBand: "可能有興趣", reasonOne: "直接符合：在互動環境中評測 LLM 作為 agent 的表現。",
+  reasonTwo: "相關方法：讓模型學會使用工具，重點並非建立 agent 評測基準。", reasonThree: "影像分類研究，與設定的興趣無關。",
+  previewNote: "兩篇真實論文的已存實測：API 受限後，Claude 使用有標示的網頁摘要重述。分數自述且未校準，可能隨對話改變；本頁不即時檢索或評分。",
   chooseEyebrow: "選擇適合你的起點", chooseTitle: "先看看，再變成自己的工具。",
-  lookTitle: "先看成品", lookText: "瀏覽 44 篇論文的離線示範，或三篇摘要的對話報告。閱讀這些範例不需安裝或金鑰。",
-  lookLink: "瀏覽離線示範 →", reportLink: "查看對話報告 →",
+  lookTitle: "先看成品", lookText: "先看兩篇真實論文的實測、來源與檢索限制；也保留 44 篇虛構論文的離線示範。瀏覽不需安裝或金鑰。",
+  lookLink: "瀏覽離線示範 →", reportLink: "查看真實論文實測 →",
   claudeTitle: "從興趣或連結開始", claudeText: "上傳啟用 0.2.0，提供研究興趣或 arXiv／PubMed／DOI 連結。取得公開資料後由對話排序，需要允許連線或既有 Claude 網頁工具。",
   claudeLink: "安裝技能、取得提示詞 →", dailyTitle: "每天追蹤一個領域",
   dailyText: "直接訂閱現有的公開 Jev 雷達，或設定自己的每日 API 工作流程。排程與額外 API 判斷需要另外設定。",
@@ -22,7 +22,7 @@ const zh = {
   stepOneTitle: "下載完整技能 ZIP。", stepOneText: "請使用 paper-radar-claude-v0.2.0.zip，不是專案的 Source code ZIP。",
   stepTwoTitle: "Claude → 自訂 → Skills 上傳。", stepTwoText: "啟用 paper-radar 與程式執行／檔案建立功能；組織管理員可能限制這些功能。",
   stepThreeTitle: "新開對話，貼上右側提示詞。", stepThreeText: "可先試虛構示範，再提供興趣或論文連結；CSV 不是必要步驟。",
-  download: "下載 Claude 技能 ZIP ↓", fullGuide: "閱讀完整安裝教學", demoTab: "先跑示範", findTab: "幫我找論文", ownTab: "連結／摘要", linksLabel: "論文連結（選填：arXiv、PubMed 或 DOI）",
+  download: "下載 Claude 技能 ZIP ↓", fullGuide: "閱讀完整安裝教學", trialGuide: "用兩個真實連結試一次 →", demoTab: "先跑示範", findTab: "幫我找論文", ownTab: "連結／摘要", linksLabel: "論文連結（選填：arXiv、PubMed 或 DOI）",
   fieldLabel: "一個明確的研究興趣", presetAgents: "Agent 評測", presetEfficiency: "高效率推論", presetNeuro: "神經科學",
   promptLabel: "複製到 CLAUDE", copy: "複製提示詞", openClaude: "開啟 Claude ↗",
   sampleCsv: "下載三篇虛構摘要 CSV", blankCsv: "下載空白 CSV 範本",
@@ -30,15 +30,15 @@ const zh = {
   outputsEyebrow: "留下結果，不只留下對話", outputsTitle: "一份閱讀清單，四種實用檔案。",
   htmlTitle: "閱讀頁面", htmlText: "分數、理由與摘要，放在一起。", csvTitle: "工作表格", csvText: "放進試算表，繼續標註與比較。",
   jsonTitle: "可追溯紀錄", jsonText: "保留 ID、分數與輸入來源。", rssTitle: "可發布的訂閱源", rssText: "匯出入選論文，再部署到固定網址。",
-  outputsNote: "以上連結是固定的虛構範例。你自己的 HTML、CSV、JSON 會保留全部輸入論文；RSS 只包含入選內容。",
+  outputsNote: "以上是使用有標示摘要重述的真實論文實測快照。HTML、CSV、JSON 保留全部已評分論文；RSS 包含必讀與可能有興趣。原虛構報告仍保留在專案內。",
   faqEyebrow: "第一次執行前", faqTitle: "先了解工具能做什麼。",
   q1: "需要 API 金鑰嗎？", a1: "對話內檢索、排序、匯出不需額外模型 API 金鑰，仍使用 Claude 方案額度。檢索需要可用網路或既有網頁工具，會發出公開資料請求；每日 API 自動化另計費。",
   q2: "安裝後就會每天自動執行嗎？", a2: "不會。上傳技能用於目前的對話；可在對話中要求單次檢索；每日排程、長期保存與公開發布仍需另外設定本機或 GitHub Actions 工作流程。",
   q3: "0.93 就代表有 93% 機率相關嗎？", a3: "不是。Claude 分數是自述的，未經校準。請親自標註入選與未入選論文，用一批資料調門檻，再以之後分開標註的一批檢查結果。",
-  q4: "目前實際驗證過什麼？", a4: "已在 Claude 網頁版 Opus 5.5 載入技能、核對檔案並匯出報告。0.2.0 連結測試遇到 API 網路限制後，改用既有網頁工具取得兩篇真實論文，改寫摘要明確標示。本機 249 項測試與 Python 3.11–3.13 CI 通過；這些是功能驗收，不是準確率或所有客戶端相容性保證。",
+  q4: "目前實際驗證過什麼？", a4: "已在 Claude 網頁版 Opus 5.5 載入技能、核對檔案並匯出報告。0.2.0 連結測試遇到 API 網路限制後，改用既有網頁工具取得兩篇真實論文，改寫摘要明確標示。本機 250 項測試與 Python 3.11–3.13 CI 通過；這些是功能驗收，不是準確率或所有客戶端相容性保證。",
   q5: "遇到問題，要提供什麼回饋？", a5: "提供環境、版本、卡住的步驟與遮蔽敏感資訊後的錯誤。不要貼金鑰、私人摘要或未公開研究。第一次使用的具體經驗，比 star 更能幫助改善工具。",
-  feedbackEyebrow: "一起決定下一版的優先順序", feedbackTitle: "第一次使用，卡在哪裡？",
-  feedbackText: "告訴我們你的領域、先試了哪一步，以及一件沒有成功的事。具體經驗能幫助我們改進。",
+  feedbackEyebrow: "一起決定下一版的優先順序", feedbackTitle: "第一次使用，結果如何？",
+  feedbackText: "成功或卡住都可以回報：領域、嘗試方式與結果是否有幫助。由你決定分享內容，本頁沒有分析追蹤。",
   feedbackButton: "回報首次使用經驗 →", footer: "獨立的 MIT 開源專案，與 Anthropic 無隸屬關係。本頁沒有分析追蹤、模型呼叫或檔案上傳。", docsLink: "文件"
 };
 
@@ -50,7 +50,7 @@ const interestInput = document.getElementById("research-interest");
 const status = document.getElementById("copy-status");
 const linksInput = document.getElementById("paper-links");
 let language = new URLSearchParams(location.search).get("lang") === "zh" ? "zh" : "en";
-let mode = "demo";
+let mode = "find";
 const presets = {
   agents: "Benchmarks for evaluating tool-using LLM agents",
   efficiency: "Methods for reducing language-model inference memory usage",
@@ -138,4 +138,5 @@ for (const [id, onlyPicks] of [["show-all", false], ["show-picks", true]]) {
     }
   });
 }
+setMode(mode);
 setLanguage(language);

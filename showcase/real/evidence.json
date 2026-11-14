@@ -1,0 +1,17 @@
+{
+  "kind": "saved-real-paper-functionality-test",
+  "source_report_sha256": "90dc605baeec488dfca9ca6e2deba39e03d4f895e5caa973c2241ea4919f89db",
+  "source_report_file": "report.json",
+  "functional_test_source_commit": "d838f47017f999f424455c3ca28324af98aba0c0",
+  "released_bundle_source_commit": "18a8a09619c5a15970ec3d1713ed06a7833c37c9",
+  "scored_ids": [
+    "arxiv:2308.03688",
+    "arxiv:2302.04761"
+  ],
+  "metadata_api_status": "failed; recovered via existing Claude web tools",
+  "abstract_kind": "web-summary",
+  "human_labels": false,
+  "accuracy_benchmark": false,
+  "live_search_on_this_page": false,
+  "presentation_note": "HTML re-rendered from saved report data; explanatory text distinguishes failed API attempts from recovered papers. Original report JSON is unchanged. CSV and RSS retain the same records and scores."
+}

@@ -1,0 +1,90 @@
+{
+  "title": "LLM agent 評測基準與工具使用：連結排序",
+  "interest": "LLM agent 的評測基準（benchmarks）與工具使用能力（tool use）",
+  "input_kind": "retrieved",
+  "thresholds": {
+    "must_read": 0.8,
+    "maybe": 0.5
+  },
+  "scorer": "Claude conversation (self-reported scores)",
+  "token_usage": null,
+  "cost_usd": null,
+  "external_api_requests_by_renderer": 0,
+  "created_at": "2026-11-13T19:11:12.537041+00:00",
+  "papers": [
+    {
+      "id": "arxiv:2308.03688",
+      "title": "AgentBench: Evaluating LLMs as Agents",
+      "abstract": "[Web summary, paraphrased by the fetch tool; not the original abstract] Introduces AgentBench, a benchmark of eight environments testing how well LLMs act as agents in reasoning and decision-making tasks. Top commercial models perform strongly while many open-source models up to 70B lag well behind. Failures are attributed mainly to weak long-term reasoning, decision-making and instruction following; better instruction following and high-quality multi-round alignment data may help, and training on code has mixed effects across agent tasks. Datasets, environments and the evaluation package are publicly released.",
+      "reason": "直接命中「LLM agent 評測基準」：提出 8 個環境的 agent benchmark，比較商用與開源模型並分析失敗原因；工具使用僅隱含於環境互動，未專門評測 API 呼叫。",
+      "url": "https://arxiv.org/abs/2308.03688",
+      "source": "claude-web",
+      "published": "2023-08-07",
+      "metadata_url": "https://arxiv.org/abs/2308.03688",
+      "retrieved_at": "2026-11-13T19:11:30+00:00",
+      "abstract_kind": "web-summary",
+      "score": 0.93,
+      "band": "must_read"
+    },
+    {
+      "id": "arxiv:2302.04761",
+      "title": "Toolformer: Language Models Can Teach Themselves to Use Tools",
+      "abstract": "[Web summary, paraphrased by the fetch tool; not the original abstract] Language models solve new tasks from few examples but struggle with arithmetic and factual lookup. Toolformer teaches itself, self-supervised with a handful of demonstrations per API, to decide which tools to call, when, with what arguments, and how to use results. Tools include a calculator, a Q&A system, two search engines, a translation system and a calendar. It improves zero-shot performance on many downstream tasks, often matching much larger models, while keeping language modeling ability.",
+      "reason": "高度相關於「工具使用能力」：自監督學習何時、如何呼叫計算機、搜尋、翻譯等 API；但它是訓練方法而非 agent 評測基準，也非多步 agent 設定，故列為 maybe。",
+      "url": "https://arxiv.org/abs/2302.04761",
+      "source": "claude-web",
+      "published": "2023-02-09",
+      "metadata_url": "https://arxiv.org/abs/2302.04761",
+      "retrieved_at": "2026-11-13T19:11:30+00:00",
+      "abstract_kind": "web-summary",
+      "score": 0.74,
+      "band": "maybe"
+    }
+  ],
+  "retrieval": {
+    "method": "claude-web",
+    "status": "fallback",
+    "note": "scripts/retrieve.py failed (export.arxiv.org request blocked, exit code 2). Fallback: Claude WebFetch of the official arXiv abstract pages. The fetch tool returned paraphrased abstracts, so abstract_kind=web-summary; these are not downloaded original abstract text. No full papers were read.",
+    "retrieved_at": "2026-11-13T19:11:30+00:00",
+    "query": null,
+    "days": null,
+    "requested_links": [
+      "https://arxiv.org/abs/2308.03688",
+      "https://arxiv.org/abs/2302.04761"
+    ],
+    "requests": [
+      {
+        "url": "https://export.arxiv.org/api/query?id_list=2308.03688%2C2302.04761&max_results=20",
+        "method": "scripts/retrieve.py",
+        "status": "failed"
+      },
+      {
+        "url": "https://arxiv.org/abs/2308.03688",
+        "method": "claude-web",
+        "status": "ok"
+      },
+      {
+        "url": "https://arxiv.org/abs/2302.04761",
+        "method": "claude-web",
+        "status": "ok"
+      }
+    ],
+    "errors": [
+      {
+        "source": "arxiv",
+        "metadata_url": "https://export.arxiv.org/api/query?id_list=2308.03688%2C2302.04761&max_results=20",
+        "error": "metadata request failed; check source availability and permitted network access"
+      },
+      {
+        "input": "arxiv:2308.03688",
+        "error": "script: no matching metadata record retrieved (recovered via claude-web fallback)"
+      },
+      {
+        "input": "arxiv:2302.04761",
+        "error": "script: no matching metadata record retrieved (recovered via claude-web fallback)"
+      }
+    ],
+    "missing_abstracts": [],
+    "model_api_requests": 0
+  }
+}

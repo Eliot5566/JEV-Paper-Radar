@@ -4,7 +4,12 @@
 · [繁體中文](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)
 · [Install the Claude skill](claude-install.md)
 
-## 1. Check the output before sharing real material
+## 1. Check the output before sharing your own material
+
+Start with the [saved real-paper test](https://eliot5566.github.io/JEV-Paper-Radar/try/real/)
+and [two-link trial guide](first-run.md). Its summaries are labelled and the
+metadata API failure/web-tool recovery is disclosed. The separate fictional
+demo below remains useful for an offline installation check.
 
 Open the public fictional demo or upload the skill and ask:
 

@@ -60,12 +60,17 @@ def test_offline_rebuild_preserves_feeds_and_adds_working_showcase(tmp_path, mon
             if parsed.path.endswith("/"):
                 path = path / "index.html"
             assert path.is_file(), (html_file.relative_to(site), target)
-    for filename in ("try/demo/feed.xml", "try/report/feed.xml", "public/ai/feed.xml"):
+    for filename in ("try/demo/feed.xml", "try/report/feed.xml", "try/real/feed.xml", "public/ai/feed.xml"):
         ET.parse(site / filename)
     example = json.loads((site / "try/report/report.json").read_text(encoding="utf-8"))
     assert example["input_kind"] == "fictional"
     assert len(example["papers"]) == 3
     assert example["cost_usd"] is None
+    real = json.loads((site / "try/real/report.json").read_text(encoding="utf-8"))
+    assert real["input_kind"] == "retrieved"
+    assert {p["id"] for p in real["papers"]} == {"arxiv:2308.03688", "arxiv:2302.04761"}
+    assert all(p["abstract_kind"] == "web-summary" for p in real["papers"])
+    assert real["retrieval"]["errors"] and real["cost_usd"] is None
 
 
 def test_public_output_cannot_escape_site_directory(tmp_path):

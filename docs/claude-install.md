@@ -4,6 +4,7 @@
 
 **[Preview examples before installing](https://eliot5566.github.io/JEV-Paper-Radar/try/)**
 · [繁體中文試用入口](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)
+· [Try two real links](first-run.md)
 · [Three practical starting workflows](recipes.md)
 
 The 0.2.0 upload bundle includes public-paper retrieval, the CLI, fictional sample

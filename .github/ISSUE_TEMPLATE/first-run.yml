@@ -1,0 +1,80 @@
+name: First-run experience / 首次使用回饋
+description: Share a successful trial, a blocker, or a ranking you would change.
+title: "[First run]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with the [real-paper trial guide](https://github.com/Eliot5566/JEV-Paper-Radar/blob/main/docs/first-run.md).
+        Successes and failures are both useful. This issue is PUBLIC and voluntary.
+        Do not post credentials, private abstracts, unpublished research, personal details, or complete chat logs.
+        首次使用成功或卡住都可回報。這是公開表單，請只分享可公開的資料。
+  - type: input
+    id: version
+    attributes:
+      label: Version / 版本
+      description: Release tag or CLI version; unknown is fine. / 不確定可填 unknown。
+      placeholder: "claude-skill-v0.2.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment / 使用環境
+      description: Claude web, desktop, Code or CLI; model/OS if known. Do not include account details.
+      placeholder: "Claude web, Opus; or local CLI, Windows"
+    validations:
+      required: true
+  - type: dropdown
+    id: route
+    attributes:
+      label: What did you try? / 嘗試方式
+      options:
+        - "Two paper links / 論文連結"
+        - "Research interest search / 研究興趣搜尋"
+        - "Pasted or attached abstracts / 自備摘要"
+        - "Fictional offline demo / 虛構離線示範"
+        - "Public feed or CLI automation / 公開雷達或自動化"
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Result / 結果
+      options:
+        - "Completed and useful / 完成且有幫助"
+        - "Completed, but needs improvement / 完成但需改善"
+        - "Partly completed / 部分完成"
+        - "Could not complete / 無法完成"
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What happened? / 實際經驗
+      description: Which step worked or failed? Could you open HTML/RSS? What one thing should change? Add only short, redacted errors.
+      placeholder: "I tried…, expected…, got…. One improvement would be…"
+    validations:
+      required: true
+  - type: input
+    id: field
+    attributes:
+      label: Broad research field (optional) / 研究領域（選填）
+      description: A general area is enough; do not disclose a private research plan.
+      placeholder: "Agent evaluation, neuroscience, or another broad field"
+  - type: dropdown
+    id: retrieval
+    attributes:
+      label: How were papers obtained? (optional) / 取得方式（選填）
+      options:
+        - "Unknown / 不確定"
+        - "Public metadata API / 公開 metadata API"
+        - "Existing Claude web tools / 既有 Claude 網頁工具"
+        - "Pasted/attached by me / 自行提供"
+        - "Bundled fictional data / 內附虛構資料"
+  - type: textarea
+    id: ranking
+    attributes:
+      label: Ranking feedback (optional) / 排序回饋（選填）
+      description: If relevant, share public paper IDs/links, your broad criterion, and a reason you would change a selection. Skip private material. This is individual feedback, not an accuracy benchmark.

@@ -4,9 +4,11 @@
 
 **Turn your research interests into a shorter paper list, with a reason for every pick.**
 
-**[Try the examples in your browser](https://eliot5566.github.io/JEV-Paper-Radar/try/)** · **[繁體中文試用入口](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)** — preview the output, prepare a prompt, or download an abstract template before installing anything. Examples are fictional and clearly labelled.
+**[Try the examples in your browser](https://eliot5566.github.io/JEV-Paper-Radar/try/)** · **[繁體中文試用入口](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)** — preview the output, prepare a prompt, or download an abstract template before installing anything. Includes a saved real-paper test with labelled web summaries and separate fictional demos.
 
 **Use inside Claude:** [Download the upload ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.2.0/paper-radar-claude-v0.2.0.zip) · [Install guide / 安裝教學](docs/claude-install.md). Upload and enable skill 0.2.0, then give it a research interest or arXiv/PubMed/DOI links: it retrieves public titles and abstracts, ranks in the current conversation and exports reports. No CSV preparation, pip or separate model API key. Retrieval needs permitted network access or existing Claude web tools; normal Claude plan usage applies.
+
+**[Try two real links](docs/first-run.md)** · [See the saved result](https://eliot5566.github.io/JEV-Paper-Radar/try/real/) · [Share first-run feedback](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=first-run.yml). Successful trials and blockers are both welcome.
 
 For scheduled Claude API judging: **[API quickstart](docs/claude-quickstart.md)** · **[繁體中文教學](docs/claude-quickstart.zh-TW.md)** · [Ready-to-fork example](https://github.com/Eliot5566/paper-radar-claude-example). Scores are self-reported; see the [first-look limitations](docs/claude-calibration.md).
 

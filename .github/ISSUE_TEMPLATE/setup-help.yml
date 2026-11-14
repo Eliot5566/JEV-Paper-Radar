@@ -6,14 +6,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        Start with [Claude quickstart](https://github.com/Eliot5566/JEV-Paper-Radar/blob/main/docs/claude-quickstart.md).
+        Start with [Claude skill installation](https://github.com/Eliot5566/JEV-Paper-Radar/blob/main/docs/claude-install.md) or the [real-paper first-run guide](https://github.com/Eliot5566/JEV-Paper-Radar/blob/main/docs/first-run.md).
         This is a public issue. Do not include keys, full environment variables, private paper text or unpublished research.
   - type: input
     id: version
     attributes:
       label: Version or release used
       description: For the Claude upload, paste the release tag. For the CLI, use paper-radar --version. Say unknown if you are unsure.
-      placeholder: "claude-skill-v0.1.0, paper-radar 0.2.0, or unknown"
+      placeholder: "claude-skill-v0.2.0, paper-radar 0.2.0, or unknown"
     validations:
       required: true
   - type: input
@@ -33,6 +33,7 @@ body:
         - "Downloading or uploading the skill ZIP"
         - "Enabling or finding the skill"
         - "Running the offline demo"
+        - "Retrieving papers from an interest or links"
         - "Ranking my abstracts"
         - "Opening or downloading a report"
         - "Live feeds or automation"
