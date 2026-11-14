@@ -31,6 +31,7 @@ body:
     attributes:
       label: What did you try? / 嘗試方式
       options:
+        - "Not sure yet / 尚不確定"
         - "Two paper links / 論文連結"
         - "Research interest search / 研究興趣搜尋"
         - "Pasted or attached abstracts / 自備摘要"
@@ -43,6 +44,7 @@ body:
     attributes:
       label: Result / 結果
       options:
+        - "Not sure yet / 尚不確定"
         - "Completed and useful / 完成且有幫助"
         - "Completed, but needs improvement / 完成但需改善"
         - "Partly completed / 部分完成"
