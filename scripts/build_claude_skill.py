@@ -21,7 +21,9 @@ def build(output: Path, source_commit: str = "working-tree") -> dict:
             continue
         if path.is_file() and path.suffix in {".md", ".py", ".json"}:
             files[relative.as_posix()] = path.read_bytes()
-    text = files["SKILL.md"].decode("utf-8")
+    # Validate the same normalized text that is stored in the archive. Windows
+    # CRLF otherwise becomes part of the captured name before normalization.
+    text = files["SKILL.md"].decode("utf-8").replace("\r\n", "\n")
     name = re.search(r"^name: (.+)$", text, re.M).group(1)
     description = re.search(r"^description: (.+)$", text, re.M).group(1)
     if name != "paper-radar" or not 1 <= len(description) <= 200:

@@ -84,6 +84,20 @@ def test_invalid_chat_scores_are_rejected_before_writing(tmp_path, bad):
     assert not out.exists()
 
 
+def test_windows_skill_line_endings_build_the_same_archive(tmp_path, monkeypatch):
+    import shutil
+    skill = tmp_path / "skill"
+    shutil.copytree(builder.SKILL, skill)
+    monkeypatch.setattr(builder, "SKILL", skill)
+    path = skill / "SKILL.md"
+    normalized = path.read_bytes().replace(b"\r\n", b"\n")
+    path.write_bytes(normalized)
+    builder.build(tmp_path / "lf.zip", "same-source")
+    path.write_bytes(normalized.replace(b"\n", b"\r\n"))
+    builder.build(tmp_path / "crlf.zip", "same-source")
+    assert (tmp_path / "lf.zip").read_bytes() == (tmp_path / "crlf.zip").read_bytes()
+
+
 def test_chat_export_preserves_low_scores_provenance_and_safe_output(tmp_path):
     data = report_input()
     data["papers"][0]["title"] = '=HYPERLINK("https://example.org")'
