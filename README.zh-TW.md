@@ -6,7 +6,7 @@
 
 **[先在瀏覽器看成品](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)** · [English](https://eliot5566.github.io/JEV-Paper-Radar/try/) — 不需先下載，直接看虛構範例、準備提示詞或取得摘要範本。
 
-**在 Claude 裡直接試用：**[下載技能 ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.1.0/paper-radar-claude.zip) · **[安裝教學](docs/claude-install.md#繁體中文)**。上傳啟用後，即可跑離線示範，或提供摘要在目前對話中排序；不需 pip 安裝或額外 API 金鑰，仍使用 Claude 對話方案額度。
+**在 Claude 裡直接試用：**[下載技能 ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.2.0/paper-radar-claude-v0.2.0.zip) · **[安裝教學](docs/claude-install.md#繁體中文)**。上傳啟用 0.2.0 後，只需研究興趣或 arXiv／PubMed／DOI 連結，技能取得公開標題摘要，再在目前對話排序與匯出。不必先整理 CSV，不需 pip 或額外模型 API 金鑰；檢索需要允許連線或既有 Claude 網頁工具，仍使用對話額度。
 
 每日自動化可用 Claude API：**[API 入門教學](docs/claude-quickstart.zh-TW.md)** · [English guide](docs/claude-quickstart.md) · [可 Fork 範例](https://github.com/Eliot5566/paper-radar-claude-example)。分數是自述的未校準數字，[初步觀察與限制](docs/claude-calibration.md)在此。
 

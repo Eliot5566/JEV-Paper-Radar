@@ -73,6 +73,9 @@ source=claude-web, metadata_url=the page actually read, and abstract_kind equal 
 source-abstract or web-summary. Mark any paraphrase explicitly as web-summary;
 never present it as a downloaded original abstract. Keep input_kind=retrieved.
 Disclose the fallback and do not claim scripts/retrieve.py succeeded.
+If web search exposes more candidates than the requested abstract-reading limit,
+record the unread candidate IDs/titles separately and disclose that preselection;
+do not imply that every search hit received abstract-based scoring.
 
 If neither route is available, explain the access limitation and offer the
 offline demo or pasted abstracts as a fallback. Do not request an API key for

@@ -6,7 +6,7 @@
 
 **[Try the examples in your browser](https://eliot5566.github.io/JEV-Paper-Radar/try/)** · **[繁體中文試用入口](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)** — preview the output, prepare a prompt, or download an abstract template before installing anything. Examples are fictional and clearly labelled.
 
-**Use inside Claude:** [Download the upload ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.1.0/paper-radar-claude.zip) · [Install guide / 安裝教學](docs/claude-install.md). Upload and enable the skill to try its offline demo or rank supplied abstracts in the current conversation, without pip or a separate API key. Normal Claude plan usage applies.
+**Use inside Claude:** [Download the upload ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.2.0/paper-radar-claude-v0.2.0.zip) · [Install guide / 安裝教學](docs/claude-install.md). Upload and enable skill 0.2.0, then give it a research interest or arXiv/PubMed/DOI links: it retrieves public titles and abstracts, ranks in the current conversation and exports reports. No CSV preparation, pip or separate model API key. Retrieval needs permitted network access or existing Claude web tools; normal Claude plan usage applies.
 
 For scheduled Claude API judging: **[API quickstart](docs/claude-quickstart.md)** · **[繁體中文教學](docs/claude-quickstart.zh-TW.md)** · [Ready-to-fork example](https://github.com/Eliot5566/paper-radar-claude-example). Scores are self-reported; see the [first-look limitations](docs/claude-calibration.md).
 
@@ -24,7 +24,7 @@ Plain-English interests · per-interest scores · pages and RSS · Claude conver
 
 arXiv now receives more than 30,000 papers a month ([32,040 in June 2026](https://blog.arxiv.org/2026/07/09/arxiv-now-hosts-over-3-million-articles/)), about 1,500 per weekday announcement. Nobody reads the listing any more. Keyword alerts miss papers that use different words, embedding recommenders quietly drop whatever does not look like your past reading, and running a chat LLM over the whole firehose every day is slow and costs real money.
 
-Most AI tools read a paper and write you a summary. **Paper Radar does not write anything.** It asks [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) — TypeSafe's System One model — one yes/no question per interest and gets a probability back: *introduces an agent benchmark, 0.97*. Your repo's code decides what that means.
+The Jev automated workflow described below uses numeric judgement rather than generated summaries. It asks [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) — TypeSafe's System One model — one yes/no question per interest and gets a probability back: *introduces an agent benchmark, 0.97*. Your repo's code decides what that means.
 
 Judgement instead of prose is what makes the arithmetic work. There is nothing to parse and no invented labels, and one judgement costs a fraction of a generated sentence — cheap enough to read *all* 1,500 papers rather than a pre-filtered handful, which is where keyword alerts and embedding recommenders lose the paper you actually wanted.
 

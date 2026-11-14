@@ -15,7 +15,27 @@ Open the public fictional demo or upload the skill and ask:
 Expected workflow: 44 fictional new-paper records, HTML and RSS. The scores use
 keyword rules, so this checks installation and layout, not Claude accuracy.
 
-## 2. Turn an existing reading pile into a shortlist
+## 2. Start with a research interest or links (skill 0.2.0)
+
+You do not need to prepare abstracts or CSV. Ask:
+
+> Use paper-radar to find up to 10 papers from the last 30 days about benchmarks
+> for tool-using LLM agents. Retrieve the titles and abstracts, rank in this
+> conversation and export HTML, CSV, JSON and RSS. Show sources and failures.
+
+Or provide arXiv, PubMed or DOI links plus a reading interest. The skill resolves
+their public metadata itself. Search uses arXiv or PubMed; DOI metadata comes
+from Crossref and may have no abstract. Missing records stay in the retrieval
+audit and are not scored. Queries and IDs go to public sources; do not put
+private research details into a public query. Retrieval needs permitted network
+access or existing Claude web tools. Web summaries are labelled as such.
+
+In a Claude web link test, the metadata API was blocked by that environment.
+Existing web tools read the two official arXiv pages, and the exporter retained
+the resulting web-summary provenance. This demonstrates that fallback in the
+tested account, not access guarantees for every account or source.
+
+### Or bring an existing reading pile
 
 Start with 5–20 abstracts from your own reading queue. The
 [blank CSV template](../showcase/samples/papers-template.csv) has columns
@@ -63,8 +83,8 @@ performance.
 ## 繁體中文：第一次使用的順序
 
 1. 到[公開試用頁](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)先看成品。
-2. 上傳啟用技能，跑一次虛構示範。再用三篇 CSV 測試對話內排序。
-3. 把空白 CSV 填成自己的 5–20 篇摘要，寫下一個明確興趣，附到 Claude。
+2. 上傳啟用 0.2.0 技能，可先跑虛構示範確認安裝。
+3. 直接描述興趣與日期範圍，或貼 arXiv／PubMed／DOI 連結；技能取得標題摘要再排序，不必先做 CSV。已有摘要也可直接貼上或附檔。
 4. 要求保留全部 ID 與未入選項目，匯出網頁、CSV、JSON、RSS；檢查理由和漏掉的相關論文。
 5. 確認對你的領域有幫助後，再考慮每日 API 自動化，不必在第一次試用時就設定金鑰或排程。
 
