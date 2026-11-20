@@ -135,6 +135,14 @@ def cmd_check(args: argparse.Namespace) -> int:
             "the Cochrane screening numbers (96.9% recall, 78% work saved) were measured with Jev "
             "and do not apply to Claude."
         )
+    if config.jev.backend == "gemini":
+        print(
+            "warning: backend is gemini — its calibration is Google's claim, not a measurement "
+            "on your data. Run `paper-radar calibrate` on Gemini-judged labels before trusting "
+            "thresholds; the Cochrane screening numbers (96.9% recall, 78% work saved) were "
+            "measured with Jev and do not apply to Gemini. Its noul is clamped to [0.01, 0.99], "
+            "so a threshold above 0.99 can never match."
+        )
     print(f"Questions per paper: {len(questions)}  (≈{per_paper} input tokens per paper, rough estimate)")
     print("The pre-run amounts below estimate input only; output, caching and retries are excluded. See data/usage.jsonl after a run.")
     for n in (200, 1500, 5000):
@@ -172,6 +180,13 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
             "uncalibrated probabilities, for Claude-judged papers only. They do not transfer "
             "to Jev, and the Cochrane screening numbers (96.9% recall, 78% work saved) were "
             "measured with Jev and do not apply to Claude."
+        )
+    if config.jev.backend == "gemini":
+        print(
+            "note: backend is gemini — these thresholds are fitted to Gemini Decision 1's "
+            "probabilities, for Gemini-judged papers only. They do not transfer to Jev, and "
+            "the Cochrane screening numbers (96.9% recall, 78% work saved) were measured with "
+            "Jev and do not apply to Gemini."
         )
     print(format_report(report, args.precision, args.recall))
     return 0
@@ -290,7 +305,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-c", "--config", default="radar.toml")
     p.add_argument("--date", help="YYYY-MM-DD (default: today, UTC)")
     p.add_argument("--limit", type=int, help="judge at most N papers (for a first test)")
-    p.add_argument("--backend", choices=["typesafe", "openrouter", "claude", "mock"], help="override jev.backend")
+    p.add_argument("--backend", choices=["typesafe", "openrouter", "claude", "gemini", "mock"], help="override jev.backend")
     p.add_argument("--base-dir", help="resolve site_dir/data_dir against this directory instead of the config's own")
     p.add_argument("--site-dir", help="publish the page to this folder instead of output.site_dir")
     p.add_argument("--dry-run", action="store_true", help="fetch and estimate cost without calling Jev")
@@ -306,7 +321,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-c", "--config", default="review.toml")
     p.add_argument("--date", help="YYYY-MM-DD (default: today, UTC)")
     p.add_argument("--limit", type=int, help="screen at most N records")
-    p.add_argument("--backend", choices=["typesafe", "openrouter", "claude", "mock"], help="override jev.backend")
+    p.add_argument("--backend", choices=["typesafe", "openrouter", "claude", "gemini", "mock"], help="override jev.backend")
     p.add_argument("--report", action="store_true", help="measure recall and workload saved against your own decisions")
     p.add_argument("--recall", type=float, help="target recall for --report (default: screening.target_recall)")
     p.set_defaults(func=cmd_screen)
