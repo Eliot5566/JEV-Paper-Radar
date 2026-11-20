@@ -36,7 +36,7 @@ inputs:
     required: false
     default: "run"
   backend:
-    description: "Judge backend: typesafe, openrouter, claude, or mock. Overrides jev.backend in the config."
+    description: "Judge backend: typesafe, openrouter, claude, gemini, or mock. Overrides jev.backend in the config."
     required: false
     default: ""
   limit:
@@ -53,6 +53,10 @@ inputs:
     default: ""
   anthropic-api-key:
     description: "Anthropic API key (ANTHROPIC_API_KEY). Pass via secrets, never as a literal."
+    required: false
+    default: ""
+  gemini-api-key:
+    description: "Gemini API key (GEMINI_API_KEY). Pass via secrets, never as a literal."
     required: false
     default: ""
   args:
@@ -77,6 +81,7 @@ runs:
         TYPESAFE_API_KEY: ${{ inputs.typesafe-api-key }}
         OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        GEMINI_API_KEY: ${{ inputs.gemini-api-key }}
       run: |
         set -euo pipefail
         cmd=(paper-radar "${{ inputs.command }}" -c "${{ inputs.config }}")

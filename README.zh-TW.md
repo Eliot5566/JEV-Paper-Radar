@@ -70,6 +70,12 @@ Paper Radar 的做法：每一篇新論文都交給 TypeSafe 的 System One 模�
 
 真實判斷需要 `ANTHROPIC_API_KEY`，API 另行計費，不包含在 Claude 聊天訂閱裡。Claude 自述分數不是校準過的機率；本專案的 Jev benchmark 不能直接套用。遇到問題可[回報設定問題](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=setup-help.yml)，或到[討論區分享使用經驗](https://github.com/Eliot5566/JEV-Paper-Radar/discussions)。
 
+### 使用 Gemini Decision 1
+
+有 Gemini API 金鑰也可以用 Gemini Decision 1 判斷：同一條 pipeline、同一個校準步驟，不需要 Jev 等候名單。它是這裡唯一另一個決策模型而非對話模型：同樣的三種問題（noul / choice / score），一次前向傳播就給出校準過的機率，不需要解析 JSON，也沒有修復重試。設定 `backend = "gemini"`，金鑰放在 `GEMINI_API_KEY`（[Google AI Studio](https://aistudio.google.com) 申請，免費層可做原型；付費層每百萬輸入 tokens $0.10、輸出 $0，`jev.price_per_mtok = 0.10`、`jev.output_price_per_mtok = 0.0`）。
+
+兩個誠實提醒：第一，**校準是 Google 的說法，不是你在自己資料上量的**，先用 `paper-radar label` 標幾十篇再 `paper-radar calibrate`，Jev 的閾值不能直接套用；第二，**README 裡的 benchmark 數字只屬於 Jev**，Cochrane 篩選結果不能套到 Gemini。它的 noul 被夾在 [0.01, 0.99]，永遠不會宣稱完全確定，閾值設超過 0.99 永遠不會命中。免費層每分鐘 200 次請求、50,000 tokens，請把 `jev.requests_per_minute` 設低一點（入門設定用 30）。
+
 ## 10 秒試玩（不需金鑰）
 
 ```bash
