@@ -80,6 +80,9 @@ def free_rules():
     for k in (50, 100):
         for frac in (0.1, 0.2, 0.3, 0.5):
             rules.append((f"dry run max({k}, {frac:.0%} of read)", partial(stop_consecutive, k=k, frac=frac)))
+    for k in (30, 50, 100):
+        for size in (0.03, 0.05, 0.08, 0.12):
+            rules.append((f"dry run max({k}, {size:.0%} of review)", partial(stop_consecutive, k=k, size_frac=size)))
     rules.append(("knee (adjusted, min 150 read)", partial(stop_knee, min_read=150, every=10)))
     rules.append(("target t=10 (mean of 20 samples)", ("target", 10)))
     return rules

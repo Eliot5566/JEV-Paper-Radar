@@ -58,19 +58,20 @@ def stop_threshold(scores: Sequence[float], read: Sequence[bool], threshold: flo
 
 
 def stop_consecutive(scores: Sequence[float], read: Sequence[bool], k: int, floor: float = 1.01,
-                     frac: float = 0.0) -> bool:
+                     frac: float = 0.0, size_frac: float = 0.0) -> bool:
     """Stop after a dry run of max(k, frac * records read so far) irrelevant records.
 
     `frac` makes the run grow with depth: 20 dry records mean little after reading
-    2,000, a lot after reading 60. `floor` forbids stopping while anything scoring at
-    or above it is unread.
+    2,000, a lot after reading 60. `size_frac` makes it grow with the review instead:
+    the run is at least that share of all ranked records. `floor` forbids stopping
+    while anything scoring at or above it is unread.
     """
     n = len(read)
     if n >= len(scores):
         return True
     if scores[n] >= floor:
         return False
-    run = max(k, int(frac * n))
+    run = max(k, int(frac * n), int(size_frac * len(scores)))
     if n < run:
         return False
     return not any(read[n - run:])
