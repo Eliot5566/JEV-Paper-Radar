@@ -212,6 +212,23 @@ class Store:
                 index[record["paper"]["id"]] = float(record["eligibility"])
         return index
 
+    def ranking_index(self) -> dict[str, float]:
+        """paper id -> reading priority: the eligibility score, except that records with
+        no abstract come first (a human has to look at them anyway) and records an
+        exclusion criterion fired on come last. The benchmark ranks the same way."""
+        index: dict[str, float] = {}
+        for day in self.screening_days():
+            for record in self.load_screening(day):
+                verdict = record.get("verdict")
+                if verdict == "manual":
+                    score = 1.0
+                elif verdict == "exclude_criterion" or record.get("triggered"):
+                    score = 0.0
+                else:
+                    score = float(record["eligibility"])
+                index[record["paper"]["id"]] = score
+        return index
+
     # --------------------------------------------------------------------- labels
     def add_label(self, paper_id: str, relevant: bool, when: str) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
