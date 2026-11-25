@@ -71,17 +71,56 @@ def run_rule(topics, names, rule) -> dict[str, Outcome]:
     return out
 
 
-def grid(floor: float):
-    rules = []
-    for k in (50, 100, 150, 200, 300):
-        rules.append((f"consecutive k={k}", partial(stop_consecutive, k=k)))
-        rules.append((f"consecutive k={k} + floor {floor:.3f}", partial(stop_consecutive, k=k, floor=floor)))
-    for k in (20, 50):
+KS = (50, 100, 150, 200, 250, 300)
+
+
+def free_rules():
+    """Rules that need nothing fitted."""
+    rules = [(f"consecutive k={k}", partial(stop_consecutive, k=k)) for k in KS]
+    for k in (50, 100):
         for frac in (0.1, 0.2, 0.3, 0.5):
             rules.append((f"dry run max({k}, {frac:.0%} of read)", partial(stop_consecutive, k=k, frac=frac)))
     rules.append(("knee (adjusted, min 150 read)", partial(stop_knee, min_read=150, every=10)))
     rules.append(("target t=10 (mean of 20 samples)", ("target", 10)))
     return rules
+
+
+def floor_rules(floor: float):
+    """Rules that use a threshold fitted on other reviews. Names carry no number, so the
+    same rule can be compared across folds that fit different thresholds."""
+    rules = [("fixed threshold (fitted on other reviews)", partial(stop_threshold, threshold=floor))]
+    rules += [(f"consecutive k={k} + floor", partial(stop_consecutive, k=k, floor=floor)) for k in KS]
+    return rules
+
+
+def evaluate(topics, rules):
+    names = sorted(topics)
+    return {name: run_rule(topics, names, rule if isinstance(rule, tuple) else ("fn", rule)) for name, rule in rules}
+
+
+def choose(results: dict[str, dict[str, Outcome]], fitting: list[str]) -> str:
+    """Highest pooled WSS on the fitting reviews among rules that keep every one of them
+    at or above the recall target. Falls back to the highest fitting recall."""
+    scored = {name: pool([out[t] for t in fitting]) for name, out in results.items()}
+    ok = [name for name, p in scored.items() if p["below"] == 0]
+    if ok:
+        return max(ok, key=lambda name: scored[name]["wss"])
+    return max(scored, key=lambda name: (scored[name]["recall"], scored[name]["wss"]))
+
+
+def loto_selection(topics) -> list[tuple[str, str, Outcome]]:
+    """For each review: choose the rule on the other eleven, report it on this one."""
+    names = sorted(topics)
+    free = evaluate(topics, free_rules())
+    picks = []
+    for held in names:
+        fitting = [t for t in names if t != held]
+        floor = fit([r for t in fitting for r in topics[t]], TARGET)
+        results = dict(free)
+        results.update(evaluate(topics, floor_rules(floor)))
+        rule = choose(results, fitting)
+        picks.append((held, rule, results[rule][held]))
+    return picks
 
 
 def main(argv=None) -> int:
@@ -106,17 +145,10 @@ def main(argv=None) -> int:
         return 2
 
     floor = fit([r for t in dev for r in topics[t]], TARGET)
-    rules = [(f"fixed threshold {floor:.3f} (fitted on dev)", partial(stop_threshold, threshold=floor))] + grid(floor)
-    results = []
-    for name, rule in rules:
-        r = rule if isinstance(rule, tuple) else ("fn", rule)
-        d_out, t_out = run_rule(topics, dev, r), run_rule(topics, test, r)
-        results.append((name, d_out, t_out))
-
-    # Choose on dev only: highest dev WSS among rules with every dev topic at or above target.
-    ok = [(name, pool(list(d.values()))) for name, d, _ in results[1:]
-          if pool(list(d.values()))["below"] == 0]
-    chosen = max(ok, key=lambda x: x[1]["wss"])[0] if ok else None
+    rules = floor_rules(floor) + free_rules()
+    evaluated = evaluate(topics, rules)
+    results = [(name, {t: out[t] for t in dev}, {t: out[t] for t in test}) for name, out in evaluated.items()]
+    chosen = choose(evaluated, dev)
 
     out = [f"# Stopping rules vs a fixed threshold{(' — ' + args.label) if args.label else ''}", "",
            f"Reviewer reads each review in order of eligibility. Recall target {TARGET:.0%}. "
@@ -134,7 +166,29 @@ def main(argv=None) -> int:
         if name == chosen or name == results[0][0] or name.startswith("knee") or name.startswith("target"):
             out.append(f"| {name} | " + " | ".join(f"{t[x].recall:.0%} / {t[x].wss:.0%}" for x in test) + " |")
     out += ["", "Cells are recall / WSS. WSS counts every record read, including the target method's random "
-            "sample and every record without an abstract (always read, never ranked)."]
+            "sample and every record without an abstract (always read, never ranked).",
+            "", f"Fixed threshold and floor: {floor:.3f}, fitted on the development reviews."]
+
+    picks = loto_selection(topics)
+    fixed = []
+    for held, _, _ in picks:
+        fitting = [t for t in topics if t != held]
+        thr = fit([r for t in fitting for r in topics[t]], TARGET)
+        fixed.append(run_rule(topics, [held], ("fn", partial(stop_threshold, threshold=thr)))[held])
+    pl, pf = pool([o for _, _, o in picks]), pool(fixed)
+    out += ["", "## Leave one review out: rule chosen on the other reviews", "",
+            "The rule is chosen with the same criterion as above, but on all the other reviews, then",
+            "applied to the one left out. Nothing about the scored review is used to pick its rule.", "",
+            "| Review | Rule chosen on the others | recall | WSS | fixed threshold: recall | WSS |",
+            "|---|---|--:|--:|--:|--:|"]
+    for (held, rule, o), f in zip(picks, fixed):
+        out.append(f"| `{held}` | {rule} | {o.recall:.1%} | {o.wss:.1%} | {f.recall:.1%} | {f.wss:.1%} |")
+    out += ["", "```",
+            f"chosen rule      recall {pl['recall']:.1%} (95% CI {pl['lo']:.1%}–{pl['hi']:.1%}, {pl['found']}/{pl['eligible']}) "
+            f"· pooled WSS {pl['wss']:.1%} · reviews below 95%: {pl['below']}",
+            f"fixed threshold  recall {pf['recall']:.1%} (95% CI {pf['lo']:.1%}–{pf['hi']:.1%}, {pf['found']}/{pf['eligible']}) "
+            f"· pooled WSS {pf['wss']:.1%} · reviews below 95%: {pf['below']}",
+            "```"]
     if warnings:
         out += ["", "## Warnings", ""] + [f"- {w}" for w in dict.fromkeys(warnings)]
     text = "\n".join(out) + "\n"
