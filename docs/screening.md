@@ -70,6 +70,32 @@ before trusting the threshold, they are what it costs you. Label a few
 hundred records first; with fewer than 10 eligible studies in your sample
 any fitted threshold is rough, and the tool says so.
 
+### Read in ranked order and let the tool say when to stop
+
+A threshold fitted on other reviews has to be low enough for the hardest
+one, so on a typical review it keeps far more than needed. The better way
+to use the scores is as a reading order. Read from the highest score down,
+label each record as you go, and ask what to do next:
+
+```bash
+paper-radar screen -c review.toml --progress            # next 20 to read, and whether you can stop
+paper-radar label -c review.toml 12345678 yes           # record each decision as you read
+```
+
+`--progress` stops you after a dry run of irrelevant records in a row,
+max(100, 3% of the ranked records) by default. Records with no abstract are
+listed apart: read them whatever the rule says, because they are not
+ranked. The rule only counts the unbroken run from the top. If you label
+records out of order, it says so and ignores them.
+
+On the twelve CLEF TAR reviews, with the rule chosen on the other eleven
+each time, this found 98.0% of eligible studies (95% CI 96.2–99.0%) and
+saved 69% of the reading, with no review below 95% recall. A fixed
+threshold gave 92.4% and 46%, and missed 95% on three reviews. On reviews
+of a few hundred records the dry run covers most of the pile, so expect
+little saving there. Reading everything is cheap at that size anyway. See
+[`benchmarks/clef_tar_2019/stopping.py`](../benchmarks/clef_tar_2019/stopping.py).
+
 ## Measured against real reviewers' decisions
 
 The benchmark is in `benchmarks/clef_tar_2019/`. It replays the CLEF
