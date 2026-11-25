@@ -128,3 +128,28 @@ def test_feedback_repo_falls_back_to_github_repository(tmp_path, monkeypatch):
     )
     _apply_env_defaults(explicit)
     assert explicit.output.feedback_repo == "me/mine"
+
+
+def test_check_warns_for_gemini_backend(tmp_path, capsys):
+    cfg = tmp_path / "radar.toml"
+    cfg.write_text(
+        '[jev]\nbackend = "gemini"\n[[sources]]\ntype = "arxiv"\n[[interests]]\nid = "a"\ntext = "x"\n',
+        encoding="utf-8",
+    )
+    assert main(["check", "-c", str(cfg)]) == 0
+    out = capsys.readouterr().out
+    assert "Google's claim, not a measurement" in out
+    assert "do not apply to Gemini" in out
+
+
+def test_calibrate_notes_gemini_backend(tmp_path, capsys):
+    import re
+
+    out = tmp_path / "demo"
+    assert main(["demo", "--out", str(out), "--date", "2026-09-22"]) == 0
+    cfg = out / "radar.demo.toml"
+    cfg.write_text(re.sub(r'backend = "[^"]+"', 'backend = "gemini"', cfg.read_text(encoding="utf-8")), encoding="utf-8")
+    assert main(["label", "2609.99001", "yes", "-c", str(cfg)]) == 0
+    assert main(["label", "2609.99007", "no", "-c", str(cfg)]) == 0
+    assert main(["calibrate", "-c", str(cfg)]) == 0
+    assert "Gemini Decision 1's probabilities" in capsys.readouterr().out

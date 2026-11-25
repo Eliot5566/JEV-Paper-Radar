@@ -5,6 +5,7 @@ Backends
 * ``typesafe``   POST {base}/v1/systemone          (TYPESAFE_API_KEY)
 * ``openrouter`` POST openrouter.ai/api/alpha/decisions (OPENROUTER_API_KEY, no waitlist)
 * ``claude``     POST api.anthropic.com/v1/messages (ANTHROPIC_API_KEY)
+* ``gemini``     POST generativelanguage.googleapis.com/v1beta/decisions (GEMINI_API_KEY)
 * ``mock``       offline keyword heuristic for demos and tests. It is NOT Jev.
 
 Both HTTP backends share the same wire format: ``{"model", "state", "questions"}`` in,
@@ -19,6 +20,20 @@ model", verified against the live API 2026-11-11.) Treat them like the mock
 backend's numbers: run ``paper-radar calibrate`` on your own labels and fit
 your thresholds to them before trusting a run. The Cochrane screening numbers
 in the README were measured with Jev and do NOT apply to Claude.
+
+The Gemini backend is different in the other direction: Gemini Decision 1
+is a real decision model, like Jev — it scores the same three question
+types (noul / choice / score) in one forward pass and returns calibrated
+probabilities, so no JSON is parsed out of prose and no repair attempt is
+needed. Two things to know before trusting it the way you trust Jev: the
+calibration claim is Google's (lowest calibration error on its own
+benchmark suite), not a measurement on your data — run
+``paper-radar calibrate`` on your own labels before trusting its
+thresholds; and its noul is clamped to [0.01, 0.99], so it never claims
+certainty and a threshold above 0.99 can never match. It bills input only
+($0.10 per million input tokens, $0 output) and has a no-cost tier in AI
+Studio for prototyping. Text input only: Paper Radar judges title and
+abstract, so the Decisions API's multimodal input is not used.
 """
 
 from __future__ import annotations
@@ -43,6 +58,7 @@ TYPESAFE_DEFAULT_BASE = "https://api.typesafe.ai"
 OPENROUTER_URL = "https://openrouter.ai/api/alpha/decisions"
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/decisions"
 # Latest Haiku as of 2026-11-11 (released 2026-10-07, model id claude-haiku-5-5).
 # If Anthropic ships a newer Haiku, set jev.model in radar.toml instead of
 # editing this default; do not assume a dateless id moves to the new model.
@@ -50,9 +66,15 @@ DEFAULT_MODELS = {
     "typesafe": "jev-latest",
     "openrouter": "typesafe/jev-1.13",
     "claude": "claude-haiku-5-5",
+    "gemini": "gemini-decision-1",
     "mock": "mock-heuristic",
 }
-KEY_ENV = {"typesafe": "TYPESAFE_API_KEY", "openrouter": "OPENROUTER_API_KEY", "claude": "ANTHROPIC_API_KEY"}
+KEY_ENV = {
+    "typesafe": "TYPESAFE_API_KEY",
+    "openrouter": "OPENROUTER_API_KEY",
+    "claude": "ANTHROPIC_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+}
 
 FATAL_STATUSES = {400, 401, 402, 403, 404, 422}
 RETRYABLE_STATUSES = {408, 409, 429, 500, 502, 503, 504, 529}
@@ -506,6 +528,221 @@ class ClaudeBackend:
             time.sleep(delay)
 
 
+# --------------------------------------------------------------------------- gemini
+
+
+def _gemini_questions(questions: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Translate Jev's question dicts into the Decisions API's shape.
+
+    The three types and their meaning are the same — Google copied Jev's
+    API shape, down to the name "noul". One field differs: a noul's
+    true/false descriptions live under ``criteria`` as ``true`` / ``false``
+    in Jev's dicts, but the Decisions API wants them as
+    ``true_description`` / ``false_description`` inside ``criteria``.
+    Choice criteria (label -> description) and score criteria (ordered
+    list) pass through unchanged. The caller's dicts are not mutated.
+    """
+    translated: dict[str, dict[str, Any]] = {}
+    for key, question in questions.items():
+        kind = question["type"]
+        entry: dict[str, Any] = {"type": kind, "instructions": question.get("instructions", "")}
+        if kind == "noul":
+            criteria = question.get("criteria") or {}
+            descriptions = {
+                "true_description": criteria.get("true"),
+                "false_description": criteria.get("false"),
+            }
+            descriptions = {k: v for k, v in descriptions.items() if v}
+            if descriptions:
+                entry["criteria"] = descriptions
+        elif kind == "choice":
+            entry["criteria"] = dict(question["criteria"])
+        elif kind == "score":
+            entry["criteria"] = list(question["criteria"])
+        else:
+            raise JevError(f"Unknown question type {kind!r} for {key!r}")
+        translated[key] = entry
+    return translated
+
+
+def _gemini_input_text(state: Any) -> str:
+    """The one text input: the paper as JSON, the same content Claude sees.
+
+    The Decisions API also takes images, audio, video and PDFs, but Paper
+    Radar judges title and abstract text, so a plain string input is the
+    whole request.
+    """
+    return json.dumps(state, ensure_ascii=False)
+
+
+def parse_gemini_answers(
+    data: Any, questions: dict[str, dict[str, Any]], fallback_model: str
+) -> JevResult:
+    """Validate a Decisions API reply into the same JevResult shape Jev returns.
+
+    The reply is typed already — no JSON is parsed out of prose, so there is
+    no repair attempt: a malformed answer raises and the pipeline treats the
+    paper as failed (and quarantines it after repeated failures), the same
+    as a malformed Jev reply. The numbers that survive are Gemini Decision
+    1's own probabilities, calibrated per Google's claim — not a measurement
+    on your data; see the module docstring.
+    """
+    if not isinstance(data, dict) or not isinstance(data.get("answers"), dict):
+        raise JevError("Malformed Gemini response: missing 'answers'")
+    answers = data["answers"]
+    out: dict[str, dict[str, Any]] = {}
+    for key, question in questions.items():
+        answer = answers.get(key)
+        if not isinstance(answer, dict) or answer.get("type") != question["type"]:
+            raise JevError(f"Malformed Gemini response: answer {key!r} missing or wrong type")
+        kind = question["type"]
+        if kind == "noul":
+            value = answer.get("noul")
+            if not _is_number(value) or not 0 <= value <= 1:
+                raise JevError(f"Malformed Gemini response: {key!r} noul must be a number in [0, 1]")
+            out[key] = {"type": "noul", "noul": round(float(value), 4)}
+            if _is_number(answer.get("confidence")):
+                out[key]["confidence"] = round(float(answer["confidence"]), 4)
+        elif kind == "choice":
+            value = answer.get("choice")
+            criteria = question["criteria"]
+            if not isinstance(value, str) or value not in criteria:
+                raise JevError(f"Malformed Gemini response: {key!r} choice must be one of {sorted(criteria)}")
+            out[key] = {"type": "choice", "choice": value}
+            probs = answer.get("probabilities")
+            if isinstance(probs, dict):
+                out[key]["probabilities"] = {k: round(float(v), 4) for k, v in probs.items() if _is_number(v)}
+            if _is_number(answer.get("confidence")):
+                out[key]["confidence"] = round(float(answer["confidence"]), 4)
+        elif kind == "score":
+            value = answer.get("score")
+            levels = list(question["criteria"])
+            if not _is_number(value) or not 0 <= value <= len(levels) - 1:
+                raise JevError(
+                    f"Malformed Gemini response: {key!r} score must be a number in [0, {len(levels) - 1}]"
+                )
+            out[key] = {
+                "type": "score",
+                "score": round(float(value), 3),
+                "legend": {str(i): level for i, level in enumerate(levels)},
+            }
+            probs = answer.get("probabilities")
+            if isinstance(probs, dict):
+                out[key]["probabilities"] = {k: round(float(v), 4) for k, v in probs.items() if _is_number(v)}
+            if _is_number(answer.get("confidence")):
+                out[key]["confidence"] = round(float(answer["confidence"]), 4)
+        else:
+            raise JevError(f"Malformed Gemini response: unknown question type {kind!r} for {key!r}")
+    usage = data.get("usage") or {}
+    total_in = usage.get("total_input_tokens")
+    return JevResult(
+        answers=out,
+        model=str(data.get("model") or fallback_model),
+        input_tokens=int(total_in) if isinstance(total_in, int) and not isinstance(total_in, bool) else 0,
+        cost=None,  # The API bills input only; the pipeline estimates from price_per_mtok.
+    )
+
+
+class GeminiBackend:
+    """Gemini Decision 1 as the judge, via the Decisions API (stdlib urllib only).
+
+    One call per paper, same question shape as Jev — the Decisions API
+    copied Jev's three types, so the pipeline's question dicts go across
+    almost verbatim (only a noul's true/false descriptions are renamed).
+    The key is read from GEMINI_API_KEY at runtime and is never stored
+    anywhere by this code. Get one at Google AI Studio; the no-cost tier
+    covers prototyping, and the paid tier bills $0.10 per million input
+    tokens with $0 output.
+
+    Differences from the Jev backends, stated plainly: the calibration is
+    Google's claim (lowest calibration error on its own benchmark suite),
+    not a measurement on your data — run ``paper-radar calibrate`` on your
+    own labels before trusting the thresholds; and noul is clamped to
+    [0.01, 0.99], so the model never claims certainty. There is no repair
+    attempt: the reply is typed, not prose, so a malformed answer is a
+    failure, and the pipeline quarantines the paper after repeated failures
+    instead of retrying it every day.
+    """
+
+    name = "gemini"
+
+    def __init__(
+        self,
+        *,
+        url: str,
+        api_key: str,
+        model: str,
+        timeout: float,
+        max_retries: int,
+        limiter: RateLimiter,
+    ):
+        self.url = url
+        self.model = model
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.limiter = limiter
+        self._headers = {
+            "x-goog-api-key": api_key,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": USER_AGENT,
+        }
+
+    def decide(self, state: Any, questions: dict[str, dict[str, Any]]) -> JevResult:
+        records: list[dict[str, Any]] = []
+        try:
+            result = self._decide(state, questions, records)
+        except JevError as error:
+            error.request_usage = records or [response_usage({})]
+            raise
+        result.request_usage = records
+        result.input_tokens = sum(r.get("input_tokens") or 0 for r in records)
+        return result
+
+    def _decide(self, state: Any, questions: dict[str, dict[str, Any]], records: list[dict[str, Any]]) -> JevResult:
+        body = json.dumps(
+            {
+                "model": self.model,
+                "input": _gemini_input_text(state),
+                "questions": _gemini_questions(questions),
+            }
+        ).encode("utf-8")
+        attempt = 0
+        while True:
+            self.limiter.acquire()
+            request = urllib.request.Request(self.url, data=body, method="POST", headers=self._headers)
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    data = json.loads(response.read())
+            except urllib.error.HTTPError as error:
+                records.append(response_usage({}))
+                detail = error.read()[:300].decode("utf-8", errors="replace")
+                message = f"{self.name} HTTP {error.code}: {detail}"
+                if error.code in FATAL_STATUSES:
+                    raise JevError(message, fatal=True, status=error.code) from None
+                if error.code not in RETRYABLE_STATUSES or attempt >= self.max_retries:
+                    raise JevError(message, status=error.code) from None
+                delay = _retry_after(error.headers) or _backoff(attempt)
+            except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as error:
+                records.append(response_usage({}))
+                if attempt >= self.max_retries:
+                    raise JevError(f"{self.name} request failed: {error}") from None
+                delay = _backoff(attempt)
+            else:
+                result = parse_gemini_answers(data, questions, self.model)
+                records.append(
+                    response_usage(
+                        {
+                            "model": result.model,
+                            "usage": {"input_tokens": result.input_tokens, "output_tokens": 0},
+                        }
+                    )
+                )
+                return result
+            attempt += 1
+            time.sleep(delay)
+
+
 # --------------------------------------------------------------------------- mock
 
 _STOP = set(
@@ -598,6 +835,13 @@ def make_backend(settings: JevSettings, env: dict[str, str] | None = None) -> Ba
                 "ANTHROPIC_API_KEY — as a repository secret (Settings -> Secrets and variables -> Actions) "
                 "or in a local .env file. The API is billed separately from a Claude Pro/Max subscription."
             )
+        elif backend == "gemini":
+            hint = (
+                "Create one at Google AI Studio (aistudio.google.com) and set it as "
+                "GEMINI_API_KEY — as a repository secret (Settings -> Secrets and variables -> Actions) "
+                "or in a local .env file. The no-cost tier covers prototyping; the paid tier bills "
+                "$0.10 per million input tokens with $0 output."
+            )
         else:
             hint = (
                 "Set it as a repository secret (Settings -> Secrets and variables -> Actions) or export it locally. "
@@ -609,6 +853,15 @@ def make_backend(settings: JevSettings, env: dict[str, str] | None = None) -> Ba
     if backend == "claude":
         return ClaudeBackend(
             url=settings.base_url or ANTHROPIC_URL,
+            api_key=api_key,
+            model=model,
+            timeout=settings.timeout,
+            max_retries=settings.max_retries,
+            limiter=limiter,
+        )
+    if backend == "gemini":
+        return GeminiBackend(
+            url=settings.base_url or GEMINI_URL,
             api_key=api_key,
             model=model,
             timeout=settings.timeout,

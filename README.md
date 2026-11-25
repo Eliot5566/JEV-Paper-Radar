@@ -82,6 +82,7 @@ Each is an ordinary config file in [`radars/`](radars). Fork the repo and yours 
    - `TYPESAFE_API_KEY` from [console.typesafe.ai](https://console.typesafe.ai/settings/keys), **or**
    - `OPENROUTER_API_KEY` if you are still on TypeSafe's waitlist. Set `backend = "openrouter"` and `model = "typesafe/jev-1.13"` in `radar.toml`; [OpenRouter serves Jev without a waitlist](https://openrouter.ai/typesafe/jev-1.13), **or**
    - `ANTHROPIC_API_KEY` to judge with Claude instead of Jev (see below). Set `backend = "claude"` in `radar.toml`.
+   - `GEMINI_API_KEY` to judge with Gemini Decision 1 instead of Jev (see below). Set `backend = "gemini"` in `radar.toml`.
 4. **Turn on Pages:** *Settings → Pages → Source: GitHub Actions*.
 5. **Run it:** *Actions → Paper Radar → Run workflow* (type `50` in *limit* for a cheap first test).
 
@@ -126,6 +127,42 @@ the Jev thresholds are defaults from the repo's first commit and the only
 ground-truth measurement in the repo is the screening benchmark — so this is
 the first labelled measurement for either backend on the daily radar.
 
+### Use Gemini Decision 1 instead of Jev
+
+If you already have a Gemini API key, Gemini Decision 1 can do the judging —
+same pipeline, same calibration step, no Jev waitlist. It is the only other
+backend here that is a decision model rather than a chat model: it scores
+the same three question types (noul / choice / score) in one forward pass
+and returns calibrated probabilities, so there is no JSON to parse and no
+repair attempt.
+
+```toml
+[jev]
+backend = "gemini"
+# model = "gemini-decision-1"   # the default; set it explicitly to pin a version
+```
+
+```bash
+paper-radar run --backend gemini --limit 50
+```
+
+Two honest warnings. First, **the calibration is Google's claim, not a
+measurement on your data**: Google reports the lowest calibration error on
+its own benchmark suite, but Paper Radar has not measured it on your
+labels. Run `paper-radar label` on a few dozen papers and then
+`paper-radar calibrate` to fit your thresholds to Gemini before trusting a
+run — the Jev thresholds in `radar.toml` will not transfer. Second, **the
+benchmark numbers in this README are Jev-only**: the Cochrane screening
+result (96.9% recall, 78% work saved on 19,447 records) was measured with
+Jev and does not apply to Gemini. Get a key at Google AI Studio; the
+no-cost tier covers prototyping, and the paid tier bills $0.10 per million
+input tokens with $0 output — set `jev.price_per_mtok = 0.10` and
+`jev.output_price_per_mtok = 0.0`. Its noul is clamped to [0.01, 0.99], so
+it never claims certainty and a threshold above 0.99 can never match. On
+the free tier, keep `jev.requests_per_minute` low (the starter profile
+uses 30): the free tier allows 200 requests and 50,000 tokens per minute,
+and a paper costs roughly 1,000 input tokens.
+
 After that it runs on weekdays at 06:00 UTC. The schedule leaves time for feed updates; GitHub scheduled runs can be delayed. Your radar is at `https://<you>.github.io/<repo>/` and the feed at `/feed.xml`.
 
 ### Inspect usage and cost
@@ -160,10 +197,11 @@ jobs:
           config: radar.toml
           typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
           # anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}  # with backend: claude
+          # gemini-api-key: ${{ secrets.GEMINI_API_KEY }}  # with backend: gemini
           # limit: "50"    # a cheap first test
 ```
 
-Pin to a release tag — `@v0.1.2` is the first tag that contains `action.yml` (`@v0.1.1` predates it, so it cannot work). Other inputs: `command` (`run` or `screen`), `backend` (`typesafe`, `openrouter`, `claude`, `mock`), and `args` for extra flags such as `--rejudge --no-notify`. Keys are passed as secrets and are never printed in the log.
+Pin to a release tag — `@v0.1.2` is the first tag that contains `action.yml` (`@v0.1.1` predates it, so it cannot work). Other inputs: `command` (`run` or `screen`), `backend` (`typesafe`, `openrouter`, `claude`, `gemini`, `mock`), and `args` for extra flags such as `--rejudge --no-notify`. Keys are passed as secrets and are never printed in the log.
 
 ### Use with Claude
 
