@@ -81,8 +81,23 @@ score the same records with Claude or Gemini Decision 1 and write
 `--dump` to get the per-record scores that `loto.py` needs for the comparison. The cost
 column counts every request, including repairs and failures, at the rates in
 `run.py`'s `RATES` table. A run on the 4 held-out topics with Claude Haiku 5.5 is
-estimated at about $1–2 (half that with `--batch`); check the cost line after a
-`--topics` run of a single small topic first.
+measured $0.90 with `--batch` (19,447 records; $0.35 more for the eight development
+topics). Check the cost line after a `--topics` run of a single small topic first.
+
+### Stopping rules and ensembles
+
+`clef_tar_2019/stopping.py` simulates a reviewer reading each review in order of
+eligibility and stopping when a rule says so (dry runs of irrelevant records, the knee
+method, the target method), next to the fixed threshold. It chooses the rule on the
+development topics and, separately, leaving one review out, so nothing about a scored
+review picks its own rule. `clef_tar_2019/ensemble.py` averages several models' dumps
+into one, which both scripts then read like any other model. Results for Jev, Claude
+and both together: [`results.stopping.md`](clef_tar_2019/results.stopping.md).
+
+```bash
+python benchmarks/clef_tar_2019/stopping.py dumps/v2 dumps/holdout --fit-on dumps/v2 --label jev
+python benchmarks/clef_tar_2019/ensemble.py dumps/jev/v2 dumps/claude/v2 --out dumps/both/v2
+```
 
 Records that PubMed no longer serves are excluded from every figure and counted
 separately. Records without an abstract are counted as kept, never as saved work; that is
