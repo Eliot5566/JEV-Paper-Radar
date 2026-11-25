@@ -76,6 +76,12 @@ def judge_all(
         try:
             result = backend.decide(paper.state(), questions)
         except JevError as error:
+            return handle(paper, error)
+        return handle(paper, result)
+
+    def handle(paper: Paper, result: Any) -> Any | None:
+        if isinstance(result, JevError):
+            error = result
             if usage is not None:
                 with lock:
                     usage.extend(error.request_usage or [response_usage({})])
@@ -95,6 +101,19 @@ def judge_all(
                               "cost": result.cost},
                 })])
         return verdict(paper, result, config)
+
+    batch = getattr(backend, "decide_batch", None)
+    if papers and config.jev.batch and batch is not None:
+        # One Message Batches request for the whole run (Claude only): half
+        # price, no rate-limit pacing. Outcomes come back in input order.
+        outcomes = batch([p.state() for p in papers], questions, log=log)
+        for paper, outcome in zip(papers, outcomes):
+            decision = handle(paper, outcome)
+            if decision is not None:
+                decisions.append(decision)
+        if fatal:
+            raise fatal[0]
+        return decisions, failures
 
     done = 0
     with ThreadPoolExecutor(max_workers=config.jev.concurrency) as pool:

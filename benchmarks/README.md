@@ -61,6 +61,29 @@ separate the eligible studies from the rest, if you tuned it perfectly?" — not
 it do on your next review". For that second question, screen a few hundred records
 yourself and run `paper-radar screen --report`.
 
+`clef_tar_2019/loto.py` measures the second question on the benchmark itself: each
+topic is scored with a threshold fitted on the *other* topics (leave-one-topic-out), or
+fitted once on the development topics and applied to the held-out ones. It reads the
+per-record CSVs from `run.py --dump`, calls no model, and reports recall with a Wilson
+95% interval, WSS, and a reliability table with Brier score and ECE:
+
+```bash
+python benchmarks/clef_tar_2019/run.py --criteria v2 --dump dumps/v2 --email you@example.com
+python benchmarks/clef_tar_2019/run.py --criteria holdout --dump dumps/holdout --email you@example.com
+python benchmarks/clef_tar_2019/loto.py dumps/v2 dumps/holdout --fit-on dumps/v2 --out loto.md
+```
+
+### Comparing models on the same records
+
+`run.py --backend claude` (optionally `--batch`, half price) and `--backend gemini`
+score the same records with Claude or Gemini Decision 1 and write
+`results.<criteria>.<backend>.md`, so the Jev results are never overwritten. Add
+`--dump` to get the per-record scores that `loto.py` needs for the comparison. The cost
+column counts every request, including repairs and failures, at the rates in
+`run.py`'s `RATES` table. A run on the 4 held-out topics with Claude Haiku 5.5 is
+estimated at about $1–2 (half that with `--batch`); check the cost line after a
+`--topics` run of a single small topic first.
+
 Records that PubMed no longer serves are excluded from every figure and counted
 separately. Records without an abstract are counted as kept, never as saved work; that is
 the conservative choice and it pushes WSS down.

@@ -29,6 +29,19 @@ These are editable assumptions, not an automatic pricing feed. Other models, pro
 
 If cached tokens are returned, configure `cache_read_price_per_mtok` and/or `cache_creation_price_per_mtok` using that provider's pricing. Do not set them to zero unless the applicable charge really is zero.
 
+The Claude backend sends the instructions and questions as a cached prefix, so a Claude run returns cache tokens from the second paper on (when the prefix is at least the model's minimum cacheable length, 512 tokens on Haiku 5.5). For Haiku 5.5, cache reads are 0.1x the input rate and 5-minute cache writes 1.25x:
+
+```toml
+cache_read_price_per_mtok = 0.01
+cache_creation_price_per_mtok = 0.125
+```
+
+Without these two rates a Claude run that hits the cache shows **cost unknown**, by design.
+
+### Batches
+
+With `jev.batch = true` (Claude only) a run goes through the Message Batches API, billed at half the standard rate on every token, cache reads and writes included. Those requests are recorded with `"batch": true` in `usage.jsonl`, and the estimate applies the 50% discount to them. Papers that fall back to an ordinary call (a malformed batch answer, an errored or expired request, or a batch cancelled after `batch_timeout_minutes`) are billed and recorded at the normal rate.
+
 ## Unknown is different from zero
 
 `cost_usd` is null when a request's usage or a required rate is missing. `known_cost_usd` is only the subtotal of known components; it is not a total bill. A provider-reported request cost takes precedence over the configured-rate estimate. `cost_basis` records whether configured estimates were used.

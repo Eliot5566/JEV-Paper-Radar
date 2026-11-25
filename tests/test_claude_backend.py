@@ -103,10 +103,23 @@ def test_request_shape_and_parse(server_factory):
     assert body["model"] == "claude-haiku-5-5"
     # No temperature: Haiku 5.5 rejects it (live API 400, 2026-11-11).
     assert "temperature" not in body
-    assert body["max_tokens"] == 1024
+    assert body["max_tokens"] == 2048
     # No assistant prefill: Haiku 5.5 rejects it, so the last message is the user turn.
     assert body["messages"][-1]["role"] == "user"
-    assert "i_a" in body["messages"][-1]["content"]
+    # The paper is the only thing in the user turn; the questions are in the
+    # cached system prefix, so they are not billed again for every paper.
+    assert body["messages"][-1]["content"].startswith("Paper:\n")
+    assert "i_a" not in body["messages"][-1]["content"]
+    system = body["system"]
+    assert system[-1]["cache_control"] == {"type": "ephemeral"}
+    assert "i_a" in system[-1]["text"]
+    # Structured outputs + low effort for a small classification task.
+    output_config = body["output_config"]
+    assert output_config["effort"] == "low"
+    schema = output_config["format"]["schema"]
+    assert output_config["format"]["type"] == "json_schema"
+    assert schema["required"] == list(QUESTIONS) and schema["additionalProperties"] is False
+    assert schema["properties"]["s_paper_type"]["enum"] == ["benchmark", "survey"]
     assert result.answers["i_a"] == {"type": "noul", "noul": 0.93}
     assert result.answers["s_paper_type"] == {"type": "choice", "choice": "benchmark"}
     assert result.answers["s_evidence"]["score"] == 1.4

@@ -52,6 +52,19 @@ from paper_radar.screening import (  # noqa: E402
     INCLUDE, MANUAL, ScreenDecision, combine_criteria, screen, screening_performance,
 )
 from paper_radar.sources.pubmed import EUTILS, parse_pubmed  # noqa: E402
+from paper_radar.usage import summarize_usage  # noqa: E402
+
+# USD per million tokens used for the cost column when the run does not report
+# a cost itself: (input, output, cache read, cache write). Checked 2026-11-25;
+# edit them if your model or tier differs. Batch requests are halved by
+# summarize_usage from their "batch": true usage records.
+RATES = {
+    "typesafe": (0.042, 0.0, 0.0, 0.0),
+    "openrouter": (0.042, 0.0, 0.0, 0.0),
+    "claude": (0.10, 0.50, 0.01, 0.125),   # Haiku 5.5, prompts up to 100K tokens
+    "gemini": (0.10, 0.0, 0.0, 0.0),       # Gemini Decision 1 bills input only
+    "mock": (0.0, 0.0, 0.0, 0.0),
+}
 
 QRELS_URL = (
     "https://raw.githubusercontent.com/CLEF-TAR/tar/master/2019-TAR/Task2/Training/"
@@ -133,16 +146,20 @@ def dump_scores(path: Path, topic: str, decisions, judged: dict[str, int]) -> No
     criteria = sorted({k for d in decisions for k in d.include})
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["topic", "pmid", "label", "verdict", "eligibility", "weakest", *criteria])
+        # "triggered" (added after the first dumps) names the exclusion criteria that fired, so
+        # an analysis can tell an excluded record from one that scored low. Older dumps lack it.
+        writer.writerow(["topic", "pmid", "label", "verdict", "eligibility", "weakest", "triggered", *criteria])
         for d in decisions:
             pmid = d.paper.id.split(":", 1)[1]
             writer.writerow([topic, pmid, judged.get(pmid, ""), d.verdict, round(d.eligibility, 4), d.weakest,
+                             "|".join(getattr(d, "triggered", []) or []),
                              *[round(d.include.get(c, float("nan")), 4) for c in criteria]])
 
 
 def run_topic(topic_file: Path, judged: dict[str, int], records: dict[str, dict], backend, target_recall: float,
-              log=print, dump: Path | None = None):
+              log=print, dump: Path | None = None, batch: bool = False):
     meta, config = config_for(topic_file)
+    config.jev.batch = batch
     papers, gone = [], 0
     for pmid in judged:
         record = records.get(pmid)
@@ -159,7 +176,13 @@ def run_topic(topic_file: Path, judged: dict[str, int], records: dict[str, dict]
     skipped = [p for p in papers if not p.abstract.strip()]
     log(f"  {meta.get('topic', topic_file.stem)}: {len(papers):,} records, "
         f"{len(sendable):,} with an abstract to judge …")
-    decisions, failures = judge_all(backend, sendable, questions, config, log=log, verdict=screen)
+    usage: list[dict] = []
+    decisions, failures = judge_all(backend, sendable, questions, config, log=log, verdict=screen, usage=usage)
+    rates = RATES.get(backend.name, RATES["mock"])
+    config.jev.backend = backend.name
+    (config.jev.price_per_mtok, config.jev.output_price_per_mtok,
+     config.jev.cache_read_price_per_mtok, config.jev.cache_creation_price_per_mtok) = rates
+    billing = summarize_usage(usage, config.jev)
     decisions += [ScreenDecision(paper=p, verdict=MANUAL, eligibility=0.0, model=backend.model) for p in skipped]
 
     scores = {mode: {} for mode in COMBINE_MODES}
@@ -201,14 +224,21 @@ def run_topic(topic_file: Path, judged: dict[str, int], records: dict[str, dict]
         "reports": reports,
         "kept_at_default": at_default,
         "tokens": sum(d.input_tokens for d in decisions),
-        "cost": sum(d.cost for d in decisions),
+        # Every request, including repairs and failures, at the RATES above (or the
+        # provider-reported cost). known_cost_usd when part of the usage is unknown.
+        "cost": billing["cost_usd"] if billing["cost_usd"] is not None else billing["known_cost_usd"],
+        "cost_complete": billing["cost_usd"] is not None,
+        "output_tokens": billing["output_tokens"],
+        "cache_read_tokens": billing["cache_read_input_tokens"],
         "model": next((d.model for d in decisions if d.model), backend.model),
     }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--backend", default="typesafe", choices=["typesafe", "openrouter", "mock"])
+    parser.add_argument("--backend", default="typesafe", choices=["typesafe", "openrouter", "claude", "gemini", "mock"])
+    parser.add_argument("--model", default=None, help="model id for the backend (default: the backend's default)")
+    parser.add_argument("--batch", action="store_true", help="Claude only: use the Message Batches API (half price)")
     parser.add_argument("--recall", type=float, default=0.95, help="recall target the threshold is fitted to")
     parser.add_argument("--topics", nargs="*", help="only these topic ids")
     parser.add_argument("--email", default="", help="passed to NCBI, which asks callers to identify themselves")
@@ -220,6 +250,9 @@ def main() -> int:
     args = parser.parse_args()
     if args.out is None:
         stem = "results.mock" if args.backend == "mock" else f"results.{args.criteria}"
+        if args.backend in ("claude", "gemini"):
+            # Never overwrite the Jev results with another model's.
+            stem += f".{args.backend}"
         args.out = str(HERE / f"{stem}.md")
 
     import os
@@ -240,6 +273,13 @@ def main() -> int:
     # that the key is missing wastes several minutes of someone's afternoon.
     _, probe = config_for(files[0])
     probe.jev.backend = args.backend
+    probe.jev.model = args.model
+    if args.backend == "claude":
+        # Anthropic's per-minute limits are far below TypeSafe's 1,000/min default.
+        probe.jev.concurrency, probe.jev.requests_per_minute = 4, 50
+    if args.batch and args.backend != "claude":
+        print("--batch only applies to --backend claude", file=sys.stderr)
+        return 2
     backend = make_backend(probe.jev)
 
     dump_dir = Path(args.dump) if args.dump else None
@@ -254,7 +294,8 @@ def main() -> int:
     results = []
     for topic_file in files:
         started = time.monotonic()
-        result = run_topic(topic_file, judged[topic_file.stem], records, backend, args.recall, dump=dump_dir)
+        result = run_topic(topic_file, judged[topic_file.stem], records, backend, args.recall, dump=dump_dir,
+                           batch=args.batch)
         result["seconds"] = time.monotonic() - started
         results.append(result)
         r = result["report"]
