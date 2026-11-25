@@ -9,6 +9,7 @@
   - Prompt caching: the instructions and questions are a cached system prefix (sorted JSON, so the bytes are stable) and the paper is the whole user turn. Configure `cache_read_price_per_mtok` and `cache_creation_price_per_mtok`, or a cached run shows cost unknown.
   - `jev.batch = true` judges a run through the Message Batches API at half price, with per-paper fallback to ordinary calls for malformed, errored or expired results and a `jev.batch_timeout_minutes` cancel. Batch usage records carry `"batch": true` and cost estimates apply the 50% discount.
   - A refusal (`stop_reason: "refusal"`) is reported as such and not repaired.
+- Benchmark: `run.py --backend claude|gemini` (and `--batch` for Claude) scores the CLEF TAR records with another model into its own results file, with cost from every request's usage. Dumps gain a `triggered` column. New `loto.py` reports leave-one-topic-out (or dev-to-holdout) thresholds, a Wilson interval for recall, and a reliability table, from dumps only.
 
 ## 0.2.0 — 2026-11-13
 
