@@ -1,7 +1,7 @@
 # Which model, and when to stop reading: twelve CLEF TAR reviews
 
 Measured 2026-11-25 on the same 27,889 records (12 Cochrane reviews, 406 eligible
-studies) for every model. Each model judged every record once; everything below is
+studies) for Jev and Claude; Gemini finished only the eight development reviews. Each model judged every record once; everything below is
 computed from those judgments by `loto.py`, `stopping.py` and `ensemble.py`, without
 calling a model again.
 
@@ -18,7 +18,6 @@ eleven reviews and applied to the twelfth.
 | Claude `claude-haiku-5-5` | ranked reading + stopping rule | 97.8% (95.8–98.8) | 49.2% | 2 | $1.25 (Batch) |
 | Jev + Claude, scores averaged | fixed threshold | 93.8% (91.1–95.8) | 55.0% | 3 | $2.09 |
 | Jev + Claude, scores averaged | ranked reading + stopping rule | 98.5% (96.8–99.3) | 55.2% | 1 | $2.09 |
-| Gemini Decision 1 | | still running | | | |
 
 Jev read in ranked order with the stopping rule is the best combination on both axes:
 more eligible studies found and more reading saved than any threshold, at the lowest
@@ -33,12 +32,37 @@ models' scores gives the steadiest threshold (99.2% recall and 56% saved on the 
 held-out reviews), at twice the cost, and still saves less than Jev alone with the
 stopping rule.
 
+## Gemini Decision 1: development reviews only
+
+Gemini judged the eight development reviews (8,441 records, nominal $0.48) but ran out
+of time on the held-out ones. The development reviews took about 1½ hours on the free
+tier; the held-out ones (19,447 records) were still running when the job hit its
+340-minute limit 4 hours later. The log was buffered, so it does not say whether that
+was the free tier's per-minute or daily limit. So the
+three models can only be compared on the eight smaller reviews, leaving one out:
+
+| Model | Fixed threshold: recall / WSS | Stopping rule: recall / WSS | Cost, 8 reviews |
+|---|--:|--:|--:|
+| Jev | 93.5% / 57.4% | 95.0% / 55.7% | $0.24 |
+| Claude Haiku 5.5 | 93.9% / 59.7% | 95.7% / 59.5% | $0.35 (Batch) |
+| Gemini Decision 1 | 93.9% / 58.5% | 97.1% / 56.8% | $0.48 (list price; ran on the free tier) |
+| Jev + Claude | 93.9% / 59.7% | 98.2% / 51.2% | $0.59 |
+| All three | 94.6% / 60.9% | 98.2% / 53.1% | $1.07 |
+
+On these small reviews (146 to 5,392 records, 279 eligible studies in all) the three
+models are within each other's confidence intervals (about ±3 points of recall). The
+differences that matter show up on the large held-out reviews, which only Jev and
+Claude finished. On the free tier, Gemini could not finish a full 19,000-record review
+in four hours; a paid key, or `--topics` one review at a time, would be needed. [Full tables](results.stopping.dev-three-way.md);
+[Gemini's own report](results.v2.gemini.md).
+
 ## The optimistic bound: threshold tuned on each review's own labels
 
 | Model | Held-out 4 reviews: recall / WSS | Development 8 reviews: recall / WSS |
 |---|--:|--:|
 | Jev `jev-1.13.0` | 96.9% / 78.0% | 97.8% / 38.9% |
 | Claude `claude-haiku-5-5` | 96.9% / 64.8% | 96.8% / 65.5% |
+| Gemini `gemini-decision-1` | not finished | 96.4% / 65.8% |
 
 Tuned per review, Jev separates the large held-out reviews better and Claude the small
 development ones. Neither number is available to a team starting a new review; the

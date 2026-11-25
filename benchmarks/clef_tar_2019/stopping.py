@@ -129,7 +129,8 @@ def loto_selection(topics) -> list[tuple[str, str, Outcome]]:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("dirs", nargs="+", type=Path)
-    parser.add_argument("--fit-on", nargs="*", type=Path, required=True)
+    parser.add_argument("--fit-on", nargs="*", type=Path, default=None,
+                        help="development topics; without it only the leave-one-review-out section is reported")
     parser.add_argument("--label", default="", help="model name for the report heading")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
@@ -138,23 +139,40 @@ def main(argv=None) -> int:
     topics = {}
     for d in args.dirs:
         topics.update(load_dir(d, warnings))
-    dev = set()
-    for d in args.fit_on:
-        dev |= set(load_dir(d, []))
-    test = sorted(t for t in topics if t not in dev)
-    dev = sorted(dev & set(topics))
-    if not dev or not test:
-        print("need both fitting and test topics", file=sys.stderr)
+    if len(topics) < 2:
+        print("need dumps for at least two topics", file=sys.stderr)
         return 2
+    out = [f"# Stopping rules vs a fixed threshold{(' — ' + args.label) if args.label else ''}", ""]
+    if args.fit_on:
+        dev = set()
+        for d in args.fit_on:
+            dev |= set(load_dir(d, []))
+        test = sorted(t for t in topics if t not in dev)
+        dev = sorted(dev & set(topics))
+        if not dev or not test:
+            print("need both fitting and test topics", file=sys.stderr)
+            return 2
+        out += split_report(topics, dev, test)
+    out += loto_report(topics)
+    if warnings:
+        out += ["", "## Warnings", ""] + [f"- {w}" for w in dict.fromkeys(warnings)]
+    text = "\n".join(out) + "\n"
+    if args.out:
+        args.out.write_text(text, encoding="utf-8")
+        print(f"wrote {args.out}")
+    else:
+        print(text, end="")
+    return 0
 
+
+def split_report(topics, dev, test) -> list[str]:
     floor = fit([r for t in dev for r in topics[t]], TARGET)
     rules = floor_rules(floor) + free_rules()
     evaluated = evaluate(topics, rules)
     results = [(name, {t: out[t] for t in dev}, {t: out[t] for t in test}) for name, out in evaluated.items()]
     chosen = choose(evaluated, dev)
 
-    out = [f"# Stopping rules vs a fixed threshold{(' — ' + args.label) if args.label else ''}", "",
-           f"Reviewer reads each review in order of eligibility. Recall target {TARGET:.0%}. "
+    out = [f"Reviewer reads each review in order of eligibility. Recall target {TARGET:.0%}. "
            f"Development topics ({len(dev)}): settings chosen here. Test topics ({len(test)}): reported.", "",
            "| Rule | dev recall | dev WSS | dev topics < 95% | test recall (95% CI) | test WSS | test worst topic | test topics < 95% |",
            "|---|--:|--:|--:|--:|--:|--:|--:|"]
@@ -171,7 +189,11 @@ def main(argv=None) -> int:
     out += ["", "Cells are recall / WSS. WSS counts every record read, including the target method's random "
             "sample and every record without an abstract (always read, never ranked).",
             "", f"Fixed threshold and floor: {floor:.3f}, fitted on the development reviews."]
+    return out
 
+
+def loto_report(topics) -> list[str]:
+    out = []
     picks = loto_selection(topics)
     fixed = []
     for held, _, _ in picks:
@@ -192,15 +214,7 @@ def main(argv=None) -> int:
             f"fixed threshold  recall {pf['recall']:.1%} (95% CI {pf['lo']:.1%}–{pf['hi']:.1%}, {pf['found']}/{pf['eligible']}) "
             f"· pooled WSS {pf['wss']:.1%} · reviews below 95%: {pf['below']}",
             "```"]
-    if warnings:
-        out += ["", "## Warnings", ""] + [f"- {w}" for w in dict.fromkeys(warnings)]
-    text = "\n".join(out) + "\n"
-    if args.out:
-        args.out.write_text(text, encoding="utf-8")
-        print(f"wrote {args.out}")
-    else:
-        print(text, end="")
-    return 0
+    return out
 
 
 if __name__ == "__main__":
