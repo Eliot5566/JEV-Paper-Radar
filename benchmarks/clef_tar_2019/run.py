@@ -93,6 +93,26 @@ def load_qrels() -> dict[str, dict[str, int]]:
     return judged
 
 
+def _efetch(url: str, attempts: int = 5) -> str:
+    """One efetch call. NCBI sometimes cuts a large response short (IncompleteRead) or
+    answers 429/5xx; retry those with backoff instead of losing a long download."""
+    import http.client
+    import urllib.error
+
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(url, timeout=120) as response:
+                return response.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as error:
+            if error.code not in (429, 500, 502, 503, 504) or attempt == attempts - 1:
+                raise
+        except (http.client.IncompleteRead, urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == attempts - 1:
+                raise
+        time.sleep(2 ** attempt)
+    raise RuntimeError("unreachable")
+
+
 def fetch_records(pmids: list[str], email: str, api_key: str) -> dict[str, dict]:
     """PMID -> {title, abstract}, cached on disk. The slow step; resumable."""
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -112,8 +132,7 @@ def fetch_records(pmids: list[str], email: str, api_key: str) -> dict[str, dict]
         if api_key:
             params["api_key"] = api_key
         url = f"{EUTILS}/efetch.fcgi?{urllib.parse.urlencode(params)}"
-        with urllib.request.urlopen(url, timeout=120) as response:
-            xml = response.read().decode("utf-8", "replace")
+        xml = _efetch(url)
         # exclude_types is empty on purpose: the reviewers judged these records, errata
         # included, so dropping any of them here would change the denominator.
         for paper in parse_pubmed(xml, set()):
