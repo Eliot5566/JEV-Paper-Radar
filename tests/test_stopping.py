@@ -143,3 +143,20 @@ def test_cli_progress(tmp_path, monkeypatch, capsys):
     assert cli.main(["screen", "-c", "x.toml", "--progress"]) == 0
     out = capsys.readouterr().out
     assert "Read in ranked order" in out and "no abstract: 1" in out and "    b" in out
+
+
+def test_ensemble_averages_scores(tmp_path):
+    here = ROOT / "benchmarks" / "clef_tar_2019"
+    sys.path.insert(0, str(here))
+    spec = importlib.util.spec_from_file_location("ensemble_bench", here / "ensemble.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["ensemble_bench"] = module
+    spec.loader.exec_module(module)
+    _write(tmp_path / "a" / "T.csv", "T", [(0.2, True), (0.8, False)])
+    _write(tmp_path / "b" / "T.csv", "T", [(0.6, True), (0.0, False)])
+    (tmp_path / "b" / "T.csv").write_text(
+        (tmp_path / "b" / "T.csv").read_text().replace("T,1,0,include,0.0,", "T,1,0,manual,0.0,"))
+    assert module.main([str(tmp_path / "a"), str(tmp_path / "b"), "--out", str(tmp_path / "o")]) == 0
+    rows = (tmp_path / "o" / "T.csv").read_text().splitlines()
+    assert rows[1] == "T,0,1,include,0.4000,"
+    assert rows[2] == "T,1,0,manual,1.0000,"
