@@ -32,8 +32,17 @@ TARGET = 0.95
 
 
 def ordered(records):
-    rows = sorted(records, key=lambda r: (-r.score, r.pmid))
+    """Judged records in reading order. Records without an abstract are left out: a
+    reviewer reads them regardless, and their labels say nothing about the ranking."""
+    rows = sorted((r for r in records if r.judged), key=lambda r: (-r.score, r.pmid))
     return [r.score for r in rows], [r.label for r in rows]
+
+
+def with_manual(outcome: Outcome, records) -> Outcome:
+    manual = [r for r in records if not r.judged]
+    hits = sum(r.label for r in manual)
+    return Outcome(outcome.read + len(manual), outcome.found + hits, outcome.total + len(manual),
+                   outcome.eligible + hits)
 
 
 def pool(outcomes: list[Outcome]) -> dict:
@@ -58,6 +67,7 @@ def run_rule(topics, names, rule) -> dict[str, Outcome]:
                                 len(labels), sum(labels))
         else:
             out[name] = simulate(scores, labels, rule[1])
+        out[name] = with_manual(out[name], topics[name])
     return out
 
 
@@ -123,7 +133,8 @@ def main(argv=None) -> int:
     for name, _, t in results:
         if name == chosen or name == results[0][0] or name.startswith("knee") or name.startswith("target"):
             out.append(f"| {name} | " + " | ".join(f"{t[x].recall:.0%} / {t[x].wss:.0%}" for x in test) + " |")
-    out += ["", "Cells are recall / WSS. WSS counts every record read, including the target method's random sample."]
+    out += ["", "Cells are recall / WSS. WSS counts every record read, including the target method's random "
+            "sample and every record without an abstract (always read, never ranked)."]
     if warnings:
         out += ["", "## Warnings", ""] + [f"- {w}" for w in dict.fromkeys(warnings)]
     text = "\n".join(out) + "\n"

@@ -210,13 +210,18 @@ def cmd_screen(args: argparse.Namespace) -> int:
     if args.progress:
         from .stopping import advise, format_advice
 
-        ranking = store.ranking_index()
-        if not ranking:
+        ranking, manual = store.ranking_index()
+        if not ranking and not manual:
             print("No screening results yet. Run `paper-radar screen` first.", file=sys.stderr)
             return 2
-        advice = advise(ranking, store.load_labels(), rule=args.rule, k=args.k, frac=args.frac,
+        labels = store.load_labels()
+        advice = advise(ranking, labels, rule=args.rule, k=args.k, frac=args.frac,
                         threshold=args.threshold, batch=args.next)
         print(format_advice(advice))
+        unread = [pid for pid in manual if pid not in labels]
+        if manual:
+            print(f"\n  Records with no abstract: {len(manual):,} ({len(unread):,} not yet labelled). "
+                  "Read these whatever the rule says; they are not ranked.")
         return 0
     if args.report:
         report = screening_performance(
