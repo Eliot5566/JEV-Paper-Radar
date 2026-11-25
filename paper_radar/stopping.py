@@ -15,9 +15,10 @@ unlikely to find another eligible study.
 Rules provided, all measured in `benchmarks/clef_tar_2019/stopping.py`:
 
 * ``threshold``: read everything scoring at or above a fixed cut-off (the baseline).
-* ``consecutive``: stop after ``k`` irrelevant records in a row, but never before
-  every record above ``floor`` has been read. Simple to explain, and the floor keeps
-  it from stopping in a dry patch near the top.
+* ``consecutive``: stop after a dry run of irrelevant records in a row. The run is at
+  least ``k`` records and at least a share of the review (the default is
+  max(100, 3% of the ranked records)). An optional ``floor`` forbids stopping while
+  anything scoring above it is unread.
 * ``knee``: Cormack & Grossman's knee method (2016, adjusted form): stop when the
   rate of finding eligible studies has fallen far below the early rate.
 * ``target``: Cormack & Grossman's target method. Read a random sample until ``t``
@@ -38,9 +39,12 @@ RULES = ("threshold", "consecutive", "knee", "target")
 
 # Defaults for live advice, chosen on the eight CLEF TAR development reviews only and
 # reported on the four held-out ones (benchmarks/clef_tar_2019/results.stopping.*.md).
-STOP_DEFAULT_K = 50
-STOP_DEFAULT_FRAC = 0.2
-STOP_DEFAULT_THRESHOLD = 0.235
+# The rule chosen there, and in every leave-one-review-out fold: stop after a dry run of
+# max(100, 3% of the ranked records).
+STOP_DEFAULT_K = 100
+STOP_DEFAULT_FRAC = 0.0
+STOP_DEFAULT_SIZE_FRAC = 0.03
+STOP_DEFAULT_THRESHOLD = 0.230
 
 
 def reading_order(scores: dict[str, float]) -> list[str]:
@@ -178,7 +182,8 @@ class Advice:
 
 
 def advise(scores: dict[str, float], labels: dict[str, bool], *, rule: str = "consecutive",
-           k: int = STOP_DEFAULT_K, frac: float = STOP_DEFAULT_FRAC, floor: float = 1.01,
+           k: int = STOP_DEFAULT_K, frac: float = STOP_DEFAULT_FRAC,
+           size_frac: float = STOP_DEFAULT_SIZE_FRAC, floor: float = 1.01,
            threshold: float = STOP_DEFAULT_THRESHOLD, batch: int = 20) -> Advice:
     """What to do next on a review that is being read in ranked order."""
     if rule not in ("threshold", "consecutive", "knee"):
@@ -196,9 +201,9 @@ def advise(scores: dict[str, float], labels: dict[str, bool], *, rule: str = "co
         reason = f"every record scoring {threshold:.3f} or more has been read" if stop else \
             f"records scoring {threshold:.3f} or more are still unread"
     elif rule == "consecutive":
-        stop = stop_consecutive(ordered_scores, read, k, floor, frac)
+        stop = stop_consecutive(ordered_scores, read, k, floor, frac, size_frac)
         n = len(read)
-        run_needed = max(k, int(frac * n))
+        run_needed = max(k, int(frac * n), int(size_frac * len(order)))
         if stop and n < len(order):
             reason = f"the last {run_needed} records read were all irrelevant"
         elif stop:

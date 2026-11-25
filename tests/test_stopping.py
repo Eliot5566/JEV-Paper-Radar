@@ -66,7 +66,7 @@ def test_target_with_too_few_eligible_reads_everything():
 def test_advise_counts_only_the_unbroken_prefix():
     scores = {f"p{i}": 1 - i / 100 for i in range(100)}
     labels = {"p0": True, "p1": False, "p5": True}
-    advice = advise(scores, labels, k=20, frac=0.0, batch=3)
+    advice = advise(scores, labels, k=20, frac=0.0, size_frac=0.0, batch=3)
     assert (advice.read, advice.found, advice.stop) == (2, 1, False)
     assert advice.skipped == ["p5"]
     assert advice.next_ids == ["p2", "p3", "p4"]
@@ -77,7 +77,7 @@ def test_advise_counts_only_the_unbroken_prefix():
 def test_advise_stops_after_dry_run():
     scores = {f"p{i}": 1 - i / 100 for i in range(100)}
     labels = {f"p{i}": i == 0 for i in range(60)}
-    advice = advise(scores, labels, k=50, frac=0.0)
+    advice = advise(scores, labels, k=50, frac=0.0, size_frac=0.0)
     assert advice.stop and advice.next_ids == []
     assert "You can stop" in format_advice(advice)
 
@@ -118,3 +118,28 @@ def test_benchmark_script_end_to_end(tmp_path):
                        "--out", str(out)]) == 0
     text = out.read_text()
     assert "fixed threshold" in text and "chosen on dev" in text and "`C`" in text
+
+
+def test_size_frac_scales_with_review():
+    read = [True] + [False] * 120
+    assert stop_consecutive([0.5] * 1000, read, k=100)
+    assert not stop_consecutive([0.5] * 10000, read, k=100, size_frac=0.03)   # needs 300
+
+
+def test_cli_progress(tmp_path, monkeypatch, capsys):
+    from paper_radar import cli
+    from paper_radar.store import Store
+
+    class Cfg:
+        data_path = tmp_path
+
+        class screening:
+            enabled = True
+    store = Store(tmp_path)
+    monkeypatch.setattr(cli, "load_config", lambda path: Cfg)
+    monkeypatch.setattr(cli, "lint", lambda config: [])
+    monkeypatch.setattr(Store, "ranking_index", lambda self: ({"a": 0.9, "b": 0.5, "c": 0.1}, ["m"]))
+    store.add_label("a", True, "2026-11-25")
+    assert cli.main(["screen", "-c", "x.toml", "--progress"]) == 0
+    out = capsys.readouterr().out
+    assert "Read in ranked order" in out and "no abstract: 1" in out and "    b" in out
