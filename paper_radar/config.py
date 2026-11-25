@@ -115,6 +115,13 @@ class JevSettings:
     cache_read_price_per_mtok: float | None = None
     cache_creation_price_per_mtok: float | None = None
     pricing_as_of: str = ""
+    # Claude backend only. effort: output_config.effort ("low" when unset; ""
+    # sends none, for models without effort). batch: judge a run through the
+    # Message Batches API (half price; results usually within minutes).
+    effort: str | None = None
+    batch: bool = False
+    batch_poll_seconds: float = 30.0
+    batch_timeout_minutes: float = 120.0
 
 
 @dataclass
@@ -308,6 +315,18 @@ def validate(config: Config) -> None:
         raise ConfigError("jev.concurrency must be between 1 and 64")
     if config.jev.requests_per_minute < 1:
         raise ConfigError("jev.requests_per_minute must be >= 1")
+    if config.jev.effort is not None and config.jev.effort not in ("", "low", "medium", "high", "xhigh", "max"):
+        raise ConfigError('jev.effort must be "low", "medium", "high", "xhigh", "max" or "" (model default)')
+    if config.jev.effort is not None and config.jev.backend != "claude":
+        raise ConfigError('jev.effort only applies to backend = "claude"')
+    if not isinstance(config.jev.batch, bool):
+        raise ConfigError("jev.batch must be true or false")
+    if config.jev.batch and config.jev.backend != "claude":
+        raise ConfigError('jev.batch only applies to backend = "claude"')
+    if not 1 <= config.jev.batch_poll_seconds <= 600:
+        raise ConfigError("jev.batch_poll_seconds must be between 1 and 600")
+    if not 1 <= config.jev.batch_timeout_minutes <= 1440:
+        raise ConfigError("jev.batch_timeout_minutes must be between 1 and 1440")
     if config.combine not in COMBINE_MODES:
         raise ConfigError(f"radar.combine must be one of {sorted(COMBINE_MODES)}")
     if config.max_papers < 1:

@@ -233,7 +233,8 @@ class HTTPBackend:
 
 CLAUDE_SYSTEM = (
     "You judge research papers against plain-English statements. "
-    "Answer with ONLY a JSON object, no prose, no markdown fences. "
+    "The paper comes in the user message as JSON; the questions are listed below. "
+    "Answer with ONLY a JSON object keyed by question. "
     "For each question key, give a number between 0 and 1 for a 'noul' question "
     "(your probability that the statement is true of the paper), the exact label "
     "string for a 'choice' question (one of its criteria keys), and a number for "
@@ -248,30 +249,87 @@ CLAUDE_REPAIR = (
     "question give the exact label string; for each 'score' question give a number."
 )
 
+# Effort levels the Messages API accepts in output_config.effort. "" means
+# "send no effort and use the model's default" (for models without effort).
+CLAUDE_EFFORTS = ("low", "medium", "high", "xhigh", "max")
+CLAUDE_DEFAULT_EFFORT = "low"
+CLAUDE_MAX_TOKENS = 2048
 
-def _claude_user_text(state: Any, questions: dict[str, dict[str, Any]]) -> str:
-    """The one user message: the paper, then every question with its expected shape."""
+
+def _claude_question_spec(questions: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Every question with its expected shape, as Claude reads it."""
     spec: dict[str, Any] = {}
     for key, question in questions.items():
         kind = question["type"]
         entry: dict[str, Any] = {"type": kind, "instructions": question.get("instructions", "")}
-        if kind == "choice":
-            entry["criteria"] = list(question["criteria"])
-        elif kind == "score":
+        if kind in ("choice", "score"):
             entry["criteria"] = list(question["criteria"])
         if question.get("criteria") and kind == "noul":
             entry["criteria"] = question["criteria"]
         spec[key] = entry
-    return (
-        "Paper:\n" + json.dumps(state, ensure_ascii=False) + "\n\n"
-        "Questions (answer every key):\n" + json.dumps(spec, ensure_ascii=False)
-    )
+    return spec
+
+
+def _claude_system_blocks(questions: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """The fixed part of every request: instructions, then the questions.
+
+    The questions are the same for every paper in a run, so they sit in the
+    system prompt ahead of the paper and end with a cache breakpoint: from the
+    second paper on, this prefix is read from the prompt cache instead of
+    being billed as fresh input. The JSON is sorted so the bytes, and the
+    cache key, do not depend on dict order. A prefix shorter than the model's
+    minimum cacheable length (512 tokens on Haiku 5.5) is simply not cached;
+    that is harmless.
+    """
+    spec = json.dumps(_claude_question_spec(questions), ensure_ascii=False, sort_keys=True)
+    return [
+        {"type": "text", "text": CLAUDE_SYSTEM},
+        {
+            "type": "text",
+            "text": "Questions (answer every key):\n" + spec,
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]
+
+
+def _claude_user_text(state: Any) -> str:
+    """The one user message: the paper, and nothing that is the same for every paper."""
+    return "Paper:\n" + json.dumps(state, ensure_ascii=False)
+
+
+def claude_output_schema(questions: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """A JSON schema for ``output_config.format``: one key per question.
+
+    Structured outputs guarantee the reply parses and has every key with the
+    right JSON type, and a choice is constrained to its labels with ``enum``.
+    The API does not support ``minimum``/``maximum``, so the 0..1 range of a
+    noul and the range of a score are still checked in ``parse_claude_answers``.
+    """
+    properties: dict[str, Any] = {}
+    for key, question in questions.items():
+        kind = question["type"]
+        if kind == "noul":
+            properties[key] = {"type": "number", "description": "Probability from 0 to 1"}
+        elif kind == "choice":
+            properties[key] = {"type": "string", "enum": list(question["criteria"])}
+        elif kind == "score":
+            top = len(question["criteria"]) - 1
+            properties[key] = {"type": "number", "description": f"A number from 0 to {top}"}
+        else:
+            raise JevError(f"Unknown question type {kind!r} for {key!r}")
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": list(questions),
+        "additionalProperties": False,
+    }
 
 
 def _extract_claude_text(data: Any) -> str:
     """The text of a Messages API response, or a JevError if there is none."""
     if not isinstance(data, dict) or not isinstance(data.get("content"), list):
         raise JevError("Malformed Claude response: missing 'content'")
+    stop = data.get("stop_reason")
     parts = [
         block.get("text", "")
         for block in data["content"]
@@ -279,6 +337,8 @@ def _extract_claude_text(data: Any) -> str:
     ]
     text = "".join(parts).strip()
     if not text:
+        if stop == "max_tokens":
+            raise JevError("Malformed Claude response: hit max_tokens before answering")
         raise JevError("Malformed Claude response: no text content")
     return text
 
@@ -410,23 +470,39 @@ def parse_claude_answers(
     )
 
 
+class ClaudeRefusal(JevError):
+    """Claude declined to answer (``stop_reason: "refusal"``). Not repaired."""
+
+
 class ClaudeBackend:
     """Claude as the judge, via the Anthropic Messages API (stdlib urllib only).
 
-    One call per paper, asking for a JSON object of
-    self-reported probabilities. The key is read from ANTHROPIC_API_KEY at
-    runtime and is never stored anywhere by this code.
+    One call per paper, asking for a JSON object of self-reported
+    probabilities. The key is read from ANTHROPIC_API_KEY at runtime and is
+    never stored anywhere by this code.
+
+    What each request uses, and why:
+
+    * Structured outputs (``output_config.format``): the reply is constrained
+      to a JSON schema with one key per question, so it always parses and a
+      choice is always one of its labels. Ranges (0..1) are still checked.
+    * ``output_config.effort`` (default ``low``): this is a small
+      classification task, and Haiku 5.5 otherwise defaults to ``medium``,
+      spending output tokens on thinking that a yes/no judgement rarely needs.
+    * Prompt caching: the instructions and questions are the same for every
+      paper, so they come first, in the system prompt, with a cache
+      breakpoint; the paper comes last.
+    * ``decide_batch`` sends a whole run through the Message Batches API
+      (half price, no rate-limit pacing) when ``jev.batch = true``.
 
     Differences from the Jev backends, stated plainly: Claude has no
     calibrated probabilities, so the numbers it returns must be re-calibrated
-    with ``paper-radar calibrate`` before the thresholds mean anything; and
-    Haiku 5.5 rejects assistant prefill, so no prefill trick is used here —
-    the JSON instruction lives in the system prompt and the user message.
-    One exception: a malformed answer gets a single repair attempt in which
-    the model's own reply is echoed back as an assistant turn (an ordinary
-    multi-turn exchange, ending on a user turn) with what was wrong with it.
-    A second bad answer raises, and the pipeline quarantines the paper after
-    repeated failures instead of retrying it every day.
+    with ``paper-radar calibrate`` before the thresholds mean anything. A
+    malformed answer still gets a single repair attempt in which the model's
+    own reply is echoed back as an assistant turn (an ordinary multi-turn
+    exchange, ending on a user turn) with what was wrong with it. A second bad
+    answer raises, and the pipeline quarantines the paper after repeated
+    failures instead of retrying it every day. A refusal is not repaired.
     """
 
     name = "claude"
@@ -440,12 +516,20 @@ class ClaudeBackend:
         timeout: float,
         max_retries: int,
         limiter: RateLimiter,
+        effort: str = CLAUDE_DEFAULT_EFFORT,
+        batch_poll_seconds: float = 30.0,
+        batch_timeout_minutes: float = 120.0,
+        sleep: Any = time.sleep,
     ):
         self.url = url
         self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
         self.limiter = limiter
+        self.effort = effort
+        self.batch_poll_seconds = batch_poll_seconds
+        self.batch_timeout_minutes = batch_timeout_minutes
+        self._sleep = sleep
         self._headers = {
             "x-api-key": api_key,
             "anthropic-version": ANTHROPIC_VERSION,
@@ -453,6 +537,34 @@ class ClaudeBackend:
             "Accept": "application/json",
             "User-Agent": USER_AGENT,
         }
+
+    # ------------------------------------------------------------ request body
+
+    def _body(self, questions: dict[str, dict[str, Any]], messages: list[dict[str, str]]) -> dict[str, Any]:
+        output_config: dict[str, Any] = {
+            "format": {"type": "json_schema", "schema": claude_output_schema(questions)},
+        }
+        if self.effort:
+            output_config["effort"] = self.effort
+        # No "temperature": claude-haiku-5-5 rejects it with
+        # 400 "`temperature` is deprecated for this model".
+        return {
+            "model": self.model,
+            "max_tokens": CLAUDE_MAX_TOKENS,
+            "system": _claude_system_blocks(questions),
+            "messages": messages,
+            "output_config": output_config,
+        }
+
+    def _answer(self, data: Any, questions: dict[str, dict[str, Any]]) -> tuple[str, JevResult]:
+        """Parse one Messages API reply. Returns (text, result) or raises JevError."""
+        if isinstance(data, dict) and data.get("stop_reason") == "refusal":
+            raise ClaudeRefusal("Claude declined to judge this paper (stop_reason: refusal)")
+        text = _extract_claude_text(data)
+        raw = _parse_claude_json(text)
+        return text, parse_claude_answers(raw, questions, self.model, usage=data.get("usage") or {})
+
+    # ------------------------------------------------------------- one paper
 
     def decide(self, state: Any, questions: dict[str, dict[str, Any]]) -> JevResult:
         records: list[dict[str, Any]] = []
@@ -465,67 +577,207 @@ class ClaudeBackend:
         result.input_tokens = sum(r.get("input_tokens") or 0 for r in records)
         return result
 
-    def _decide(self, state: Any, questions: dict[str, dict[str, Any]], records: list[dict[str, Any]]) -> JevResult:
-        user_text = _claude_user_text(state, questions)
+    def _decide(
+        self,
+        state: Any,
+        questions: dict[str, dict[str, Any]],
+        records: list[dict[str, Any]],
+        first_reply: Any = None,
+    ) -> JevResult:
+        """Judge one paper. ``first_reply`` is an already-received (batch) reply
+        whose answer was malformed: it skips straight to the repair turn."""
+        user_text = _claude_user_text(state)
         messages: list[dict[str, str]] = [{"role": "user", "content": user_text}]
         repaired = False
+        pending = first_reply
         attempt = 0
         while True:
-            self.limiter.acquire()
-            body = json.dumps(
-                {
-                    "model": self.model,
-                    "max_tokens": 1024,
-                    # No "temperature": claude-haiku-5-5 rejects it with
-                    # 400 "`temperature` is deprecated for this model".
-                    "system": CLAUDE_SYSTEM,
-                    "messages": messages,
-                }
-            ).encode("utf-8")
-            request = urllib.request.Request(self.url, data=body, method="POST", headers=self._headers)
+            if pending is not None:
+                data, pending = pending, None
+            else:
+                self.limiter.acquire()
+                body = json.dumps(self._body(questions, messages)).encode("utf-8")
+                request = urllib.request.Request(self.url, data=body, method="POST", headers=self._headers)
+                try:
+                    with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                        data = json.loads(response.read())
+                except urllib.error.HTTPError as error:
+                    records.append(response_usage({}))
+                    detail = error.read()[:300].decode("utf-8", errors="replace")
+                    message = f"{self.name} HTTP {error.code}: {detail}"
+                    if error.code in FATAL_STATUSES:
+                        raise JevError(message, fatal=True, status=error.code) from None
+                    if error.code not in RETRYABLE_STATUSES or attempt >= self.max_retries:
+                        raise JevError(message, status=error.code) from None
+                    attempt += 1
+                    self._sleep(_retry_after(error.headers) or _backoff(attempt - 1))
+                    continue
+                except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as error:
+                    records.append(response_usage({}))
+                    if attempt >= self.max_retries:
+                        raise JevError(f"{self.name} request failed: {error}") from None
+                    attempt += 1
+                    self._sleep(_backoff(attempt - 1))
+                    continue
+                records.append(response_usage(data))
+            # A malformed model answer gets ONE repair attempt: the model's
+            # own reply is echoed back with what was wrong with it. (This is
+            # an ordinary multi-turn exchange, not an assistant prefill — the
+            # conversation still ends on a user turn.) A second bad answer
+            # raises, so a systematically bad prompt still surfaces instead of
+            # burning retries.
+            text = ""
             try:
-                with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                    data = json.loads(response.read())
+                if isinstance(data, dict) and data.get("stop_reason") == "refusal":
+                    raise ClaudeRefusal("Claude declined to judge this paper (stop_reason: refusal)")
+                text = _extract_claude_text(data)
+                raw = _parse_claude_json(text)
+                return parse_claude_answers(raw, questions, self.model, usage=data.get("usage") or {})
+            except ClaudeRefusal:
+                raise
+            except JevError as error:
+                if repaired:
+                    raise
+                repaired = True
+                messages = [{"role": "user", "content": user_text}]
+                if text:
+                    messages.append({"role": "assistant", "content": text})
+                messages.append({"role": "user", "content": CLAUDE_REPAIR.format(reason=error)})
+
+    # ------------------------------------------------------------- batches
+
+    def _batches_url(self) -> str:
+        base = self.url.rstrip("/")
+        return base + "/batches" if base.endswith("/messages") else base + "/v1/messages/batches"
+
+    def _http(self, method: str, url: str, payload: Any = None, *, raw: bool = False) -> Any:
+        """One Batches API call with the same retry rules as a Messages call."""
+        body = json.dumps(payload).encode("utf-8") if payload is not None else None
+        attempt = 0
+        while True:
+            request = urllib.request.Request(url, data=body, method=method, headers=self._headers)
+            try:
+                with urllib.request.urlopen(request, timeout=max(self.timeout, 60.0)) as response:
+                    content = response.read()
+                return content.decode("utf-8") if raw else json.loads(content)
             except urllib.error.HTTPError as error:
-                records.append(response_usage({}))
                 detail = error.read()[:300].decode("utf-8", errors="replace")
-                message = f"{self.name} HTTP {error.code}: {detail}"
+                message = f"{self.name} batch HTTP {error.code}: {detail}"
                 if error.code in FATAL_STATUSES:
                     raise JevError(message, fatal=True, status=error.code) from None
                 if error.code not in RETRYABLE_STATUSES or attempt >= self.max_retries:
                     raise JevError(message, status=error.code) from None
                 delay = _retry_after(error.headers) or _backoff(attempt)
             except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as error:
-                records.append(response_usage({}))
                 if attempt >= self.max_retries:
-                    raise JevError(f"{self.name} request failed: {error}") from None
+                    raise JevError(f"{self.name} batch request failed: {error}") from None
                 delay = _backoff(attempt)
-            else:
-                records.append(response_usage(data))
-                # A malformed model answer gets ONE repair attempt: the model's
-                # own reply is echoed back with what was wrong with it. (This
-                # is an ordinary multi-turn exchange, not an assistant
-                # prefill — the conversation still ends on a user turn.)
-                # A second bad answer raises, so a systematically bad prompt
-                # still surfaces instead of burning retries — and the pipeline
-                # quarantines the paper after repeated failures instead of
-                # retrying it every day.
-                text = ""
-                try:
-                    text = _extract_claude_text(data)
-                    raw = _parse_claude_json(text)
-                    return parse_claude_answers(raw, questions, self.model, usage=data.get("usage") or {})
-                except JevError as error:
-                    if repaired:
-                        raise
-                    repaired = True
-                    messages = [{"role": "user", "content": user_text}]
-                    if text:
-                        messages.append({"role": "assistant", "content": text})
-                    messages.append({"role": "user", "content": CLAUDE_REPAIR.format(reason=error)})
-                    continue
             attempt += 1
-            time.sleep(delay)
+            self._sleep(delay)
+
+    def decide_batch(
+        self,
+        states: list[Any],
+        questions: dict[str, dict[str, Any]],
+        log: Any = print,
+    ) -> list[JevResult | JevError]:
+        """Judge many papers through the Message Batches API, in input order.
+
+        Returns one outcome per paper, except after a fatal error, where the
+        list stops early.
+
+        Batch requests are billed at half the standard rate (and the prompt
+        cache still applies), and they are not paced by the per-minute rate
+        limiter. Results usually arrive within minutes; if the batch has not
+        ended after ``batch_timeout_minutes`` it is cancelled and the papers
+        that have no result are judged one by one instead, so a slow batch
+        never costs a day's run. A paper whose batch answer is malformed, or
+        whose request errored or expired, also falls back to an ordinary
+        call (with the usual repair attempt). Every request's usage is
+        recorded; batch records carry ``"batch": true`` so cost estimates
+        apply the discount.
+        """
+        if not states:
+            return []
+        url = self._batches_url()
+        requests = [
+            {"custom_id": f"p{i}", "params": self._body(questions, [{"role": "user", "content": _claude_user_text(s)}])}
+            for i, s in enumerate(states)
+        ]
+        created = self._http("POST", url, {"requests": requests})
+        batch_id = str(created.get("id") or "") if isinstance(created, dict) else ""
+        if not batch_id:
+            raise JevError("Malformed batch response: missing 'id'")
+        log(f"  … submitted {len(states)} papers as Claude batch {batch_id}")
+        deadline = time.monotonic() + self.batch_timeout_minutes * 60
+        status = created
+        while not (isinstance(status, dict) and status.get("processing_status") == "ended"):
+            if time.monotonic() >= deadline:
+                log(f"  ! batch {batch_id} not finished after {self.batch_timeout_minutes:g} min; cancelling and judging the rest one by one")
+                try:
+                    status = self._http("POST", f"{url}/{batch_id}/cancel", {})
+                except JevError:
+                    status = {}
+                break
+            self._sleep(self.batch_poll_seconds)
+            status = self._http("GET", f"{url}/{batch_id}")
+        replies: dict[str, Any] = {}
+        results_url = status.get("results_url") if isinstance(status, dict) else None
+        if results_url and status.get("processing_status") == "ended":
+            text = self._http("GET", results_url, raw=True)
+            for line in text.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(item, dict) and isinstance(item.get("result"), dict):
+                    replies[str(item.get("custom_id"))] = item["result"]
+
+        outcomes: list[JevResult | JevError] = []
+        fallbacks = 0
+        for i, state in enumerate(states):
+            reply = replies.get(f"p{i}")
+            records: list[dict[str, Any]] = []
+            first_reply = None
+            if reply and reply.get("type") == "succeeded" and isinstance(reply.get("message"), dict):
+                message = reply["message"]
+                record = response_usage(message)
+                record["batch"] = True
+                records.append(record)
+                try:
+                    _, result = self._answer(message, questions)
+                except ClaudeRefusal as error:
+                    error.request_usage = records
+                    outcomes.append(error)
+                    continue
+                except JevError:
+                    first_reply = message  # repair it with an ordinary call
+                else:
+                    result.request_usage = records
+                    result.input_tokens = sum(r.get("input_tokens") or 0 for r in records)
+                    outcomes.append(result)
+                    continue
+            fallbacks += 1
+            try:
+                result = self._decide(state, questions, records, first_reply=first_reply)
+            except JevError as error:
+                error.request_usage = records or [response_usage({})]
+                outcomes.append(error)
+                if error.fatal:
+                    # A bad key or a disallowed request will fail every paper:
+                    # stop here. The papers after this one get no outcome, the
+                    # same as papers left unjudged when a threaded run stops.
+                    break
+                continue
+            result.request_usage = records
+            result.input_tokens = sum(r.get("input_tokens") or 0 for r in records)
+            outcomes.append(result)
+        if fallbacks:
+            log(f"  … {fallbacks} paper(s) judged one by one after the batch (malformed, errored or expired)")
+        return outcomes
 
 
 # --------------------------------------------------------------------------- gemini
@@ -729,16 +981,18 @@ class GeminiBackend:
                     raise JevError(f"{self.name} request failed: {error}") from None
                 delay = _backoff(attempt)
             else:
-                result = parse_gemini_answers(data, questions, self.model)
+                # Record usage before validating: a malformed reply is still billed.
+                usage = data.get("usage") if isinstance(data, dict) else None
+                total_in = usage.get("total_input_tokens") if isinstance(usage, dict) else None
                 records.append(
                     response_usage(
                         {
-                            "model": result.model,
-                            "usage": {"input_tokens": result.input_tokens, "output_tokens": 0},
+                            "model": (data.get("model") if isinstance(data, dict) else None) or self.model,
+                            "usage": {"input_tokens": total_in, "output_tokens": 0},
                         }
                     )
                 )
-                return result
+                return parse_gemini_answers(data, questions, self.model)
             attempt += 1
             time.sleep(delay)
 
@@ -858,6 +1112,9 @@ def make_backend(settings: JevSettings, env: dict[str, str] | None = None) -> Ba
             timeout=settings.timeout,
             max_retries=settings.max_retries,
             limiter=limiter,
+            effort=CLAUDE_DEFAULT_EFFORT if settings.effort is None else settings.effort,
+            batch_poll_seconds=settings.batch_poll_seconds,
+            batch_timeout_minutes=settings.batch_timeout_minutes,
         )
     if backend == "gemini":
         return GeminiBackend(

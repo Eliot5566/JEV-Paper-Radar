@@ -47,12 +47,14 @@ def summarize_usage(records: list[dict[str, Any]], settings: Any) -> dict[str, A
             known_cost += reported
             continue
         estimated = True
+        # Message Batches requests are billed at half the standard rate.
+        discount = 0.5 if record.get("batch") else 1.0
         for field, rate in rates.items():
             tokens = record.get(field)
             if (tokens is None and rate != 0) or (tokens and rate is None):
                 complete = False
             elif tokens:
-                known_cost += tokens * rate / 1_000_000
+                known_cost += tokens * rate * discount / 1_000_000
     return {
         "scope": "judging_requests_only",
         "requests": len(records),

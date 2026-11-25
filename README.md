@@ -114,6 +114,18 @@ Claude Pro/Max subscription, and costs more per paper than Jev; set
 for the Haiku 5.5 ≤100K prompt tier checked on 2026-11-13, and lower
 `jev.requests_per_minute` if you are on a low API tier.
 
+How each Claude request is built: the reply is constrained by **structured
+outputs** (a JSON schema with one key per question, so it always parses and a
+choice is always one of its labels); **`output_config.effort` is `low`** by
+default, since this is a small classification task (set `jev.effort` to change
+it, or `""` to send none); and the instructions and questions are a **cached
+prefix** with the paper last, so set `jev.cache_read_price_per_mtok = 0.01`
+and `jev.cache_creation_price_per_mtok = 0.125` for Haiku 5.5. A scheduled
+run that nobody waits on can set `jev.batch = true` to go through the
+**Message Batches API** at half price; papers whose batch answer is malformed
+or missing are judged one by one afterwards, and a batch still running after
+`jev.batch_timeout_minutes` (120) is cancelled the same way.
+
 There is now a first-look calibration for the Claude backend — see
 [`docs/claude-calibration.md`](docs/claude-calibration.md). On 49 papers from
 the 2026-11-11 arXiv listing (6 relevant), Claude Haiku 5.5 scored Brier

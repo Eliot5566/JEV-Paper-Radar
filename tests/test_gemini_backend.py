@@ -178,9 +178,11 @@ def test_malformed_response_raises_without_repair(server_factory):
     # A decision model returns typed answers, not prose: there is no repair
     # attempt, so one bad reply is one request and one failure.
     server = server_factory([(200, {}, {"usage": {"total_input_tokens": 10}})])
-    with pytest.raises(JevError, match="missing 'answers'"):
+    with pytest.raises(JevError, match="missing 'answers'") as caught:
         _backend(server.url).decide("state", QUESTIONS)
     assert len(server.requests) == 1
+    # The bad reply was still billed, so its input tokens are recorded.
+    assert caught.value.request_usage[0]["input_tokens"] == 10
 
 
 @pytest.mark.parametrize(

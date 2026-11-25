@@ -12,7 +12,13 @@ requests_per_minute = 30
 # Source and accounting limits: ../docs/usage-and-cost.md
 price_per_mtok = 0.10
 output_price_per_mtok = 0.50
+# The questions are sent as a cached prefix: reads are 0.1x input and
+# 5-minute cache writes 1.25x input on Haiku 5.5.
+cache_read_price_per_mtok = 0.01
+cache_creation_price_per_mtok = 0.125
 pricing_as_of = "2026-11-13"
+# effort = "low"   # the default for Claude; "" sends none (models without effort)
+# batch = true     # half price via the Message Batches API; results usually in minutes
 
 [[sources]]
 type = "arxiv"

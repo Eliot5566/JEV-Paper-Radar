@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- New backend: Gemini Decision 1 (`backend = "gemini"`, `GEMINI_API_KEY`), a decision model with the same noul / choice / score questions as Jev. From PR #29. Its usage is now recorded before the reply is validated, so a malformed but billed reply still counts in `usage.jsonl`.
+- Claude backend:
+  - Structured outputs: the reply is constrained to a JSON schema built from the questions (choices as `enum`). The 0..1 and score ranges are still checked, and the one repair attempt stays for answers outside them.
+  - `output_config.effort` defaults to `low` (`jev.effort`; `""` sends none). Haiku 5.5 otherwise runs at `medium` and spends output tokens thinking. `max_tokens` is 2048.
+  - Prompt caching: the instructions and questions are a cached system prefix (sorted JSON, so the bytes are stable) and the paper is the whole user turn. Configure `cache_read_price_per_mtok` and `cache_creation_price_per_mtok`, or a cached run shows cost unknown.
+  - `jev.batch = true` judges a run through the Message Batches API at half price, with per-paper fallback to ordinary calls for malformed, errored or expired results and a `jev.batch_timeout_minutes` cancel. Batch usage records carry `"batch": true` and cost estimates apply the 50% discount.
+  - A refusal (`stop_reason: "refusal"`) is reported as such and not repaired.
+
 ## 0.2.0 — 2026-11-13
 
 - Reject out-of-range, non-finite and boolean numeric answers before ranking or screening.
