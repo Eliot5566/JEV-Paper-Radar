@@ -19,6 +19,11 @@ label = "Optimal transport"
 text = "The paper uses optimal transport or Wasserstein distances as a central tool"
 
 [[interests]]
+id = "graph_learning"
+label = "Graph learning"
+text = "The paper uses graph neural networks or graph-based learning as a central tool"
+
+[[interests]]
 id = "uses_imagenet"
 label = "Uses ImageNet"
 text = "The paper reports results on the ImageNet dataset"
