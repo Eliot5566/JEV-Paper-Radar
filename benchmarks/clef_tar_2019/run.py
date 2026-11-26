@@ -366,7 +366,7 @@ def render(results: list[dict], args) -> str:
         "2019 track (Task 2, Intervention, training set). Criteria come from each review's own",
         "published selection criteria; see `criteria/*.toml`, which quote the source verbatim.",
         "",
-        "Both aggregation rules are scored from the same Jev answers, so the comparison is",
+        "Both aggregation rules are scored from the same model answers, so the comparison is",
         "paired: no record is judged twice and no run-to-run variation enters it.",
         "",
         "| Topic | Review | Records | Eligible | geometric recall | geometric WSS | min recall | min WSS | No abstract | Cost |",
@@ -428,7 +428,11 @@ def render(results: list[dict], args) -> str:
         "## Reproducing",
         "",
         "```bash",
-        f"python benchmarks/clef_tar_2019/run.py --criteria {args.criteria} --email you@example.com",
+        "python benchmarks/clef_tar_2019/run.py"
+        + ("" if args.backend == "typesafe" else f" --backend {args.backend}")
+        + (f" --model {args.model}" if args.model else "")
+        + (" --batch" if args.batch else "")
+        + f" --criteria {args.criteria} --email you@example.com",
         "```",
         "",
         "Set `NCBI_API_KEY` to fetch faster. Everything is cached under `cache/`, so only the",

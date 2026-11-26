@@ -21,6 +21,7 @@ from .jev import JevError, MockBackend, make_backend
 from .pipeline import estimate_tokens_per_paper, rebuild_site, run, run_screening
 from .questions import build_questions, build_screening_questions
 from .screening import format_performance, screening_performance
+from .stopping import STOP_DEFAULT_FRAC, STOP_DEFAULT_K, STOP_DEFAULT_SIZE_FRAC, STOP_DEFAULT_THRESHOLD
 from .store import Store
 
 
@@ -206,6 +207,22 @@ def cmd_screen(args: argparse.Namespace) -> int:
         print(f"warning: {warning}")
 
     store = Store(config.data_path)
+    if args.progress:
+        from .stopping import advise, format_advice
+
+        ranking, manual = store.ranking_index()
+        if not ranking and not manual:
+            print("No screening results yet. Run `paper-radar screen` first.", file=sys.stderr)
+            return 2
+        labels = store.load_labels()
+        advice = advise(ranking, labels, rule=args.rule, k=args.k, frac=args.frac, size_frac=args.size_frac,
+                        threshold=args.threshold, batch=args.next)
+        print(format_advice(advice))
+        unread = [pid for pid in manual if pid not in labels]
+        if manual:
+            print(f"\n  Records with no abstract: {len(manual):,} ({len(unread):,} not yet labelled). "
+                  "Read these whatever the rule says; they are not ranked.")
+        return 0
     if args.report:
         report = screening_performance(
             store.eligibility_index(),
@@ -324,6 +341,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--backend", choices=["typesafe", "openrouter", "claude", "gemini", "mock"], help="override jev.backend")
     p.add_argument("--report", action="store_true", help="measure recall and workload saved against your own decisions")
     p.add_argument("--recall", type=float, help="target recall for --report (default: screening.target_recall)")
+    p.add_argument("--progress", action="store_true",
+                   help="read in ranked order, label as you go; this says what to read next and when you can stop")
+    p.add_argument("--rule", choices=["consecutive", "threshold", "knee"], default="consecutive",
+                   help="stopping rule for --progress (default: consecutive)")
+    p.add_argument("--k", type=int, default=STOP_DEFAULT_K, help="--progress: shortest dry run that allows stopping")
+    p.add_argument("--frac", type=float, default=STOP_DEFAULT_FRAC,
+                   help="--progress: dry run must also cover this share of the records read so far")
+    p.add_argument("--size-frac", type=float, default=STOP_DEFAULT_SIZE_FRAC,
+                   help="--progress: dry run must also cover this share of all ranked records (default 0.03)")
+    p.add_argument("--threshold", type=float, default=STOP_DEFAULT_THRESHOLD, help="--progress with --rule threshold")
+    p.add_argument("--next", type=int, default=20, help="--progress: how many next records to list")
     p.set_defaults(func=cmd_screen)
 
     p = sub.add_parser("directory", help="build one page listing several radars, with each one's latest numbers")

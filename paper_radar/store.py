@@ -212,6 +212,30 @@ class Store:
                 index[record["paper"]["id"]] = float(record["eligibility"])
         return index
 
+    def ranking_index(self) -> tuple[dict[str, float], list[str]]:
+        """(paper id -> reading priority, ids with no abstract).
+
+        The priority is the eligibility score, except that records an exclusion
+        criterion fired on go last. Records with no abstract are returned apart: a human
+        reads them whatever happens, and their labels say nothing about the ranking, so
+        a stopping rule must not count them. The benchmark ranks the same way."""
+        index: dict[str, float] = {}
+        manual: dict[str, None] = {}
+        for day in self.screening_days():
+            for record in self.load_screening(day):
+                pid = record["paper"]["id"]
+                verdict = record.get("verdict")
+                if verdict == "manual":
+                    manual[pid] = None
+                    index.pop(pid, None)
+                    continue
+                manual.pop(pid, None)
+                if verdict == "exclude_criterion" or record.get("triggered"):
+                    index[pid] = 0.0
+                else:
+                    index[pid] = float(record["eligibility"])
+        return index, list(manual)
+
     # --------------------------------------------------------------------- labels
     def add_label(self, paper_id: str, relevant: bool, when: str) -> None:
         self.root.mkdir(parents=True, exist_ok=True)

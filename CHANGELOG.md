@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Screening: `paper-radar screen --progress` for reading in ranked order. Label as you read; it lists the next records and says when a dry run of max(100, 3% of the ranked records) irrelevant records makes it safe to stop. Records without an abstract are listed apart and never counted by the rule. On the twelve CLEF TAR reviews, with the rule chosen on the other eleven each time, Jev found 98.0% of eligible studies and saved 69% of the reading, against 92.4% / 46% for a fixed threshold.
+- Benchmark: `stopping.py` (stopping rules vs a fixed threshold, chosen leaving one review out) and `ensemble.py` (average several models' dumps). Jev, Claude Haiku 5.5 and both together compared on the same 27,889 records, and Gemini Decision 1 on the eight development reviews it finished, in `results.stopping.md`. Reports now print the exact command that reproduces them, backend and model included.
 - New backend: Gemini Decision 1 (`backend = "gemini"`, `GEMINI_API_KEY`), a decision model with the same noul / choice / score questions as Jev. From PR #29. Its usage is now recorded before the reply is validated, so a malformed but billed reply still counts in `usage.jsonl`.
 - Claude backend:
   - Structured outputs: the reply is constrained to a JSON schema built from the questions (choices as `enum`). The 0..1 and score ranges are still checked, and the one repair attempt stays for answers outside them.
