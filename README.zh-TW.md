@@ -4,23 +4,26 @@
 
 **用白話寫下研究興趣，得到有理由、可繼續整理的論文清單。**
 
-**[先在瀏覽器看成品](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)** · [English](https://eliot5566.github.io/JEV-Paper-Radar/try/) — 不需先下載，先看使用有標示摘要重述的真實論文實測，也保留虛構示範。
+[![GitHub stars](https://img.shields.io/github/stars/Eliot5566/JEV-Paper-Radar?style=social)](https://github.com/Eliot5566/JEV-Paper-Radar/stargazers) [![Latest release](https://img.shields.io/github/v/release/Eliot5566/JEV-Paper-Radar)](https://github.com/Eliot5566/JEV-Paper-Radar/releases) [![CI](https://github.com/Eliot5566/JEV-Paper-Radar/actions/workflows/ci.yml/badge.svg)](https://github.com/Eliot5566/JEV-Paper-Radar/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**在 Claude 裡直接試用：**[下載技能 ZIP](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.2.0/paper-radar-claude-v0.2.0.zip) · **[安裝教學](docs/claude-install.md#繁體中文)**。上傳啟用 0.2.0 後，只需研究興趣或 arXiv／PubMed／DOI 連結，技能取得公開標題摘要，再在目前對話排序與匯出。不必先整理 CSV，不需 pip 或額外模型 API 金鑰；檢索需要允許連線或既有 Claude 網頁工具，仍使用對話額度。
-
-**[用兩個真實連結試一次](docs/first-run.md#繁體中文)** · [查看實測結果](https://eliot5566.github.io/JEV-Paper-Radar/try/real/) · [回報首次使用經驗](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=first-run.yml)。成功與卡住都歡迎回報。
-
-每日自動化可用 Claude API：**[API 入門教學](docs/claude-quickstart.zh-TW.md)** · [English guide](docs/claude-quickstart.md) · [可 Fork 範例](https://github.com/Eliot5566/paper-radar-claude-example)。分數是自述的未校準數字，[初步觀察與限制](docs/claude-calibration.md)在此。
-
-白話研究興趣 · 逐項分數 · 網頁與 RSS · Claude 對話或 Jev／Claude API 自動化
-
-[English](README.md) · [Claude 入門](docs/claude-quickstart.zh-TW.md)
+用白話寫下你關心的主題，Paper Radar 會讀完 arXiv、bioRxiv、PubMed 或任何 RSS 的每一篇新論文，逐項打分，每天產生一頁值得讀的清單和 RSS。
 
 <img src="docs/demo.png" width="720" alt="Paper Radar 每日頁面">
 
 <sub>真實執行結果：Jev 在 5 秒內讀完 50 篇當日 arXiv 新論文，花費 $0.002。沒有金鑰也可以用 <code>paper-radar demo</code> 看到同樣的頁面。</sub>
 
+**[在瀏覽器試用](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh)** · **[在 Claude 裡使用](docs/claude-install.md#繁體中文)** · **[用 GitHub Actions 每天自動跑](docs/claude-quickstart.zh-TW.md)** · [English](README.md)
+
 </div>
+
+| 我想要… | 從這裡開始 | 需要什麼 |
+|---|---|---|
+| 直接訂閱現成的每日雷達 | [七個公開雷達與 RSS](https://eliot5566.github.io/JEV-Paper-Radar/public/) | 什麼都不用 |
+| 安裝前先看成品 | [瀏覽器範例](https://eliot5566.github.io/JEV-Paper-Radar/try/?lang=zh) · [English](https://eliot5566.github.io/JEV-Paper-Radar/try/) · [真實論文實測](https://eliot5566.github.io/JEV-Paper-Radar/try/real/) | 什麼都不用 |
+| 在 Claude 對話裡排序論文 | [技能 ZIP 0.2.0](https://github.com/Eliot5566/JEV-Paper-Radar/releases/download/claude-skill-v0.2.0/paper-radar-claude-v0.2.0.zip) · [安裝教學](docs/claude-install.md#繁體中文) · [用兩個真實連結試一次](docs/first-run.md#繁體中文) | Claude 方案；不需 pip、CSV 或額外模型 API 金鑰 |
+| 每天產生自己的頁面與 RSS | [Claude API 入門教學](docs/claude-quickstart.zh-TW.md) · [English guide](docs/claude-quickstart.md) · [可 Fork 範例](https://github.com/Eliot5566/paper-radar-claude-example) | 一個 fork 加一把 API 金鑰（Jev、OpenRouter、Claude 或 Gemini） |
+
+<sub>技能在允許連線或有 Claude 網頁工具時取得公開標題與摘要，仍使用對話額度。Claude 分數是自述的未校準數字，[初步觀察與限制](docs/claude-calibration.md)在此。試用過了嗎？歡迎[回報首次使用經驗](https://github.com/Eliot5566/JEV-Paper-Radar/issues/new?template=first-run.yml)，成功與卡住都歡迎。</sub>
 
 ---
 
